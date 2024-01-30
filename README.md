@@ -1,2 +1,2 @@
-# pystream-rustic
-Rustic version of PyStream
+# RuStream
+Rustic API to stream videos from localhost

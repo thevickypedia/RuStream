@@ -1,0 +1,21 @@
+# https://doc.rust-lang.org/cargo/getting-started/first-steps.html#first-steps-with-cargo
+[package]
+name = "RuStream"
+version = "0.0.1"
+description = "Rustic API to stream videos from localhost"
+license = "MIT"
+documentation = "https://thevickypedia.github.io/rustic-stream"
+homepage = "https://github.com/thevickypedia/rustic-stream"
+repository = "https://github.com/thevickypedia/rustic-stream"
+
+[[bin]]
+name = "stream"
+path = "src/main.rs"
+
+#[dependencies]
+#log = "0.4.20"
+#chrono = "0.4.31"
+#serde_json = "1.0"
+#env_logger = "0.11.1"
+#serde = { version = "1.0", features = [ "derive" ] }
+#reqwest = { version = "0.11.22", features = ["blocking"] }
