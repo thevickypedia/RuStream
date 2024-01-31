@@ -1,14 +1,13 @@
 use std::env;
 use std::path::Path;
 
-#[allow(dead_code)]
-struct Server {
-    workers: i32,
-    max_connections: i32,
-    port: i32,
+pub struct Server {
+    pub workers: usize,
+    pub max_connections: usize,
+    pub port: usize,
 }
 
-pub async fn getenv(key: &str, default: i32) -> i32 {
+fn getenv(key: &str, default: i32) -> i32 {
     let value = env::var(key);
     return match value {
         Ok(ok) => {
@@ -18,6 +17,16 @@ pub async fn getenv(key: &str, default: i32) -> i32 {
             default
         }
     };
+}
+
+impl Server {
+    pub fn config() -> Server {
+        Server {
+            workers: getenv("workers", getenv("WORKERS", 3)) as usize,
+            max_connections: getenv("max_connections", getenv("MAX_CONNECTIONS", 100)) as usize,
+            port: getenv("port", getenv("PORT", 8000)) as usize
+        }
+    }
 }
 
 pub async fn get_binary() -> String {
