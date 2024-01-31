@@ -17,6 +17,8 @@ async fn main() -> io::Result<()> {
     let binary = squire::get_binary().await;
     let logging_level = format!("actix_web=debug,actix_server=info,{}=debug", binary);
     env::set_var("RUST_LOG", logging_level);
+    // todo: take debug as an cmdline arg and enable this if flag is passed
+    env::set_var("RUST_BACKTRACE", "0");
     // env::set_var("RUST_LOG", "actix_web=debug,actix_server=info,stream=debug");
     env_logger::init();
     let config = squire::Server::config();

@@ -1,13 +1,17 @@
-use actix_web::{HttpRequest, HttpResponse, web};
+use std::path::PathBuf;
+
+use actix_web::{HttpRequest, HttpResponse};
 
 #[get("/stream")]
 pub async fn stream(req: HttpRequest) -> HttpResponse {
     log::info!("Connection received from {}", req.connection_info().host());
-    let data = "This is a streaming response.";
-    let streaming_body = web::Bytes::from(data);
-    let streaming = futures_util::stream::once(
-        async move { Ok::<_, actix_web::Error>(streaming_body) }
-    );
-    HttpResponse::Ok().streaming(streaming)
+    // todo: toss around the loaded and validated config, between modules
+    let video_path = PathBuf::from("/path/to/video.mp4");
+    if video_path.exists() {
+        let file = actix_files::NamedFile::open_async(video_path.clone()).await.unwrap();
+        return file.into_response(&req)
+    }
+    let error = format!("File {:?} not found", video_path);
+    log::error!("{}", error);
+    return HttpResponse::NotFound().body(error)
 }
-

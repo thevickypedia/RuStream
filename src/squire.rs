@@ -2,29 +2,49 @@ use std::env;
 use std::path::Path;
 
 pub struct Server {
+    pub video_source: String,
     pub workers: usize,
     pub max_connections: usize,
     pub port: usize,
 }
 
-fn getenv(key: &str, default: i32) -> i32 {
-    let value = env::var(key);
-    return match value {
-        Ok(ok) => {
-            ok.to_string().parse::<i32>().unwrap()
+fn getenv_int(key: &str, default: i32) -> i32 {
+    if let Ok(value_lower) = env::var(key.to_lowercase()) {
+        if let Ok(parsed_value) = value_lower.parse::<i32>() {
+            return parsed_value;
         }
-        Err(_) => {
-            default
+        panic!("\n{}\n\tInput is not valid i32 [value={}]\n", key, value_lower)
+    }
+    if let Ok(value_upper) = env::var(key.to_uppercase()) {
+        if let Ok(parsed_value) = value_upper.parse::<i32>() {
+            return parsed_value;
         }
-    };
+        panic!("\n{}\n\tInput is not valid i32 [value={}]\n", key, value_upper)
+    }
+    default
 }
+
+fn getenv_str(key: &str, default: Option<String>) -> String {
+    if let Ok(value_lower) = env::var(key.to_lowercase()) {
+        return value_lower;
+    }
+    if let Ok(value_upper) = env::var(key.to_uppercase()) {
+        return value_upper;
+    }
+    if let Some(default_value) = default {
+        return default_value;
+    }
+    panic!("\n{}\n\tField required [value=missing]\n", key)
+}
+
 
 impl Server {
     pub fn config() -> Server {
         Server {
-            workers: getenv("workers", getenv("WORKERS", 3)) as usize,
-            max_connections: getenv("max_connections", getenv("MAX_CONNECTIONS", 100)) as usize,
-            port: getenv("port", getenv("PORT", 8000)) as usize
+            video_source: getenv_str("video_source", None),
+            workers: getenv_int("workers", 3) as usize,
+            max_connections: getenv_int("max_connections", 100) as usize,
+            port: getenv_int("port", 8000) as usize,
         }
     }
 }
