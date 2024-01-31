@@ -4,7 +4,7 @@ extern crate actix_web;
 use std::env;
 use std::io;
 
-use actix_web::{App, HttpServer, middleware};
+use actix_web::{App, HttpServer, middleware, web};
 // use serde_json::Value::String;
 use log;
 
@@ -21,7 +21,8 @@ async fn main() -> io::Result<()> {
     env::set_var("RUST_BACKTRACE", "0");
     // env::set_var("RUST_LOG", "actix_web=debug,actix_server=info,stream=debug");
     env_logger::init();
-    let config = squire::Server::config();
+    let arc_config = squire::Server::config();
+    let config = arc_config.clone();
     /*
         || syntax is creating a closure that serves as the argument to the HttpServer::new() method.
         The closure is defining the configuration for the Actix web server.
@@ -29,8 +30,9 @@ async fn main() -> io::Result<()> {
      */
     let host = format!("0.0.0.0:{}", config.port);
     log::info!("{} running on http://{} (Press CTRL+C to quit)", env!("CARGO_PKG_NAME"), host);
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()  // Creates a new Actix web application
+            .app_data(web::Data::new(arc_config.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
             .service(routes::basics::status)

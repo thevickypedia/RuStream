@@ -1,8 +1,8 @@
-use std::env;
-use std::path::Path;
+use std::{env, path};
+use std::sync::Arc;
 
 pub struct Server {
-    pub video_source: String,
+    pub video_source: path::PathBuf,
     pub workers: usize,
     pub max_connections: usize,
     pub port: usize,
@@ -39,17 +39,24 @@ fn getenv_str(key: &str, default: Option<String>) -> String {
 
 
 impl Server {
-    pub fn config() -> Server {
-        Server {
-            video_source: getenv_str("video_source", None),
+    pub fn config() -> Arc<Server> {
+        let binding = getenv_str("video_source", None);
+        let src_path = path::Path::new(&binding);
+        if !src_path.exists() {
+            panic!("\nvideo_source\n\tInput is not a valid path [value={:?}]\n", src_path)
+        }
+        Arc::new(Server {
+            video_source: src_path.to_owned(),
             workers: getenv_int("workers", 3) as usize,
             max_connections: getenv_int("max_connections", 100) as usize,
             port: getenv_int("port", 8000) as usize,
-        }
+        })
     }
 }
 
 pub async fn get_binary() -> String {
-    let binary = env::args().next().unwrap();
-    Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
+    // fixme: fails since Path is referred
+    // let binary = env::args().next().unwrap();
+    // Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
+    return "stream".to_string()
 }
