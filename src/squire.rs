@@ -55,8 +55,6 @@ impl Server {
 }
 
 pub async fn get_binary() -> String {
-    // fixme: fails since Path is referred
-    // let binary = env::args().next().unwrap();
-    // Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
-    return "stream".to_string()
+    let binary = env::args().next().unwrap();
+    path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
 }
