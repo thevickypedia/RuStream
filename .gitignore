@@ -12,3 +12,4 @@ Cargo.lock
 
 # RustRover IDE
 .idea
+config.json
