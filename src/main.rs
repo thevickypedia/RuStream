@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate actix_web;
 
-use std::env;
+use std::{env, path};
 use std::io;
 use std::sync::Arc;
 
@@ -15,9 +15,14 @@ mod routes;
 mod squire;
 mod parser;
 
+pub async fn get_binary() -> String {
+    let binary = env::args().next().unwrap();
+    path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
+}
+
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
-    let binary = squire::get_binary().await;
+    let binary = get_binary().await;
     let args = parser::arguments();
     if args.debug {
         let logging_level = format!("actix_web=debug,actix_server=info,{}=debug", binary);
