@@ -8,6 +8,7 @@ use log;
 
 mod routes;
 mod squire;
+mod render;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
@@ -29,6 +30,7 @@ async fn main() -> io::Result<()> {
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
             .service(routes::basics::status)
+            .service(routes::basics::root)
             .service(routes::video::stream)
     })
         .workers(config.workers as usize)
