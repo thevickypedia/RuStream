@@ -3,9 +3,7 @@ use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 
-use squire::Config;
-
-use crate::squire;
+use crate::squire::settings;
 
 #[derive(Deserialize)]
 pub struct Payload {
@@ -13,7 +11,8 @@ pub struct Payload {
 }
 
 #[get("/stream")]
-pub async fn stream(config: web::Data<Arc<Config>>, req: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
+pub async fn stream(config: web::Data<Arc<settings::Config>>,
+                    req: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
     let video_path = config.video_source.join(&info.video_file);
     log::info!("Connection received from {} requesting {:?}", req.connection_info().host(), info.video_file);
     if video_path.exists() {
