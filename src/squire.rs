@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::net::ToSocketAddrs;
 use std::path;
 
 use serde::{Deserialize, Serialize};
@@ -28,7 +29,20 @@ pub struct Config {
 }
 
 
-pub fn default_video_host() -> String { "localhost".to_string() }
+pub fn default_video_host() -> String {
+    let hostname = "localhost";
+    match (hostname, 0).to_socket_addrs() {
+        Ok(addrs) => {
+            if let Some(addr) = addrs.filter(|a| a.is_ipv4()).next() {
+                return addr.ip().to_string();
+            }
+        }
+        Err(err) => {
+            log::error!("Error resolving hostname: {}", err);
+        }
+    }
+    "localhost".to_string()
+}
 
 pub fn default_video_port() -> i32 { 8000 }
 

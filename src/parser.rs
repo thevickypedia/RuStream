@@ -15,7 +15,8 @@ pub fn arguments() -> Args {
         \tdebug:{}Enable debug mode for detailed logging\n\
         \tversion:{}Get version of the package\n\n\
         arguments:\n\
-        \t-f / --filename{}JSON filename where the config information is stored\n",
+        \t-f / --filename{}JSON filename where the config information is stored \
+        (use -h/--help to vide the args required in the JSON file)\n",
         " ".repeat(6), " ".repeat(8), " ".repeat(8)
     );
     if args.is_empty() {
@@ -35,6 +36,20 @@ pub fn arguments() -> Args {
         match args[i].as_str() {
             "debug" => {
                 debug = true;
+            }
+            "-h" | "--help" => {
+                let helper = "\nMandatory Args:\n
+        authorization: Dictionary of key-value pairs with username as key and password as value.\n
+        video_source: Source path for video files.\n\n\
+        Optional Args:\n
+        video_host: IP address to host the video. Defaults to 127.0.0.1\n
+        video_port: Port number to host the application. Defaults to 8000\n
+        file_formats: Sequence of supported video file formats. Defaults to (.mp4, .mov)\n
+        workers: Number of workers to spin up the uvicorn server. Defaults to 1\n
+        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n
+        auto_thumbnail: Boolean flag to auto generate thumbnail images for preview. Defaults to true\n\n".to_string();
+                println!("{}", helper);
+                exit(0)
             }
             "-V" | "-v" | "--version" => {
                 version = true;

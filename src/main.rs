@@ -29,7 +29,8 @@ async fn main() -> io::Result<()> {
         env::set_var("RUST_LOG", logging_level);
         env::set_var("RUST_BACKTRACE", "1");
     } else {
-        let logging_level = format!("actix_web=info,actix_server=info,{}=info", binary);
+        // set actix logging to warning mode since it becomes too noisy when streaming a giant video file
+        let logging_level = format!("actix_web=warn,actix_server=warn,{}=info", binary);
         env::set_var("RUST_LOG", logging_level);
         env::set_var("RUST_BACKTRACE", "0");
     }
@@ -68,7 +69,7 @@ async fn main() -> io::Result<()> {
         The closure is defining the configuration for the Actix web server.
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
-    let host = format!("0.0.0.0:{}", config.video_port);
+    let host = format!("{}:{}", config.video_host, config.video_port);
     log::info!("{} running on http://{} (Press CTRL+C to quit)", env!("CARGO_PKG_NAME"), host);
     HttpServer::new(move || {
         App::new()  // Creates a new Actix web application
