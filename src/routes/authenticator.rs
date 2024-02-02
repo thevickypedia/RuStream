@@ -1,12 +1,16 @@
+use std::collections::HashMap;
 use std::sync::Arc;
-use actix_web::cookie::Cookie;
-use actix_web::cookie::time::{Duration, OffsetDateTime};
+
 use actix_web::http::header::HeaderValue;
 use actix_web::HttpRequest;
 use actix_web::web::Data;
 
 use crate::squire;
 use crate::squire::settings;
+
+lazy_static::lazy_static! {
+    static ref SESSION_MAPPING: std::sync::Mutex<HashMap<String, String>> = std::sync::Mutex::new(HashMap::new());
+}
 
 struct Credentials {
     username: String,
@@ -33,7 +37,10 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Credentials {
     Credentials { username, signature, timestamp }
 }
 
-pub fn verify_login(request: HttpRequest, config: Data<Arc<settings::Config>>) -> Option<Cookie<'static>> {
+pub fn verify_login(
+    request: HttpRequest,
+    config: Data<Arc<settings::Config>>,
+) -> Option<HashMap<&'static str, String>> {
     let authorization = request.headers().get("authorization");
     if authorization.is_some() {
         let credentials = extract_credentials(authorization);
@@ -46,14 +53,14 @@ pub fn verify_login(request: HttpRequest, config: Data<Arc<settings::Config>>) -
             // Create a new signature with hex encoded username and password stored in config file as plain text
             let expected_signature = squire::secure::calculate_hash(message);
             if expected_signature == credentials.signature {
-                let mut cookie = Cookie::build("session_token", "thiswillbechanged")
-                    .http_only(true)
-                    .finish();
-                let mut expiration = OffsetDateTime::now_utc();
-                expiration += Duration::seconds(config.session_duration as i64);
-                cookie.set_expires(expiration);
-                log::info!("Session for '{}' will be valid until {}", credentials.username, expiration);
-                return Some(cookie);
+                // todo: create a lazy mapping to store the key for each username
+                let key = squire::secure::keygen();
+                SESSION_MAPPING.lock().unwrap().insert(credentials.username.to_string(), key.to_string());
+                let mut mapped = HashMap::new();
+                mapped.insert("username", credentials.username.to_string());
+                mapped.insert("key", key.to_string());
+                mapped.insert("timestamp", credentials.timestamp.to_string());
+                return Some(mapped);
             } else {
                 log::warn!("{} entered bad credentials", credentials.username);
             }
@@ -62,4 +69,12 @@ pub fn verify_login(request: HttpRequest, config: Data<Arc<settings::Config>>) -
         }
     }
     return None;
+}
+
+pub fn verify_token(request: HttpRequest) {
+    let cookie = request.cookie("session_token");
+    if cookie.is_some() {
+        println!("Cookie: {}", cookie.unwrap().value());
+        println!("Stored: {:?}", SESSION_MAPPING.lock().unwrap());
+    }
 }

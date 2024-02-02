@@ -1,3 +1,4 @@
+use rand::{thread_rng, Rng};
 extern crate base64;
 extern crate sha2;
 
@@ -64,4 +65,16 @@ pub fn hex_decode(value: &str) -> String {
         }
     }
     result
+}
+
+pub fn keygen() -> String {
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    let mut rng = thread_rng();
+    let token: String = (0..64)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect();
+   token
 }
