@@ -38,14 +38,14 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
         response.add_cookie(&cookie).unwrap();
         return response;
     }
-    return HttpResponse::Unauthorized().json(DetailError {
+    HttpResponse::Unauthorized().json(DetailError {
         detail: "Incorrect username or password".to_string()
-    });
+    })
 }
 
 #[get("/home")]
-pub async fn home(config: web::Data<Arc<settings::Config>>,
+pub async fn home(_config: web::Data<Arc<settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
     authenticator::verify_token(request);
-    return HttpResponse::Ok().finish();
+    HttpResponse::Ok().finish()
 }

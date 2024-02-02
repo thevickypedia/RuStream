@@ -29,9 +29,9 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Credentials {
     let header = authorization.unwrap().to_str().unwrap().to_string();
     // base64 encoded in JavaScript using inbuilt btoa function
     let decoded_auth = squire::secure::base64_decode(&header).to_string();
-    let vector: Vec<&str> = decoded_auth.split(",").collect();
+    let vector: Vec<&str> = decoded_auth.split(',').collect();
     // Decode hex username into string to retrieve password from config file
-    let username = squire::secure::hex_decode(vector.get(0).unwrap());
+    let username = squire::secure::hex_decode(vector.first().unwrap());
     let signature = vector.get(1).unwrap().to_string();
     let timestamp = vector.get(2).unwrap().to_string();
     Credentials { username, signature, timestamp }
@@ -68,7 +68,7 @@ pub fn verify_login(
             log::warn!("{} is not allowed", credentials.username);
         }
     }
-    return None;
+    None
 }
 
 pub fn verify_token(request: HttpRequest) {

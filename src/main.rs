@@ -4,7 +4,7 @@ extern crate actix_web;
 use std::{env, io};
 
 use actix_web::{App, HttpServer, middleware, web};
-use log;
+
 
 mod routes;
 mod squire;

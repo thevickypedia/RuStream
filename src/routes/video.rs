@@ -36,5 +36,5 @@ pub async fn stream(config: web::Data<Arc<settings::Config>>,
     }
     let error = format!("File {:?} not found", video_path);
     log::error!("{}", error);
-    return HttpResponse::NotFound().body(error);
+    HttpResponse::NotFound().body(error)
 }
