@@ -4,10 +4,10 @@ use std::sync::Arc;
 use actix_web::http::header::HeaderValue;
 use actix_web::HttpRequest;
 use actix_web::web::Data;
+use chrono::Utc;
 
-use crate::squire;
-use crate::squire::settings;
 use crate::constant;
+use crate::squire;
 
 lazy_static::lazy_static! {
     static ref SESSION_MAPPING: std::sync::Mutex<HashMap<String, String>> = std::sync::Mutex::new(HashMap::new());
@@ -18,6 +18,12 @@ struct Credentials {
     signature: String,
     timestamp: String,
 }
+
+pub struct AuthToken {
+    pub ok: bool,
+    pub detail: String,
+}
+
 
 /// Extracts credentials from the authorization header in the following steps
 ///
@@ -40,7 +46,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Credentials {
 
 pub fn verify_login(
     request: HttpRequest,
-    config: Data<Arc<settings::Config>>,
+    config: Data<Arc<squire::settings::Config>>,
 ) -> Option<HashMap<&'static str, String>> {
     let authorization = request.headers().get("authorization");
     if authorization.is_some() {
@@ -72,24 +78,37 @@ pub fn verify_login(
     None
 }
 
-pub fn verify_token(request: HttpRequest) -> bool {
+pub fn verify_token(request: HttpRequest, config: Data<Arc<squire::settings::Config>>) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
-        return false;
+        let ok = false;
+        let detail = "".to_string();
+        return AuthToken { ok, detail };
     }
-    let cookie = request.cookie("session_token");
-    if cookie.is_some() {
-        let decrypted = constant::FERNET.decrypt(&cookie.unwrap().value());
-        if decrypted.is_ok() {
-            let payload: HashMap<String, String> = serde_json::from_str(&String::from_utf8_lossy(&decrypted.unwrap())).unwrap();
+    if let Some(cookie) = request.cookie("session_token") {
+        if let Ok(decrypted) = constant::FERNET.decrypt(cookie.value()) {
+            let payload: HashMap<String, String> = serde_json::from_str(&String::from_utf8_lossy(&decrypted)).unwrap();
             let cookie_user = payload.get("username").unwrap();
             let cookie_key = payload.get("key").unwrap();
-            let timestamp = payload.get("timestamp").unwrap();
+            let timestamp = payload.get("timestamp").unwrap().parse::<i64>().unwrap();
             let stored_key = SESSION_MAPPING.lock().unwrap().get(cookie_user).unwrap().clone();
-            if stored_key == cookie_key.to_string() {
-                println!("{}", timestamp);
-                return true;
+            let current_time = Utc::now().timestamp();
+            // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
+            if stored_key != *cookie_key {
+                let ok = false;
+                let detail = "Invalid session token".to_string();
+                return AuthToken { ok, detail };
             }
+            if current_time - timestamp > config.session_duration as i64 {
+                let ok = false;
+                let detail = "Session Expired".to_string();
+                return AuthToken { ok, detail };
+            }
+            let ok = true;
+            let detail = format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time);
+            return AuthToken { ok, detail };
         }
     }
-    return false;
+    let ok = false;
+    let detail = "Invalid session token".to_string();
+    return AuthToken { ok, detail };
 }

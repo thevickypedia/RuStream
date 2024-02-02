@@ -3,11 +3,12 @@ use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::{Duration, OffsetDateTime};
+use actix_web::http::StatusCode;
 use serde::Serialize;
 
+use crate::{constant, render};
 use crate::routes::authenticator;
 use crate::squire::settings;
-use crate::constant;
 
 #[derive(Serialize)]
 struct RedirectResponse {
@@ -24,15 +25,14 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
                    request: HttpRequest) -> HttpResponse {
     let mapped = authenticator::verify_login(request, config.clone());
     if mapped.is_some() {
-        let mapping = mapped.unwrap();
-        let payload = serde_json::to_string(&mapping).unwrap();
+        let payload = serde_json::to_string(&mapped).unwrap();
         let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
             .http_only(true)
             .finish();
         let mut expiration = OffsetDateTime::now_utc();
         expiration += Duration::seconds(config.session_duration as i64);
         cookie.set_expires(expiration);
-        log::info!("Session for '{}' will be valid until {}", mapping.get("username").unwrap(), expiration);
+        log::info!("Session for '{}' will be valid until {}", mapped.unwrap().get("username").unwrap(), expiration);
         let mut response = HttpResponse::Ok().json(RedirectResponse {
             redirect_url: "/home".to_string(),
         });
@@ -45,8 +45,31 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
 }
 
 #[get("/home")]
-pub async fn home(_config: web::Data<Arc<settings::Config>>,
+pub async fn home(config: web::Data<Arc<settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
-    authenticator::verify_token(request);
-    HttpResponse::Ok().finish()
+    let auth_response = authenticator::verify_token(request, config);
+    if auth_response.ok {
+        log::info!("{}", auth_response.detail);
+        return HttpResponse::Ok().finish();
+    }
+    let mut response = HttpResponse::Found();
+    // Set to the lowest possible second since deletion is not an option
+    let age = Duration::new(1, 0);
+    let cookie = Cookie::build("detail", auth_response.detail)
+        .http_only(true).max_age(age).finish();
+    response.cookie(cookie);
+    response.append_header(("Location", "/error"));
+    return response.finish();
+}
+
+#[get("/error")]
+pub async fn error(request: HttpRequest) -> HttpResponse {
+    if let Some(detail) = request.cookie("detail") {
+        return HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(render::SESSION.replace("{{ reason }}", detail.value()));  // todo: replace with minijinja
+    }
+    return HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(render::UNAUTHORIZED);
 }

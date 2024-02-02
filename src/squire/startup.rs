@@ -25,12 +25,11 @@ pub fn init_logger(debug: bool) {
 }
 
 pub fn get_config(args: Args) -> Arc<Config> {
-    let filename;
-    if args.filename.is_empty() {
-        filename = "config.json".to_string()
+    let filename = if args.filename.is_empty() {
+        "config.json".to_string()
     } else {
-        filename = args.filename
-    }
+        args.filename
+    };
     let config;
     if path::Path::new(&filename).exists() {
         match std::fs::read_to_string(&filename) {

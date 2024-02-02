@@ -32,8 +32,8 @@ pub struct Config {
 pub fn default_video_host() -> String {
     let hostname = "localhost";
     match (hostname, 0).to_socket_addrs() {
-        Ok(addrs) => {
-            if let Some(addr) = addrs.filter(|a| a.is_ipv4()).next() {
+        Ok(mut addrs) => {
+            if let Some(addr) = addrs.find(|a| a.is_ipv4()) {
                 return addr.ip().to_string();
             }
         }
@@ -48,12 +48,7 @@ pub fn default_video_port() -> i32 { 8000 }
 
 pub fn default_session_duration() -> i32 { 3600 }
 
-pub fn default_file_formats() -> Vec<String> {
-    let mut formats = Vec::new();
-    formats.push(".mp4".to_string());
-    formats.push(".mov".to_string());
-    formats
-}
+pub fn default_file_formats() -> Vec<String> { vec![".mp4".to_string(), ".mov".to_string()] }
 
 pub fn default_workers() -> i32 { 3 }
 

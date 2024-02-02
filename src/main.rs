@@ -34,6 +34,7 @@ async fn main() -> io::Result<()> {
             .service(routes::basics::root)
             .service(routes::auth::login)
             .service(routes::auth::home)
+            .service(routes::auth::error)
             .service(routes::video::stream)
     })
         .workers(config.workers as usize)

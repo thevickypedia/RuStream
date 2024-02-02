@@ -1,3 +1,8 @@
+/// Create a Fernet object to encrypt and decrypt session token.
+///
+/// References:
+///     https://docs.rs/fernet/latest/fernet/
+
 use fernet::Fernet;
 use lazy_static::lazy_static;
 
