@@ -31,6 +31,7 @@ async fn main() -> io::Result<()> {
             .service(routes::basics::health)  // Registers a service for handling requests
             .service(routes::basics::status)
             .service(routes::basics::root)
+            .service(routes::auth::login)
             .service(routes::video::stream)
     })
         .workers(config.workers as usize)
