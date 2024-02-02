@@ -1,11 +1,17 @@
+/*
+https://docs.rs/base64/latest/base64/#url-safe-alphabet
+https://docs.rs/sha2/latest/sha2/#usage
+ */
+
 extern crate base64;
 extern crate sha2;
 
 use sha2::{Digest, Sha512};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 pub fn base64_decode(encoded_value: String) -> String {
     // Decode base64 and then decode UTF-8
-    if let Ok(decoded_bytes) = base64::decode(&encoded_value) {  // fixme: deprecated
+    if let Ok(decoded_bytes) = STANDARD.decode(&encoded_value) {
         if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
             decoded_str
         } else {
