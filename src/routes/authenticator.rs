@@ -7,6 +7,7 @@ use actix_web::web::Data;
 
 use crate::squire;
 use crate::squire::settings;
+use crate::constant;
 
 lazy_static::lazy_static! {
     static ref SESSION_MAPPING: std::sync::Mutex<HashMap<String, String>> = std::sync::Mutex::new(HashMap::new());
@@ -71,10 +72,24 @@ pub fn verify_login(
     None
 }
 
-pub fn verify_token(request: HttpRequest) {
+pub fn verify_token(request: HttpRequest) -> bool {
+    if SESSION_MAPPING.lock().unwrap().is_empty() {
+        return false;
+    }
     let cookie = request.cookie("session_token");
     if cookie.is_some() {
-        println!("Cookie: {}", cookie.unwrap().value());
-        println!("Stored: {:?}", SESSION_MAPPING.lock().unwrap());
+        let decrypted = constant::FERNET.decrypt(&cookie.unwrap().value());
+        if decrypted.is_ok() {
+            let payload: HashMap<String, String> = serde_json::from_str(&String::from_utf8_lossy(&decrypted.unwrap())).unwrap();
+            let cookie_user = payload.get("username").unwrap();
+            let cookie_key = payload.get("key").unwrap();
+            let timestamp = payload.get("timestamp").unwrap();
+            let stored_key = SESSION_MAPPING.lock().unwrap().get(cookie_user).unwrap().clone();
+            if stored_key == cookie_key.to_string() {
+                println!("{}", timestamp);
+                return true;
+            }
+        }
     }
+    return false;
 }

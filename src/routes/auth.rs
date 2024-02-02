@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::routes::authenticator;
 use crate::squire::settings;
+use crate::constant;
 
 #[derive(Serialize)]
 struct RedirectResponse {
@@ -24,8 +25,8 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
     let mapped = authenticator::verify_login(request, config.clone());
     if mapped.is_some() {
         let mapping = mapped.unwrap();
-        // todo: use Fernet to encrypt the payload and set the entire payload as cookie
-        let mut cookie = Cookie::build("session_token", mapping.get("key").unwrap().to_string())
+        let payload = serde_json::to_string(&mapping).unwrap();
+        let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
             .http_only(true)
             .finish();
         let mut expiration = OffsetDateTime::now_utc();
