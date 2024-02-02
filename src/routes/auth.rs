@@ -1,3 +1,4 @@
+use minijinja::{Environment, context};
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
@@ -49,7 +50,7 @@ pub async fn home(config: web::Data<Arc<settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
     let auth_response = authenticator::verify_token(request, config);
     if auth_response.ok {
-        log::info!("{}", auth_response.detail);
+        log::debug!("{}", auth_response.detail);
         return HttpResponse::Ok().finish();
     }
     let mut response = HttpResponse::Found();
@@ -62,12 +63,18 @@ pub async fn home(config: web::Data<Arc<settings::Config>>,
     return response.finish();
 }
 
+/// Error response endpoint where the users are redirected in case of issues with session-token
+///
+/// Uses the cookie set during redirect to pick the right HTML page and insert response within.
 #[get("/error")]
 pub async fn error(request: HttpRequest) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {
+        let mut env = Environment::new();
+        env.add_template("session", render::SESSION).unwrap();
+        let template = env.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
-            .body(render::SESSION.replace("{{ reason }}", detail.value()));  // todo: replace with minijinja
+            .body(template.render(context!(reason => detail.value())).unwrap());
     }
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
