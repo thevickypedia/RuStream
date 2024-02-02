@@ -1,17 +1,37 @@
-/*
-https://docs.rs/base64/latest/base64/#url-safe-alphabet
-https://docs.rs/sha2/latest/sha2/#usage
- */
-
 extern crate base64;
 extern crate sha2;
 
+use base64::{Engine as _, engine::general_purpose::URL_SAFE};
 use sha2::{Digest, Sha512};
-use base64::{engine::general_purpose::STANDARD, Engine as _};
 
-pub fn base64_decode(encoded_value: String) -> String {
-    // Decode base64 and then decode UTF-8
-    if let Ok(decoded_bytes) = STANDARD.decode(&encoded_value) {
+/// Generates hash value for the given payload using sha512 algorithm
+///
+/// References:
+///     https://docs.rs/sha2/latest/sha2/#usage
+pub fn calculate_hash(value: String) -> String {
+    let mut hasher = Sha512::new();
+    hasher.update(value);
+    let result = hasher.finalize();
+    format!("{:x}", result)
+}
+
+/// Creates a Base64-encoded ASCII string from a binary string (similar to the built-in btoa function in native JS)
+///
+/// (i.e., a string in which each character in the string is treated as a byte of binary data)
+///
+/// References:
+///     https://docs.rs/base64/latest/base64/#url-safe-alphabet
+#[allow(dead_code)]  // Just for reference
+pub fn base64_encode(value: &str) -> String {
+    URL_SAFE.encode(value.as_bytes())
+}
+
+/// Decode a string of data which has been encoded using base64 (similar to the built-in atob function in native JS)
+///
+/// References:
+///     https://docs.rs/base64/latest/base64/#url-safe-alphabet
+pub fn base64_decode(value: &str) -> String {
+    if let Ok(decoded_bytes) = URL_SAFE.decode(value) {
         if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
             decoded_str
         } else {
@@ -22,25 +42,20 @@ pub fn base64_decode(encoded_value: String) -> String {
     }
 }
 
-pub fn calculate_hash(signature: String) -> String {
-    let mut hasher = Sha512::new();
-    hasher.update(signature);
-    let result = hasher.finalize();
-    format!("{:x}", result)
-}
-
-pub fn hex_encode(input_str: &str) -> String {
+/// Convert a string value into hex
+pub fn hex_encode(value: &str) -> String {
     let mut hex_values: Vec<String> = Vec::new();
-    for ch in input_str.chars() {
+    for ch in value.chars() {
         let hex_value = format!("{:04x}", ch as u32);
         hex_values.push(hex_value);
     }
     format!("\\u{}", hex_values.join("\\u"))
 }
 
-pub fn hex_decode(input: &str) -> String {
+/// Convert hex value into a string
+pub fn hex_decode(value: &str) -> String {
     let mut result = String::new();
-    let hex_values: Vec<&str> = input.split("\\u").skip(1).collect();
+    let hex_values: Vec<&str> = value.split("\\u").skip(1).collect();
     for hex_value in hex_values {
         if let Ok(code_point) = u32::from_str_radix(hex_value, 16) {
             if let Some(ch) = char::from_u32(code_point) {
