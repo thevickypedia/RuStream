@@ -7,9 +7,7 @@ use actix_web::http::StatusCode;
 use minijinja::{context, Environment};
 use serde::Serialize;
 
-use crate::{constant, render, squire};
-use crate::routes::authenticator;
-use crate::squire::settings;
+use crate::{constant, render, squire, routes};
 
 #[derive(Serialize)]
 struct RedirectResponse {
@@ -17,14 +15,14 @@ struct RedirectResponse {
 }
 
 #[derive(Serialize)]
-struct DetailError {
-    detail: String,
+pub struct DetailError {
+    pub detail: String,
 }
 
 #[post("/login")]
-pub async fn login(config: web::Data<Arc<settings::Config>>,
+pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest) -> HttpResponse {
-    let mapped = authenticator::verify_login(request, &config);
+    let mapped = routes::authenticator::verify_login(request, &config);
     if mapped.is_some() {
         let payload = serde_json::to_string(&mapped).unwrap();
         let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
@@ -46,9 +44,9 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
 }
 
 #[get("/home")]
-pub async fn home(config: web::Data<Arc<settings::Config>>,
+pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
-    let auth_response = authenticator::verify_token(request, &config);
+    let auth_response = routes::authenticator::verify_token(request, &config);
     if auth_response.ok {
         log::debug!("{}", auth_response.detail);
         // todo: avoid hard coding index

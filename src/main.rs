@@ -35,6 +35,7 @@ async fn main() -> io::Result<()> {
             .service(routes::auth::home)
             .service(routes::auth::error)
             .service(routes::video::stream)
+            .service(routes::video::streaming_endpoint)
     })
         .workers(config.workers as usize)
         .max_connections(config.max_connections as usize)
