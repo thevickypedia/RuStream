@@ -5,7 +5,6 @@ use std::{env, io};
 
 use actix_web::{App, HttpServer, middleware, web};
 
-
 mod routes;
 mod squire;
 mod render;

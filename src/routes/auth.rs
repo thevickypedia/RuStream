@@ -1,13 +1,13 @@
-use minijinja::{Environment, context};
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
+use minijinja::{context, Environment};
 use serde::Serialize;
 
-use crate::{constant, render};
+use crate::{constant, render, squire};
 use crate::routes::authenticator;
 use crate::squire::settings;
 
@@ -48,10 +48,21 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
-    let auth_response = authenticator::verify_token(request, config);
+    let auth_response = authenticator::verify_token(request, config.clone());  // todo: check with &
     if auth_response.ok {
         log::debug!("{}", auth_response.detail);
-        return HttpResponse::Ok().finish();
+        // todo: avoid hard coding index
+        let file_format = (config.file_formats[0].to_string(), config.file_formats[1].to_string());
+        let args = (config.video_source.to_string_lossy().to_string(), file_format);
+        let listing_page = squire::fileio::get_py_content("get_all_stream_content", args);
+        let mut env = Environment::new();
+        env.add_template("listing", render::LISTING).unwrap();
+        let template = env.get_template("listing").unwrap();
+        return HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(template.render(context!(
+                files => listing_page.files, directories => listing_page.directories)).unwrap()
+            );
     }
     let mut response = HttpResponse::Found();
     // Set to the lowest possible second since deletion is not an option

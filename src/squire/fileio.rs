@@ -1,57 +1,67 @@
 use std::collections::HashMap;
 use std::path;
 
-use walkdir::WalkDir;
+use pyo3::{Py, PyAny, PyResult, Python};
+use pyo3::prelude::PyModule;
+use serde::{Deserialize, Serialize};
 
-struct FileSystem {
-    files: Vec<String>,
-    directories: Vec<String>,
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct ContentPayload {
+    pub files: Vec<HashMap<String, String>>,
+    pub directories: Vec<HashMap<String, String>>,
 }
 
-fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
-    let parts: Vec<_> = filename.split_terminator(char::is_numeric).map(|s| s.to_string()).collect();
-    parts.into_iter().map(|part| part.parse::<i32>().map_err(|_| part)).collect()
+fn delete_file(file_path: String) {
+    match std::fs::remove_file(&file_path) {
+        Ok(()) => {
+            log::debug!("File '{}' successfully deleted.", file_path);
+        }
+        Err(err) => match err.kind() {
+            // Handle specific errors, if necessary
+            std::io::ErrorKind::NotFound => {
+                log::error!("File '{}' not found.", file_path);
+            }
+            _ => {
+                log::error!("Error deleting file '{}': {}", file_path, err);
+            }
+        },
+    }
 }
 
-pub fn get_all_stream_content(video_source: &str, file_formats: Vec<String>) -> FileSystem {
-    let mut structure = FileSystem {
-        files: Vec::new(),
-        directories: Vec::new(),
-    };
-
-    for entry in WalkDir::new(video_source)
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
-        let entry_path = entry.path();
-        let filename = entry_path.file_name();
-        let file_extn = entry_path.extension();
-        if filename.is_some() && file_extn.is_some() {
-            let fname = filename.unwrap().to_string_lossy();
-            if fname.starts_with("_") || fname.starts_with(".") { continue; }
-            let extn = format!(".{}", file_extn.unwrap().to_string_lossy());
-            if file_formats.contains(&extn) {
-                let new_path = entry_path.to_string_lossy()
-                    .replace(video_source, "")
-                    .replace(&fname.to_string(), "")
-                    .strip_prefix("/").unwrap().to_string();
-                if new_path.is_empty() {
-                    structure.files.push(fname.to_string())
-                } else {
-                    let mut entry: HashMap<String, String> = HashMap::new();
-                    entry.insert("name".to_string(), new_path);
-                    let key = path::Path::new("stream").join(new_path.to_string());
-                    entry.insert("path".to_string(), key.to_str().unwrap().to_string());
-                    if structure.directories.contains(entry) {
-                        continue
+fn convert_to_json(filename: String) -> ContentPayload {
+    let payload;
+    if path::Path::new(&filename).exists() {
+        match std::fs::read_to_string(&filename) {
+            Ok(content) => {
+                let output: serde_json::Result<ContentPayload> = serde_json::from_str(&content);
+                match output {
+                    Ok(raw_config) => {
+                        delete_file(filename);
+                        payload = raw_config;
+                    }
+                    Err(err) => {
+                        println!("{:?}", content);
+                        panic!("Error deserializing JSON: {}", err);
                     }
                 }
-                println!("{} - {}", new_path, fname);
+            }
+            Err(err) => {
+                panic!("Error reading file: {}", err);
             }
         }
+    } else {
+        panic!("{} not found", filename)
     }
-    for (_, entries) in structure.iter_mut() {
-        entries.sort_by_key(|entry| natural_sort_key(&entry["name"]));
-    }
-    structure
+    payload
+}
+
+pub fn get_py_content(attr: &str, args: (String, (String, String))) -> ContentPayload {
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
+        let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
+            .getattr(attr)?
+            .into();
+        app.call1(py, args)
+    });
+    return convert_to_json(from_python.unwrap().to_string());
 }

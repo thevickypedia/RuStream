@@ -13,3 +13,4 @@ Cargo.lock
 # RustRover IDE
 .idea
 config.json
+src_test/

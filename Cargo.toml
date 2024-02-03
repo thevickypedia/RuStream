@@ -13,6 +13,11 @@ edition = "2021"
 name = "stream"
 path = "src/main.rs"
 
+# For internal tests ONLY
+[[bin]]
+name = "temp"
+path = "src_test/main.rs"
+
 [dependencies]
 actix-rt = "2.9.0"
 actix-web = "4.4.1"
@@ -31,3 +36,4 @@ rand = "0.8.5"
 fernet = "0.2.1"
 minijinja = "1.0.12"
 walkdir = "2.3"
+pyo3 = { version = "0.20.2", features = ["auto-initialize"] }
