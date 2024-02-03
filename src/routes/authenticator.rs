@@ -46,7 +46,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Credentials {
 
 pub fn verify_login(
     request: HttpRequest,
-    config: Data<Arc<squire::settings::Config>>,
+    config: &Data<Arc<squire::settings::Config>>,
 ) -> Option<HashMap<&'static str, String>> {
     let authorization = request.headers().get("authorization");
     if authorization.is_some() {
@@ -78,7 +78,7 @@ pub fn verify_login(
     None
 }
 
-pub fn verify_token(request: HttpRequest, config: Data<Arc<squire::settings::Config>>) -> AuthToken {
+pub fn verify_token(request: HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         let ok = false;
         let detail = "".to_string();
@@ -90,7 +90,7 @@ pub fn verify_token(request: HttpRequest, config: Data<Arc<squire::settings::Con
             let cookie_user = payload.get("username").unwrap();
             let cookie_key = payload.get("key").unwrap();
             let timestamp = payload.get("timestamp").unwrap().parse::<i64>().unwrap();
-            let stored_key = SESSION_MAPPING.lock().unwrap().get(cookie_user).unwrap().clone();
+            let stored_key = SESSION_MAPPING.lock().unwrap().get(cookie_user).unwrap().to_string();
             let current_time = Utc::now().timestamp();
             // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
             if stored_key != *cookie_key {

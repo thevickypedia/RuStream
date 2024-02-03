@@ -55,7 +55,7 @@ fn convert_to_json(filename: String) -> ContentPayload {
     payload
 }
 
-pub fn get_py_content(attr: &str, args: (String, (String, String))) -> ContentPayload {
+pub fn get_py_content(attr: &str, args: (String, (&String, &String))) -> ContentPayload {
     let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?

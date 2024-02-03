@@ -23,14 +23,14 @@ pub async fn stream(config: web::Data<Arc<settings::Config>>,
     let video_path = config.video_source.join(&info.video_file);
 
     if video_path.exists() {
-        let file = actix_files::NamedFile::open_async(video_path.clone()).await.unwrap();
+        let file = actix_files::NamedFile::open_async(video_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
         let mut tracker = HOST_SERVE.lock().unwrap();
         if tracker.get(&host).is_some() && tracker.get(&host).unwrap() == &info.video_file {
             // logging is skipped since it is a continued streaming
         } else {
             log::info!("Streaming {}", info.video_file);
-            tracker.insert(req.connection_info().host().to_string(), info.video_file.clone());
+            tracker.insert(req.connection_info().host().to_string(), info.video_file.to_string());
         }
         return file.into_response(&req);
     }

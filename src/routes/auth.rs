@@ -24,7 +24,7 @@ struct DetailError {
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<settings::Config>>,
                    request: HttpRequest) -> HttpResponse {
-    let mapped = authenticator::verify_login(request, config.clone());
+    let mapped = authenticator::verify_login(request, &config);
     if mapped.is_some() {
         let payload = serde_json::to_string(&mapped).unwrap();
         let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
@@ -48,11 +48,11 @@ pub async fn login(config: web::Data<Arc<settings::Config>>,
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
-    let auth_response = authenticator::verify_token(request, config.clone());  // todo: check with &
+    let auth_response = authenticator::verify_token(request, &config);
     if auth_response.ok {
         log::debug!("{}", auth_response.detail);
         // todo: avoid hard coding index
-        let file_format = (config.file_formats[0].to_string(), config.file_formats[1].to_string());
+        let file_format = (&config.file_formats[0], &config.file_formats[1]);
         let args = (config.video_source.to_string_lossy().to_string(), file_format);
         let listing_page = squire::fileio::get_py_content("get_all_stream_content", args);
         let mut env = Environment::new();
