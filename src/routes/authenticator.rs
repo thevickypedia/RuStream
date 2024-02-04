@@ -22,6 +22,7 @@ struct Credentials {
 pub struct AuthToken {
     pub ok: bool,
     pub detail: String,
+    pub username: String,
 }
 
 
@@ -79,35 +80,38 @@ pub fn verify_login(
 
 pub fn verify_token(request: HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
+        log::warn!("No stored sessions, no point in validating further");
         let ok = false;
         let detail = "".to_string();
-        return AuthToken { ok, detail };
+        let username = "NA".to_string();
+        return AuthToken { ok, detail, username };
     }
     if let Some(cookie) = request.cookie("session_token") {
         if let Ok(decrypted) = constant::FERNET.decrypt(cookie.value()) {
             let payload: HashMap<String, String> = serde_json::from_str(&String::from_utf8_lossy(&decrypted)).unwrap();
-            let cookie_user = payload.get("username").unwrap();
-            let cookie_key = payload.get("key").unwrap();
+            let username = payload.get("username").unwrap().to_string();
+            let cookie_key = payload.get("key").unwrap().to_string();
             let timestamp = payload.get("timestamp").unwrap().parse::<i64>().unwrap();
-            let stored_key = SESSION_MAPPING.lock().unwrap().get(cookie_user).unwrap().to_string();
+            let stored_key = SESSION_MAPPING.lock().unwrap().get(&username).unwrap().to_string();
             let current_time = Utc::now().timestamp();
             // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
             if stored_key != *cookie_key {
                 let ok = false;
                 let detail = "Invalid session token".to_string();
-                return AuthToken { ok, detail };
+                return AuthToken { ok, detail, username };
             }
             if current_time - timestamp > config.session_duration as i64 {
                 let ok = false;
                 let detail = "Session Expired".to_string();
-                return AuthToken { ok, detail };
+                return AuthToken { ok, detail, username };
             }
             let ok = true;
             let detail = format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time);
-            return AuthToken { ok, detail };
+            return AuthToken { ok, detail, username };
         }
     }
     let ok = false;
     let detail = "Invalid session token".to_string();
-    AuthToken { ok, detail }
+    let username = "NA".to_string();
+    AuthToken { ok, detail, username }
 }

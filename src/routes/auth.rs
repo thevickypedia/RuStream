@@ -44,7 +44,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
 }
 
 #[get("/logout")]
-pub async fn logout(_config: web::Data<Arc<squire::settings::Config>>,
+pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
     let template = render::ENV.lock().unwrap();
@@ -52,8 +52,12 @@ pub async fn logout(_config: web::Data<Arc<squire::settings::Config>>,
     let mut response = HttpResponse::build(StatusCode::OK);
     response.content_type("text/html; charset=utf-8");
     let rendered;
-    if let Some(_) = request.cookie("session_token") {
-        log::info!("{} logged out", request.connection_info().host());
+    let auth_response = routes::authenticator::verify_token(request, &config);
+    log::debug!("Session Validation Response: {}", auth_response.detail);
+    if auth_response.username != "NA" {
+        log::info!("{} from {} attempted to logged out", auth_response.username, host);
+    }
+    if auth_response.ok {
         let mut tracker = render::HOST_SERVE.lock().unwrap();
         if tracker.get(&host).is_some() {
             tracker.remove(&host);
