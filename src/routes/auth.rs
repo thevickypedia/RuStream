@@ -4,10 +4,10 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
-use minijinja::{context, Environment};
+use minijinja::context;
 use serde::Serialize;
 
-use crate::{constant, render, squire, routes};
+use crate::{constant, render, routes, squire};
 
 #[derive(Serialize)]
 struct RedirectResponse {
@@ -46,6 +46,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
+    // todo: cache this page to render faster
     let auth_response = routes::authenticator::verify_token(request, &config);
     if auth_response.ok {
         log::debug!("{}", auth_response.detail);
@@ -53,12 +54,11 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
         let file_format = (&config.file_formats[0], &config.file_formats[1]);
         let args = (config.video_source.to_string_lossy().to_string(), file_format);
         let listing_page = squire::fileio::get_py_content("get_all_stream_content", args);
-        let mut env = Environment::new();
-        env.add_template("listing", render::LISTING).unwrap();
-        let template = env.get_template("listing").unwrap();
+        let template = render::ENV.lock().unwrap();
+        let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
-            .body(template.render(context!(
+            .body(listing.render(context!(
                 files => listing_page.files, directories => listing_page.directories)).unwrap()
             );
     }
@@ -78,12 +78,11 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/error")]
 pub async fn error(request: HttpRequest) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {
-        let mut env = Environment::new();
-        env.add_template("session", render::SESSION).unwrap();
-        let template = env.get_template("session").unwrap();
+        let template = render::ENV.lock().unwrap();
+        let session = template.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
-            .body(template.render(context!(reason => detail.value())).unwrap());
+            .body(session.render(context!(reason => detail.value())).unwrap());
     }
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")

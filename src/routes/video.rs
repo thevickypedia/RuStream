@@ -4,9 +4,11 @@ use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::Duration;
+use actix_web::http::StatusCode;
+use minijinja::context;
 use serde::Deserialize;
 
-use crate::squire;
+use crate::{render, squire};
 use crate::routes;
 
 lazy_static::lazy_static! {
@@ -15,7 +17,7 @@ lazy_static::lazy_static! {
 
 #[derive(Deserialize)]
 pub struct Payload {
-    video_file: String,
+    file: String,
 }
 
 #[get("/stream/{video_path:.*}")]
@@ -24,15 +26,19 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     let auth_response = routes::authenticator::verify_token(request, &config);
     if auth_response.ok {
         log::debug!("{}", auth_response.detail);
-        let target = config.video_source.join(video_path);
-        if target.exists() {
-            // todo: return landing page
-        } else {
+        let target = config.video_source.join(video_path.to_string());
+        if !target.exists() {
             return HttpResponse::NotFound().json(routes::auth::DetailError {
                 detail: format!("'{}' was not found", video_path)
-            })
+            });
         }
-        return HttpResponse::Ok().finish();
+        // todo: add code to reach sub folders
+        let template = render::ENV.lock().unwrap();
+        let landing = template.get_template("landing").unwrap();
+        let render_path = format!("/video?file={}", target.to_string_lossy().to_string());
+        return HttpResponse::build(StatusCode::OK)
+            .content_type("text/html; charset=utf-8")
+            .body(landing.render(context!(video_title => video_path.to_string(), path => render_path)).unwrap());
     }
     let mut response = HttpResponse::Found();
     // Set to the lowest possible second since deletion is not an option
@@ -46,22 +52,22 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
 
 #[get("/video")]
 pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>,
-                                req: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
-    let host = req.connection_info().host().to_owned();
+                                request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
+    let host = request.connection_info().host().to_owned();
     log::info!("Connection received from {}", host);  // todo: move to a function to log only once
-    let video_path = config.video_source.join(&info.video_file);
+    let video_path = config.video_source.join(&info.file);
 
     if video_path.exists() {
         let file = actix_files::NamedFile::open_async(video_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
         let mut tracker = HOST_SERVE.lock().unwrap();
-        if tracker.get(&host).is_some() && tracker.get(&host).unwrap() == &info.video_file {
+        if tracker.get(&host).is_some() && tracker.get(&host).unwrap() == &info.file {
             // logging is skipped since it is a continued streaming
         } else {
-            log::info!("Streaming {}", info.video_file);
-            tracker.insert(req.connection_info().host().to_string(), info.video_file.to_string());
+            log::info!("Streaming {}", info.file);
+            tracker.insert(request.connection_info().host().to_string(), info.file.to_string());
         }
-        return file.into_response(&req);
+        return file.into_response(&request);
     }
     let error = format!("File {:?} not found", video_path);
     log::error!("{}", error);
