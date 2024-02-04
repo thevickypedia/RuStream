@@ -22,25 +22,26 @@ pub struct DetailError {
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest) -> HttpResponse {
-    let mapped = routes::authenticator::verify_login(request, &config);
-    if mapped.is_some() {
-        let payload = serde_json::to_string(&mapped).unwrap();
-        let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
-            .http_only(true)
-            .finish();
-        let mut expiration = OffsetDateTime::now_utc();
-        expiration += Duration::seconds(config.session_duration as i64);
-        cookie.set_expires(expiration);
-        log::info!("Session for '{}' will be valid until {}", mapped.unwrap().get("username").unwrap(), expiration);
-        let mut response = HttpResponse::Ok().json(RedirectResponse {
-            redirect_url: "/home".to_string(),
+    let mapped = routes::authenticator::verify_login(&request, &config);
+    if mapped.is_none() {
+        return HttpResponse::Unauthorized().json(DetailError {
+            detail: "Incorrect username or password".to_string()
         });
-        response.add_cookie(&cookie).unwrap();
-        return response;
     }
-    HttpResponse::Unauthorized().json(DetailError {
-        detail: "Incorrect username or password".to_string()
-    })
+    squire::logger::log_connection(&request);
+    let payload = serde_json::to_string(&mapped).unwrap();
+    let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
+        .http_only(true)
+        .finish();
+    let mut expiration = OffsetDateTime::now_utc();
+    expiration += Duration::seconds(config.session_duration as i64);
+    cookie.set_expires(expiration);
+    log::info!("Session for '{}' will be valid until {}", mapped.unwrap().get("username").unwrap(), expiration);
+    let mut response = HttpResponse::Ok().json(RedirectResponse {
+        redirect_url: "/home".to_string(),
+    });
+    response.add_cookie(&cookie).unwrap();
+    response
 }
 
 #[get("/logout")]
@@ -52,7 +53,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
     let mut response = HttpResponse::build(StatusCode::OK);
     response.content_type("text/html; charset=utf-8");
     let rendered;
-    let auth_response = routes::authenticator::verify_token(request, &config);
+    let auth_response = routes::authenticator::verify_token(&request, &config);
     log::debug!("Session Validation Response: {}", auth_response.detail);
     if auth_response.username != "NA" {
         log::info!("{} from {} attempted to logged out", auth_response.username, host);
@@ -71,7 +72,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
             .http_only(true).max_age(age).finish();
         response.cookie(cookie);
     } else {
-        log::info!("Redirecting connection from {} to login page", host);
+        log::debug!("No stored session found for {}", host);
         rendered = logout_template.render(
             context!(detail => "You are not logged in. Please click the button below to proceed.",
                 show_login => true)
@@ -86,29 +87,30 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
     // todo: investigate why home page takes longer to load while sub folders render quickly
     // todo: cache this page to render faster
-    let auth_response = routes::authenticator::verify_token(request, &config);
-    if auth_response.ok {
-        log::debug!("{}", auth_response.detail);
-        // todo: avoid hard coding index
-        let file_format = (&config.file_formats[0], &config.file_formats[1]);
-        let args = (config.video_source.to_string_lossy().to_string(), file_format);
-        let listing_page = squire::fileio::get_all_stream_content(args);
-        let template = constant::ENV.lock().unwrap();
-        let listing = template.get_template("listing").unwrap();
-        return HttpResponse::build(StatusCode::OK)
-            .content_type("text/html; charset=utf-8")
-            .body(listing.render(context!(
-                files => listing_page.files, directories => listing_page.directories)).unwrap()
-            );
+    let auth_response = routes::authenticator::verify_token(&request, &config);
+    if !auth_response.ok {
+        let mut response = HttpResponse::Found();
+        // Set to the lowest possible second since deletion is not an option
+        let age = Duration::new(0, 1);
+        let cookie = Cookie::build("detail", auth_response.detail)
+            .http_only(true).max_age(age).finish();
+        response.cookie(cookie);
+        response.append_header(("Location", "/error"));
+        return response.finish();
     }
-    let mut response = HttpResponse::Found();
-    // Set to the lowest possible second since deletion is not an option
-    let age = Duration::new(0, 1);
-    let cookie = Cookie::build("detail", auth_response.detail)
-        .http_only(true).max_age(age).finish();
-    response.cookie(cookie);
-    response.append_header(("Location", "/error"));
-    response.finish()
+    squire::logger::log_connection(&request);
+    log::debug!("{}", auth_response.detail);
+    // todo: avoid hard coding index
+    let file_format = (&config.file_formats[0], &config.file_formats[1]);
+    let args = (config.video_source.to_string_lossy().to_string(), file_format);
+    let listing_page = squire::fileio::get_all_stream_content(args);
+    let template = constant::ENV.lock().unwrap();
+    let listing = template.get_template("listing").unwrap();
+    return HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(listing.render(context!(
+                files => listing_page.files, directories => listing_page.directories)).unwrap()
+        );
 }
 
 /// Error response endpoint where the users are redirected in case of issues with session-token

@@ -19,7 +19,7 @@ pub struct Payload {
 #[get("/stream/{video_path:.*}")]
 pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
-    let auth_response = routes::authenticator::verify_token(request, &config);
+    let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         let mut response = HttpResponse::Found();
         // Set to the lowest possible second since deletion is not an option
@@ -30,6 +30,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         response.append_header(("Location", "/error"));
         return response.finish();
     }
+    squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     let target = config.video_source.join(video_path.to_string());
     let target_str = target.to_string_lossy().to_string();
@@ -70,17 +71,25 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/video")]
 pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>,
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
+    let auth_response = routes::authenticator::verify_token(&request, &config);
+    if !auth_response.ok {
+        let mut response = HttpResponse::Found();
+        // Set to the lowest possible second since deletion is not an option
+        let age = Duration::new(1, 0);
+        let cookie = Cookie::build("detail", auth_response.detail)
+            .http_only(true).max_age(age).finish();
+        response.cookie(cookie);
+        response.append_header(("Location", "/error"));
+        return response.finish();
+    }
+    squire::logger::log_connection(&request);
     let host = request.connection_info().host().to_owned();
-    log::info!("Connection received from {}", host);  // todo: move to a function to log only once
     let video_path = config.video_source.join(&info.file);
-
     if video_path.exists() {
         let file = actix_files::NamedFile::open_async(video_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
         let mut tracker = constant::HOST_SERVE.lock().unwrap();
-        if tracker.get(&host).is_some() && tracker.get(&host).unwrap() == &info.file {
-            // logging is skipped since it is a continued streaming
-        } else {
+        if tracker.get(&host).unwrap() != &info.file {
             log::info!("Streaming {}", info.file);
             tracker.insert(request.connection_info().host().to_string(), info.file.to_string());
         }

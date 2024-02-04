@@ -46,7 +46,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Credentials {
 }
 
 pub fn verify_login(
-    request: HttpRequest,
+    request: &HttpRequest,
     config: &Data<Arc<squire::settings::Config>>,
 ) -> Option<HashMap<&'static str, String>> {
     let authorization = request.headers().get("authorization");
@@ -78,7 +78,7 @@ pub fn verify_login(
     None
 }
 
-pub fn verify_token(request: HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
+pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");
         let ok = false;
