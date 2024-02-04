@@ -38,3 +38,4 @@ minijinja = "1.0.12"
 walkdir = "2.3"
 pyo3 = { version = "0.20.2", features = ["auto-initialize"] }
 url = "2.2.1"
+itertools = "0.12.1"

@@ -4,6 +4,7 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
+use itertools::Itertools;
 use minijinja::context;
 use serde::Serialize;
 
@@ -100,8 +101,8 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
-    // todo: avoid hard coding index
-    let file_format = (&config.file_formats[0], &config.file_formats[1]);
+    // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
+    let file_format = config.file_formats.iter().collect_tuple().unwrap();
     let args = (config.video_source.to_string_lossy().to_string(), file_format);
     let listing_page = squire::fileio::get_all_stream_content(args);
     let template = constant::ENV.lock().unwrap();

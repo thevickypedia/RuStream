@@ -4,6 +4,7 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
+use itertools::Itertools;
 use minijinja::context;
 use serde::Deserialize;
 use url::form_urlencoded;
@@ -49,8 +50,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             .body(landing.render(context!(video_title => video_path.to_string(), path => render_path)).unwrap());
     } else if target.is_dir() {
         let child_dir = target.iter().last().unwrap().to_string_lossy().to_string();
-        // todo: avoid hard coding index
-        let file_format = (&config.file_formats[0], &config.file_formats[1]);
+        let file_format = config.file_formats.iter().collect_tuple().unwrap();
         let args = (target_str, child_dir, file_format);
         let listing_page = squire::fileio::get_dir_stream_content(args);
         let listing = template.get_template("listing").unwrap();
