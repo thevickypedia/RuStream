@@ -40,7 +40,6 @@ pub fn get_config(args: Args) -> Arc<Config> {
                         config = Arc::new(raw_config);
                     }
                     Err(err) => {
-                        println!("{:?}", content);
                         panic!("Error deserializing JSON: {}", err);
                     }
                 }
@@ -51,6 +50,31 @@ pub fn get_config(args: Args) -> Arc<Config> {
         }
     } else {
         panic!("\nfilename\n\tInput [{}] is not a valid filepath [value=missing]\n", filename)
+    }
+    let mut errors = "".to_owned();
+    if !config.video_source.exists() || !config.video_source.is_dir() {
+        let err1 = format!("\nvideo_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
+                           config.video_source.to_string_lossy());
+        errors.push_str(&err1);
+    }
+    for (username, password) in &config.authorization {
+        if username.len() < 4 {
+            let err2 = format!(
+                "\nauthorization\n\t[{}: {}] username should be at least 4 or more characters [value=invalid]\n",
+                username, "*".repeat(password.len())
+            );
+            errors.push_str(&err2);
+        }
+        if password.len() < 8 {
+            let err3 = format!(
+                "\nauthorization\n\t[{}: {}] password should be at least 8 or more characters [value=invalid]\n",
+                username, "*".repeat(password.len())
+            );
+            errors.push_str(&err3);
+        }
+    }
+    if !errors.is_empty() {
+        panic!("{}", errors);
     }
     config
 }

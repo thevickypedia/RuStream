@@ -19,12 +19,7 @@ def get_dir_stream_content(parent: str, subdir: str, file_formats: List[str]) ->
             continue
         if pathlib.PurePath(file_).suffix in file_formats:
             files.append({"name": file_, "path": os.path.join(subdir, file_)})
-    data = sorted(files, key=lambda x: natural_sort_key(x['name']))
-    filename = datetime.now().strftime(os.path.join(os.getcwd(), 'temp_dir_%d-%m-%Y_%H:%M:%S.json'))
-    with open(filename, "w") as file:
-        json.dump({"files": data}, file)
-        file.flush()
-    return filename
+    return json.dumps({"files": sorted(files, key=lambda x: natural_sort_key(x['name']))})
 
 
 
@@ -44,13 +39,8 @@ def get_all_stream_content(video_source: str, file_formats: List[str]) -> Dict[s
                     structure['directories'].append(entry)
                 else:
                     structure['files'].append({"name": file_, "path": os.path.join("stream", file_)})
-    data = dict(files=sorted(structure['files'], key=lambda x: natural_sort_key(x['name'])),
-                directories=sorted(structure['directories'], key=lambda x: natural_sort_key(x['name'])))
-    filename = datetime.now().strftime(os.path.join(os.getcwd(), 'temp_all_%d-%m-%Y_%H:%M:%S.json'))
-    with open(filename, "w") as file:
-        json.dump(data, file)
-        file.flush()
-    return filename
+    return json.dumps(dict(files=sorted(structure['files'], key=lambda x: natural_sort_key(x['name'])),
+                           directories=sorted(structure['directories'], key=lambda x: natural_sort_key(x['name']))))
 
 
 def get_iter(filepath: str, file_formats: List[str]) -> Union[List[str], List[None]]:

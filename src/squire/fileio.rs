@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::path;
 
 use pyo3::{Py, PyAny, PyResult, Python};
 use pyo3::prelude::PyModule;
@@ -14,46 +13,17 @@ pub struct ContentPayload {
 
 pub fn default_structure() -> Vec<HashMap<String, String>> { Vec::new() }
 
-fn delete_file(file_path: String) {
-    match std::fs::remove_file(&file_path) {
-        Ok(()) => {
-            log::debug!("File '{}' successfully deleted.", file_path);
-        }
-        Err(err) => match err.kind() {
-            // Handle specific errors, if necessary
-            std::io::ErrorKind::NotFound => {
-                log::error!("File '{}' not found.", file_path);
-            }
-            _ => {
-                log::error!("Error deleting file '{}': {}", file_path, err);
-            }
-        },
-    }
-}
-
-fn convert_to_json(filename: String) -> ContentPayload {
+fn convert_to_json(content: String) -> ContentPayload {
     let payload;
-    if path::Path::new(&filename).exists() {
-        match std::fs::read_to_string(&filename) {
-            Ok(content) => {
-                let output: serde_json::Result<ContentPayload> = serde_json::from_str(&content);
-                match output {
-                    Ok(raw_config) => {
-                        delete_file(filename);
-                        payload = raw_config;
-                    }
-                    Err(err) => {
-                        println!("{:?}", content);
-                        panic!("Error deserializing JSON: {}", err);
-                    }
-                }
-            }
-            Err(err) => {
-                panic!("Error reading file: {}", err);
-            }
+    let output: serde_json::Result<ContentPayload> = serde_json::from_str(&content);
+    match output {
+        Ok(raw_config) => {
+            payload = raw_config;
         }
-    } else {
-        panic!("{} not found", filename)
+        Err(err) => {
+            println!("{:?}", content);
+            panic!("Error deserializing JSON: {}", err);
+        }
     }
     payload
 }
