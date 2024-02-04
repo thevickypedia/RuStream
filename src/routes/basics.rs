@@ -1,6 +1,6 @@
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
-use crate::render;
+use crate::template;
 
 #[get("/health")]
 pub async fn health() -> HttpResponse {
@@ -16,5 +16,5 @@ pub async fn status() -> HttpResponse {
 pub async fn root() -> HttpResponse {
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(render::INDEX);
+        .body(template::INDEX);
 }

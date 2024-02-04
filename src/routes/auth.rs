@@ -7,7 +7,7 @@ use actix_web::http::StatusCode;
 use minijinja::context;
 use serde::Serialize;
 
-use crate::{constant, render, routes, squire};
+use crate::{constant, template, routes, squire};
 
 #[derive(Serialize)]
 struct RedirectResponse {
@@ -47,7 +47,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
 pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
-    let template = render::ENV.lock().unwrap();
+    let template = constant::ENV.lock().unwrap();
     let logout_template = template.get_template("logout").unwrap();
     let mut response = HttpResponse::build(StatusCode::OK);
     response.content_type("text/html; charset=utf-8");
@@ -58,7 +58,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
         log::info!("{} from {} attempted to logged out", auth_response.username, host);
     }
     if auth_response.ok {
-        let mut tracker = render::HOST_SERVE.lock().unwrap();
+        let mut tracker = constant::HOST_SERVE.lock().unwrap();
         if tracker.get(&host).is_some() {
             tracker.remove(&host);
         } else {
@@ -93,7 +93,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
         let file_format = (&config.file_formats[0], &config.file_formats[1]);
         let args = (config.video_source.to_string_lossy().to_string(), file_format);
         let listing_page = squire::fileio::get_all_stream_content(args);
-        let template = render::ENV.lock().unwrap();
+        let template = constant::ENV.lock().unwrap();
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
@@ -117,7 +117,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/error")]
 pub async fn error(request: HttpRequest) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {
-        let template = render::ENV.lock().unwrap();
+        let template = constant::ENV.lock().unwrap();
         let session = template.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
@@ -125,5 +125,5 @@ pub async fn error(request: HttpRequest) -> HttpResponse {
     }
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(render::UNAUTHORIZED);
+        .body(template::UNAUTHORIZED);
 }

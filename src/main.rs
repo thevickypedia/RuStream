@@ -7,7 +7,7 @@ use actix_web::{App, HttpServer, middleware, web};
 
 mod routes;
 mod squire;
-mod render;
+mod template;
 mod constant;
 
 #[actix_rt::main]

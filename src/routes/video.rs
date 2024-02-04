@@ -8,7 +8,7 @@ use minijinja::context;
 use serde::Deserialize;
 use url::form_urlencoded;
 
-use crate::{render, squire};
+use crate::{squire, constant};
 use crate::routes;
 
 #[derive(Deserialize)]
@@ -38,7 +38,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             detail: format!("'{}' was not found", video_path)
         });
     }
-    let template = render::ENV.lock().unwrap();
+    let template = constant::ENV.lock().unwrap();
     if target.is_file() {
         let landing = template.get_template("landing").unwrap();
         let render_path = format!("/video?file={}", form_urlencoded::byte_serialize(target_str
@@ -77,7 +77,7 @@ pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>
     if video_path.exists() {
         let file = actix_files::NamedFile::open_async(video_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
-        let mut tracker = render::HOST_SERVE.lock().unwrap();
+        let mut tracker = constant::HOST_SERVE.lock().unwrap();
         if tracker.get(&host).is_some() && tracker.get(&host).unwrap() == &info.file {
             // logging is skipped since it is a continued streaming
         } else {
