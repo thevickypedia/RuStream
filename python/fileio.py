@@ -53,19 +53,22 @@ def get_all_stream_content(video_source: str, file_formats: List[str]) -> Dict[s
     return filename
 
 
-def get_iter(filename: pathlib.PurePath, file_formats: List[str]) -> Union[Tuple[str, str], Tuple[None, None]]:
+def get_iter(filepath: str, file_formats: List[str]) -> Union[List[str], List[None]]:
+    filepath = pathlib.PosixPath(filepath)
     # Extract only the file formats that are supported
     dir_content = sorted(
-        (file for file in os.listdir(filename.parent) if pathlib.PosixPath(file).suffix in file_formats),
+        (file for file in os.listdir(filepath.parent) if pathlib.PosixPath(file).suffix in file_formats),
         key=lambda x: natural_sort_key(x)
     )
-    idx = dir_content.index(filename.name)
+    idx = dir_content.index(filepath.name)
     try:
         previous_ = dir_content[idx - 1]
+        if previous_ == filepath.name:
+            previous_ = None
     except IndexError:
         previous_ = None
     try:
         next_ = dir_content[idx + 1]
     except IndexError:
         next_ = None
-    return previous_, next_
+    return json.dumps({"previous": previous_, "next": next_})

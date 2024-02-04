@@ -9,7 +9,7 @@ use minijinja::context;
 use serde::Deserialize;
 use url::form_urlencoded;
 
-use crate::{squire, constant};
+use crate::{constant, squire};
 use crate::routes;
 
 #[derive(Deserialize)]
@@ -43,11 +43,26 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     let template = constant::ENV.lock().unwrap();
     if target.is_file() {
         let landing = template.get_template("landing").unwrap();
+        let file_format = config.file_formats.iter().collect_tuple().unwrap();
+        let args = (&target_str, file_format);
+        let iter_content = squire::fileio::get_iter(args);
+        let mut previous = None;
+        let mut next = None;
+        match iter_content {
+            Some(iter) => {
+                previous = iter.previous;
+                next = iter.next;
+            }
+            None => {}
+        }
+        // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
         let render_path = format!("/video?file={}", form_urlencoded::byte_serialize(target_str
             .as_bytes()).collect::<Vec<_>>().join(""));
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
-            .body(landing.render(context!(video_title => video_path.to_string(), path => render_path)).unwrap());
+            .body(landing.render(context!(
+                video_title => video_path.to_string(), path => render_path, previous => previous, next => next)
+            ).unwrap());
     } else if target.is_dir() {
         let child_dir = target.iter().last().unwrap().to_string_lossy().to_string();
         let file_format = config.file_formats.iter().collect_tuple().unwrap();

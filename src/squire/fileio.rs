@@ -79,3 +79,30 @@ pub fn get_dir_stream_content(args: (String, String, (&String, &String))) -> Con
     });
     convert_to_json(from_python.unwrap().to_string())
 }
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Iter {
+    pub previous: Option<String>,
+    pub next: Option<String>,
+}
+
+pub fn get_iter(args: (&String, (&String, &String))) -> Option<Iter> {
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
+        let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
+            .getattr("get_iter")?
+            .into();
+        app.call1(py, args)
+    });
+    let content = from_python.unwrap().to_string();
+    let output: serde_json::Result<Iter> = serde_json::from_str(&content);
+    match output {
+        Ok(parsed_vector) => {
+            return Some(parsed_vector);
+        }
+        Err(e) => {
+            log::error!("Error parsing JSON: {}", e);
+        }
+    }
+    None
+}
