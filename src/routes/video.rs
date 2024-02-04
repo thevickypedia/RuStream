@@ -67,9 +67,9 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     log::error!("Something went really wrong");
     log::error!("Video Path: {}", video_path.to_string());
     log::error!("Target: {}", target_str);
-    return HttpResponse::ExpectationFailed().json(routes::auth::DetailError {
+    HttpResponse::ExpectationFailed().json(routes::auth::DetailError {
         detail: format!("'{}' was neither a file nor a folder", video_path)
-    });
+    })
 }
 
 #[get("/video")]

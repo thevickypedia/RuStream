@@ -66,7 +66,7 @@ pub fn get_all_stream_content(args: (String, (&String, &String))) -> ContentPayl
             .into();
         app.call1(py, args)
     });
-    return convert_to_json(from_python.unwrap().to_string());
+    convert_to_json(from_python.unwrap().to_string())
 }
 
 pub fn get_dir_stream_content(args: (String, String, (&String, &String))) -> ContentPayload {
@@ -77,5 +77,5 @@ pub fn get_dir_stream_content(args: (String, String, (&String, &String))) -> Con
             .into();
         app.call1(py, args)
     });
-    return convert_to_json(from_python.unwrap().to_string());
+    convert_to_json(from_python.unwrap().to_string())
 }

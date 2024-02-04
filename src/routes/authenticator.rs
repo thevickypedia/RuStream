@@ -109,5 +109,5 @@ pub fn verify_token(request: HttpRequest, config: &Data<Arc<squire::settings::Co
     }
     let ok = false;
     let detail = "Invalid session token".to_string();
-    return AuthToken { ok, detail };
+    AuthToken { ok, detail }
 }

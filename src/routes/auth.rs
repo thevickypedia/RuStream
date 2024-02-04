@@ -70,7 +70,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
         .http_only(true).max_age(age).finish();
     response.cookie(cookie);
     response.append_header(("Location", "/error"));
-    return response.finish();
+    response.finish()
 }
 
 /// Error response endpoint where the users are redirected in case of issues with session-token
