@@ -14,17 +14,16 @@ pub struct ContentPayload {
 pub fn default_structure() -> Vec<HashMap<String, String>> { Vec::new() }
 
 fn convert_to_json(content: String) -> ContentPayload {
-    let payload;
     let output: serde_json::Result<ContentPayload> = serde_json::from_str(&content);
-    match output {
+    let payload = match output {
         Ok(raw_config) => {
-            payload = raw_config;
+            raw_config
         }
         Err(err) => {
             println!("{:?}", content);
             panic!("Error deserializing JSON: {}", err);
         }
-    }
+    };
     payload
 }
 

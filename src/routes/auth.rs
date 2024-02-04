@@ -86,8 +86,6 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
-    // todo: investigate why home page takes longer to load while sub folders render quickly
-    // todo: cache this page to render faster
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         let mut response = HttpResponse::Found();

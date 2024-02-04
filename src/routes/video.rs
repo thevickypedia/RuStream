@@ -43,6 +43,8 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     }
     let template = constant::ENV.lock().unwrap();
     if target.is_file() {
+        // todo: include an endpoint for thumbnail and render it using ffmpeg (or use blank if too complex)
+        // todo: include an endpoint for subtitles and automatic subtitle conversion
         let landing = template.get_template("landing").unwrap();
         let file_format = config.file_formats.iter().collect_tuple().unwrap();
         let args = (&target_str, file_format);
