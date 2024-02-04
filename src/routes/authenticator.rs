@@ -60,7 +60,6 @@ pub fn verify_login(
             // Create a new signature with hex encoded username and password stored in config file as plain text
             let expected_signature = squire::secure::calculate_hash(message);
             if expected_signature == credentials.signature {
-                // todo: create a lazy mapping to store the key for each username
                 let key = squire::secure::keygen();
                 SESSION_MAPPING.lock().unwrap().insert(credentials.username.to_string(), key.to_string());
                 let mut mapped = HashMap::new();

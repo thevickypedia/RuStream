@@ -12,15 +12,20 @@ def natural_sort_key(filename: str) -> List[Union[int, str]]:
     return [int(part) if part.isdigit() else part.lower() for part in parts]
 
 
-def get_dir_stream_content(parent: pathlib.PosixPath,
-                           subdir: str, file_formats: List[str]) -> List[Dict[str, str]]:
+def get_dir_stream_content(parent: str, subdir: str, file_formats: List[str]) -> List[Dict[str, str]]:
     files = []
     for file_ in os.listdir(parent):
         if file_.startswith('_') or file_.startswith('.'):
             continue
         if pathlib.PurePath(file_).suffix in file_formats:
             files.append({"name": file_, "path": os.path.join(subdir, file_)})
-    return sorted(files, key=lambda x: natural_sort_key(x['name']))
+    data = sorted(files, key=lambda x: natural_sort_key(x['name']))
+    filename = datetime.now().strftime(os.path.join(os.getcwd(), 'temp_dir_%d-%m-%Y_%H:%M:%S.json'))
+    with open(filename, "w") as file:
+        json.dump({"files": data}, file)
+        file.flush()
+    return filename
+
 
 
 def get_all_stream_content(video_source: str, file_formats: List[str]) -> Dict[str, List[Dict[str, str]]]:

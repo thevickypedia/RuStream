@@ -46,6 +46,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
+    // todo: investigate why home page takes longer to load while sub folders render quickly
     // todo: cache this page to render faster
     let auth_response = routes::authenticator::verify_token(request, &config);
     if auth_response.ok {
@@ -53,7 +54,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
         // todo: avoid hard coding index
         let file_format = (&config.file_formats[0], &config.file_formats[1]);
         let args = (config.video_source.to_string_lossy().to_string(), file_format);
-        let listing_page = squire::fileio::get_py_content("get_all_stream_content", args);
+        let listing_page = squire::fileio::get_all_stream_content(args);
         let template = render::ENV.lock().unwrap();
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)

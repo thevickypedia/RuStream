@@ -8,8 +8,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ContentPayload {
     pub files: Vec<HashMap<String, String>>,
+    #[serde(default = "default_structure")]
     pub directories: Vec<HashMap<String, String>>,
 }
+
+pub fn default_structure() -> Vec<HashMap<String, String>> { Vec::new() }
 
 fn delete_file(file_path: String) {
     match std::fs::remove_file(&file_path) {
@@ -55,11 +58,22 @@ fn convert_to_json(filename: String) -> ContentPayload {
     payload
 }
 
-pub fn get_py_content(attr: &str, args: (String, (&String, &String))) -> ContentPayload {
+pub fn get_all_stream_content(args: (String, (&String, &String))) -> ContentPayload {
     let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
-            .getattr(attr)?
+            .getattr("get_all_stream_content")?
+            .into();
+        app.call1(py, args)
+    });
+    return convert_to_json(from_python.unwrap().to_string());
+}
+
+pub fn get_dir_stream_content(args: (String, String, (&String, &String))) -> ContentPayload {
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
+        let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
+            .getattr("get_dir_stream_content")?
             .into();
         app.call1(py, args)
     });
