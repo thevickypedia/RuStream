@@ -43,6 +43,40 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
     })
 }
 
+#[get("/logout")]
+pub async fn logout(_config: web::Data<Arc<squire::settings::Config>>,
+                    request: HttpRequest) -> HttpResponse {
+    let host = request.connection_info().host().to_owned();
+    let template = render::ENV.lock().unwrap();
+    let logout_template = template.get_template("logout").unwrap();
+    let mut response = HttpResponse::build(StatusCode::OK);
+    response.content_type("text/html; charset=utf-8");
+    let rendered;
+    if let Some(_) = request.cookie("session_token") {
+        log::info!("{} logged out", request.connection_info().host());
+        let mut tracker = render::HOST_SERVE.lock().unwrap();
+        if tracker.get(&host).is_some() {
+            tracker.remove(&host);
+        } else {
+            log::warn!("Session information for {} was not stored or no video was played", host);
+        }
+        rendered = logout_template.render(context!(detail => "You have been logged out successfully.")).unwrap();
+        // Set to the lowest possible second since deletion is not an option
+        let age = Duration::new(0, 1);
+        let cookie = Cookie::build("session_token", "boo")
+            .http_only(true).max_age(age).finish();
+        response.cookie(cookie);
+    } else {
+        log::info!("Redirecting connection from {} to login page", host);
+        rendered = logout_template.render(
+            context!(detail => "You are not logged in. Please click the button below to proceed.",
+                show_login => true)
+        ).unwrap();
+    }
+    // response.finish() is not required since setting the body will close the response
+    response.body(rendered)
+}
+
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
@@ -65,7 +99,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
     }
     let mut response = HttpResponse::Found();
     // Set to the lowest possible second since deletion is not an option
-    let age = Duration::new(1, 0);
+    let age = Duration::new(0, 1);
     let cookie = Cookie::build("detail", auth_response.detail)
         .http_only(true).max_age(age).finish();
     response.cookie(cookie);

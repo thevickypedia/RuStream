@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
@@ -11,10 +10,6 @@ use url::form_urlencoded;
 
 use crate::{render, squire};
 use crate::routes;
-
-lazy_static::lazy_static! {
-    static ref HOST_SERVE: std::sync::Mutex<HashMap<String, String>> = std::sync::Mutex::new(HashMap::new());
-}
 
 #[derive(Deserialize)]
 pub struct Payload {
@@ -82,7 +77,7 @@ pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>
     if video_path.exists() {
         let file = actix_files::NamedFile::open_async(video_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
-        let mut tracker = HOST_SERVE.lock().unwrap();
+        let mut tracker = render::HOST_SERVE.lock().unwrap();
         if tracker.get(&host).is_some() && tracker.get(&host).unwrap() == &info.file {
             // logging is skipped since it is a continued streaming
         } else {
