@@ -61,11 +61,14 @@ def get_iter(filepath: str, file_formats: List[str]) -> Union[List[str], List[No
         key=lambda x: natural_sort_key(x)
     )
     idx = dir_content.index(filepath.name)
-    try:
-        previous_ = dir_content[idx - 1]
-        if previous_ == filepath.name:
+    if idx > 0:
+        try:
+            previous_ = dir_content[idx - 1]
+            if previous_ == filepath.name:
+                previous_ = None
+        except IndexError:
             previous_ = None
-    except IndexError:
+    else:
         previous_ = None
     try:
         next_ = dir_content[idx + 1]

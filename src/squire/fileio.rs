@@ -86,7 +86,7 @@ pub struct Iter {
     pub next: Option<String>,
 }
 
-pub fn get_iter(args: (&String, (&String, &String))) -> Option<Iter> {
+pub fn get_iter(args: (&String, (&String, &String))) -> Iter {
     let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
@@ -98,11 +98,13 @@ pub fn get_iter(args: (&String, (&String, &String))) -> Option<Iter> {
     let output: serde_json::Result<Iter> = serde_json::from_str(&content);
     match output {
         Ok(parsed_vector) => {
-            return Some(parsed_vector);
+            return parsed_vector;
         }
         Err(e) => {
             log::error!("Error parsing JSON: {}", e);
         }
     }
-    None
+    let previous = None;
+    let next = None;
+    Iter { previous, next }
 }

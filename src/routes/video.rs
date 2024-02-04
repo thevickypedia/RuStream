@@ -33,11 +33,12 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
-    let target = config.video_source.join(video_path.to_string());
+    let filepath = video_path.to_string();
+    let target = config.video_source.join(&filepath);
     let target_str = target.to_string_lossy().to_string();
     if !target.exists() {
         return HttpResponse::NotFound().json(routes::auth::DetailError {
-            detail: format!("'{}' was not found", video_path)
+            detail: format!("'{}' was not found", filepath)
         });
     }
     let template = constant::ENV.lock().unwrap();
@@ -45,23 +46,16 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         let landing = template.get_template("landing").unwrap();
         let file_format = config.file_formats.iter().collect_tuple().unwrap();
         let args = (&target_str, file_format);
-        let iter_content = squire::fileio::get_iter(args);
-        let mut previous = None;
-        let mut next = None;
-        match iter_content {
-            Some(iter) => {
-                previous = iter.previous;
-                next = iter.next;
-            }
-            None => {}
-        }
+        let iter = squire::fileio::get_iter(args);
         // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
-        let render_path = format!("/video?file={}", form_urlencoded::byte_serialize(target_str
-            .as_bytes()).collect::<Vec<_>>().join(""));
+        let render_path = format!("/video?file={}",
+                                  form_urlencoded::byte_serialize(target_str.as_bytes())
+                                      .collect::<Vec<_>>()
+                                      .join(""));
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
             .body(landing.render(context!(
-                video_title => video_path.to_string(), path => render_path, previous => previous, next => next)
+                video_title => filepath, path => render_path, previous => iter.previous, next => iter.next)
             ).unwrap());
     } else if target.is_dir() {
         let child_dir = target.iter().last().unwrap().to_string_lossy().to_string();
@@ -76,10 +70,10 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             ).unwrap());
     }
     log::error!("Something went really wrong");
-    log::error!("Video Path: {}", video_path.to_string());
+    log::error!("Video Path: {}", filepath);
     log::error!("Target: {}", target_str);
     HttpResponse::ExpectationFailed().json(routes::auth::DetailError {
-        detail: format!("'{}' was neither a file nor a folder", video_path)
+        detail: format!("'{}' was neither a file nor a folder", filepath)
     })
 }
 
