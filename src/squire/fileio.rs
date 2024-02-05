@@ -77,3 +77,18 @@ pub fn get_iter(args: (&String, (&String, &String))) -> Iter {
     let next = None;
     Iter { previous, next }
 }
+
+pub fn srt_to_vtt(input_file: &String) -> bool {
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
+        let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
+            .getattr("srt_to_vtt")?
+            .into();
+        app.call1(py, (input_file,))
+    });
+    match from_python.unwrap().to_string().as_str() {
+        "true" => true,
+        "false" => false,
+        _ => false,
+    }
+}

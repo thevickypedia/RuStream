@@ -1,10 +1,8 @@
-import os
 import json
+import os
 import pathlib
 import re
-
-from datetime import datetime
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 
 
 def natural_sort_key(filename: str) -> List[Union[int, str]]:
@@ -20,7 +18,6 @@ def get_dir_stream_content(parent: str, subdir: str, file_formats: List[str]) ->
         if pathlib.PurePath(file_).suffix in file_formats:
             files.append({"name": file_, "path": os.path.join(subdir, file_)})
     return json.dumps({"files": sorted(files, key=lambda x: natural_sort_key(x['name']))})
-
 
 
 def get_all_stream_content(video_source: str, file_formats: List[str]) -> Dict[str, List[Dict[str, str]]]:
@@ -65,3 +62,27 @@ def get_iter(filepath: str, file_formats: List[str]) -> Union[List[str], List[No
     except IndexError:
         next_ = None
     return json.dumps({"previous": previous_, "next": next_})
+
+
+def srt_to_vtt(filename: str) -> str:
+    if not filename.endswith('.srt'):
+        return json.dumps(False)
+    filename = pathlib.PosixPath(filename)
+    output_file = filename.with_suffix('.vtt')
+    with open(filename, 'r', encoding='utf-8') as rf:
+        srt_content = rf.read()
+    srt_content = srt_content.replace(',', '.')
+    srt_content = srt_content.replace(' --> ', '-->')
+    vtt_content = 'WEBVTT\n\n'
+    subtitle_blocks = srt_content.strip().split('\n\n')
+    for block in subtitle_blocks:
+        lines = block.split('\n')
+        timecode = lines[1]
+        text = '\n'.join(lines[2:])
+        vtt_content += f"{timecode}\n{text}\n\n"
+    with open(output_file, 'w', encoding='utf-8') as wf:
+        wf.write(vtt_content)
+        wf.flush()
+    if output_file.exists():
+        return json.dumps(True)
+    return json.dumps(False)

@@ -35,6 +35,7 @@ async fn main() -> io::Result<()> {
             .service(routes::auth::logout)
             .service(routes::auth::home)
             .service(routes::auth::error)
+            .service(routes::video::track)
             .service(routes::video::stream)
             .service(routes::video::streaming_endpoint)
     })
