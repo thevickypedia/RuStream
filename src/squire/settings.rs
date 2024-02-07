@@ -24,8 +24,6 @@ pub struct Config {
     pub max_connections: i32,
     #[serde(default = "default_website")]
     pub website: Vec<String>,
-    #[serde(default = "default_auto_thumbnail")]
-    pub auto_thumbnail: bool,
 }
 
 
@@ -55,5 +53,3 @@ pub fn default_workers() -> i32 { 3 }
 pub fn default_max_connections() -> i32 { 300 }
 
 pub fn default_website() -> Vec<String> { Vec::new() }
-
-pub fn default_auto_thumbnail() -> bool { true }

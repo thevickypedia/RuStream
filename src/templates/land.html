@@ -110,7 +110,6 @@
            preload="auto"
            controls muted="muted"
            style="position: relative; margin-left: auto; margin-right: auto; display: block"
-           poster=""
            data-setup='{
          "playbackRates": [1, 1.5, 2, 5],
          "controlBar": {
@@ -143,12 +142,10 @@
 <script>
     let origin = window.location.origin; // Get the current origin using JavaScript
     let path = "{{ path }}";
-    let preview = "{{ preview }}";
     let track = "{{ track }}";
 
-    // Construct the source URL for video/preview by combining origin and path/preview
+    // Construct the source URL for video by combining origin and path
     let videoSource = origin + path;
-    let previewSource = origin + preview;
 
     // Set the video source URL for the video-source element
     let videoElement = document.getElementById("video-source");
@@ -159,8 +156,6 @@
     trackElement.setAttribute("src", track);
 
     let videoPlayer = document.getElementById("video-player");
-    // Set the preview source URL for the video-player element
-    videoPlayer.setAttribute("poster", previewSource);
     videoPlayer.load(); // Load the video
     // videoPlayer.play(); // Play the video
 </script>

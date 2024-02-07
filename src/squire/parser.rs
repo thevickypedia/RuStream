@@ -46,8 +46,8 @@ pub fn arguments() -> Args {
         video_port: Port number to host the application. Defaults to 8000\n
         file_formats: Sequence of supported video file formats. Defaults to (.mp4, .mov)\n
         workers: Number of workers to spin up the uvicorn server. Defaults to 1\n
-        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n
-        auto_thumbnail: Boolean flag to auto generate thumbnail images for preview. Defaults to true\n\n".to_string();
+        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n\n"
+                    .to_string();
                 println!("{}", helper);
                 exit(0)
             }
