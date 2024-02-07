@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::net::ToSocketAddrs;
-use std::path;
+use std::{path, thread};
 
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +48,17 @@ pub fn default_session_duration() -> i32 { 3600 }
 
 pub fn default_file_formats() -> Vec<String> { vec![".mp4".to_string(), ".mov".to_string()] }
 
-pub fn default_workers() -> i32 { 3 }
+/// Set default workers to the number of physical cores (half of logical cores)
+pub fn default_workers() -> i32 {
+    let logical_cores = thread::available_parallelism();
+    match logical_cores {
+        Ok(cores) => cores.get() as i32 / 2,
+        Err(err) => {
+            log::error!("{}", err);
+            3
+        }
+    }
+}
 
 pub fn default_max_connections() -> i32 { 300 }
 

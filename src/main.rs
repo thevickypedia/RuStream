@@ -23,7 +23,7 @@ async fn main() -> io::Result<()> {
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
     let host = format!("{}:{}", config.video_host, config.video_port);
-    log::info!("{} running on http://{} (Press CTRL+C to quit)", env!("CARGO_PKG_NAME"), host);
+    log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)", env!("CARGO_PKG_NAME"), config.workers, host);
     HttpServer::new(move || {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
