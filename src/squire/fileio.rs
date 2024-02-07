@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ContentPayload {
+    #[serde(default = "default_structure")]
     pub files: Vec<HashMap<String, String>>,
     #[serde(default = "default_structure")]
     pub directories: Vec<HashMap<String, String>>,
@@ -15,16 +16,16 @@ pub fn default_structure() -> Vec<HashMap<String, String>> { Vec::new() }
 
 fn convert_to_json(content: String) -> ContentPayload {
     let output: serde_json::Result<ContentPayload> = serde_json::from_str(&content);
-    let payload = match output {
+    match output {
         Ok(raw_config) => {
             raw_config
         }
         Err(err) => {
-            println!("{:?}", content);
-            panic!("Error deserializing JSON: {}", err);
+            log::error!("Error deserializing JSON: {}", err);
+            log::error!("Raw content from python: {:?}", content);
+            ContentPayload::default()
         }
-    };
-    payload
+    }
 }
 
 pub fn get_all_stream_content(args: (String, (&String, &String))) -> ContentPayload {
@@ -69,8 +70,9 @@ pub fn get_iter(args: (&String, (&String, &String))) -> Iter {
         Ok(parsed_vector) => {
             return parsed_vector;
         }
-        Err(e) => {
-            log::error!("Error parsing JSON: {}", e);
+        Err(err) => {
+            log::error!("Error parsing JSON response from python: {}", err);
+            log::error!("Raw content from python: {}", content);
         }
     }
     let previous = None;

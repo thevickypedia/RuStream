@@ -13,11 +13,6 @@ edition = "2021"
 name = "stream"
 path = "src/main.rs"
 
-# For internal tests ONLY
-[[bin]]
-name = "temp"
-path = "src_test/main.rs"
-
 [dependencies]
 actix-rt = "2.9.0"
 actix-web = "4.4.1"

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html>
+<!--suppress JSUnresolvedLibraryURL -->
+<html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Rustic video streaming</title>
@@ -88,23 +89,27 @@
 <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
 <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
 <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
-{% if dir_name %}
-    <h3>{{dir_name}}</h3>
+{% if dir_name or files or directories %}
+    {% if dir_name %}
+        <h3>{{dir_name}}</h3>
+    {% else %}
+        <h3>Files</h3>
+    {% endif %}
+    <ol>
+        {% for file in files %}
+        <li><a href="{{file.path}}">{{file.name}}</a></li>
+        {% endfor %}
+    </ol>
+    {% if directories %}
+    <h3>Directories</h3>
+    <ol>
+        {% for directory in directories %}
+        <li><a href="{{directory.path}}">{{directory.name}}</a></li>
+        {% endfor %}
+    </ol>
+    {% endif %}
 {% else %}
-    <h3>Files</h3>
-{% endif %}
-<ol>
-    {% for file in files %}
-    <li><a href="{{file.path}}">{{file.name}}</a></li>
-    {% endfor %}
-</ol>
-{% if directories %}
-<h3>Directories</h3>
-<ol>
-    {% for directory in directories %}
-    <li><a href="{{directory.path}}">{{directory.name}}</a></li>
-    {% endfor %}
-</ol>
+    <h3 style="text-align: center">No content was rendered by the server</h3>
 {% endif %}
 <hr>
 <script>
