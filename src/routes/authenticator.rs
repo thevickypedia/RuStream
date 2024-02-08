@@ -33,49 +33,64 @@ pub struct AuthToken {
 /// 2. Splits it into 3 parts with first one being the username followed by the signature and timestamp
 ///
 /// 3. Converts the username from hex into a string.
-fn extract_credentials(authorization: Option<&HeaderValue>) -> Credentials {
+fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credentials, &'static str> {
     let header = authorization.unwrap().to_str().unwrap().to_string();
+    // fixme: use match with Ok and Err to extract error response
     // base64 encoded in JavaScript using inbuilt btoa function
-    let decoded_auth = squire::secure::base64_decode(&header).to_string();
-    let vector: Vec<&str> = decoded_auth.split(',').collect();
-    // Decode hex username into string to retrieve password from config file
-    let username = squire::secure::hex_decode(vector.first().unwrap());
-    let signature = vector.get(1).unwrap().to_string();
-    let timestamp = vector.get(2).unwrap().to_string();
-    Credentials { username, signature, timestamp }
+    if let Ok(decoded_auth) = squire::secure::base64_decode(&header) {
+        if decoded_auth.is_empty() {
+            log::error!("Empty payload");  // todo: change this
+            return Err("Authorization payload was empty");
+        }
+        let vector: Vec<&str> = decoded_auth.split(',').collect();
+        return Ok(Credentials {
+            // Decode hex username into string to retrieve password from config file
+            username: squire::secure::hex_decode(vector.first().unwrap()),
+            signature: vector.get(1).unwrap().to_string(),
+            timestamp: vector.get(2).unwrap().to_string()
+        });
+    }
+    return Err("Failed to extract credentials");
 }
 
 pub fn verify_login(
     request: &HttpRequest,
     config: &Data<Arc<squire::settings::Config>>,
-) -> Option<HashMap<&'static str, String>> {
+) -> Result<HashMap<&'static str, String>, String> {
     let authorization = request.headers().get("authorization");
+    let err_response;
     if authorization.is_some() {
-        let credentials = extract_credentials(authorization);
-        let password = config.authorization.get(&credentials.username);
-        if password.is_some() {  // Check if the username is present in HashMap as key
-            let message = format!("{}{}{}",
-                                  squire::secure::hex_encode(&credentials.username),
-                                  squire::secure::hex_encode(password.unwrap()),
-                                  credentials.timestamp);
-            // Create a new signature with hex encoded username and password stored in config file as plain text
-            let expected_signature = squire::secure::calculate_hash(message);
-            if expected_signature == credentials.signature {
-                let key = squire::secure::keygen();
-                SESSION_MAPPING.lock().unwrap().insert(credentials.username.to_string(), key.to_string());
-                let mut mapped = HashMap::new();
-                mapped.insert("username", credentials.username.to_string());
-                mapped.insert("key", key.to_string());
-                mapped.insert("timestamp", credentials.timestamp.to_string());
-                return Some(mapped);
+        // fixme: use match with Ok and Err to extract error response
+        if let Ok(credentials) = extract_credentials(authorization) {
+            let password = config.authorization.get(&credentials.username);
+            if password.is_some() {  // Check if the username is present in HashMap as key
+                let message = format!("{}{}{}",
+                                      squire::secure::hex_encode(&credentials.username),
+                                      squire::secure::hex_encode(password.unwrap()),
+                                      credentials.timestamp);
+                // Create a new signature with hex encoded username and password stored in config file as plain text
+                let expected_signature = squire::secure::calculate_hash(message);
+                if expected_signature == credentials.signature {
+                    let key = squire::secure::keygen();
+                    SESSION_MAPPING.lock().unwrap().insert(credentials.username.to_string(), key.to_string());
+                    let mut mapped = HashMap::new();
+                    mapped.insert("username", credentials.username.to_string());
+                    mapped.insert("key", key.to_string());
+                    mapped.insert("timestamp", credentials.timestamp.to_string());
+                    return Ok(mapped);
+                } else {
+                    err_response = format!("{} entered bad credentials", credentials.username);
+                }
             } else {
-                log::warn!("{} entered bad credentials", credentials.username);
+                err_response = format!("{} is not allowed", credentials.username);
             }
         } else {
-            log::warn!("{} is not allowed", credentials.username);
+            err_response = "Failed to extract credentials".to_string();
         }
+    } else {
+        err_response = "No authorization headers were received".to_string();
     }
-    None
+    return Err(err_response)
 }
 
 pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {

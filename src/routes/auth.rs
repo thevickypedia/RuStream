@@ -8,7 +8,7 @@ use itertools::Itertools;
 use minijinja::context;
 use serde::Serialize;
 
-use crate::{constant, template, routes, squire};
+use crate::{constant, routes, squire, template};
 
 #[derive(Serialize)]
 struct RedirectResponse {
@@ -23,12 +23,15 @@ pub struct DetailError {
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest) -> HttpResponse {
-    let mapped = routes::authenticator::verify_login(&request, &config);
-    if mapped.is_none() {
+    let verified = routes::authenticator::verify_login(&request, &config);
+    if verified.is_err() {
+        let err = verified.err().unwrap().to_string();
+        println!("Error response::{}", err);
         return HttpResponse::Unauthorized().json(DetailError {
-            detail: "Incorrect username or password".to_string()
+            detail: err
         });
     }
+    let mapped = verified.unwrap();
     squire::logger::log_connection(&request);
     let payload = serde_json::to_string(&mapped).unwrap();
     let mut cookie = Cookie::build("session_token", constant::FERNET.encrypt(payload.as_bytes()))
@@ -37,7 +40,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
     let mut expiration = OffsetDateTime::now_utc();
     expiration += Duration::seconds(config.session_duration as i64);
     cookie.set_expires(expiration);
-    log::info!("Session for '{}' will be valid until {}", mapped.unwrap().get("username").unwrap(), expiration);
+    log::info!("Session for '{}' will be valid until {}", mapped.get("username").unwrap(), expiration);
     let mut response = HttpResponse::Ok().json(RedirectResponse {
         redirect_url: "/home".to_string(),
     });

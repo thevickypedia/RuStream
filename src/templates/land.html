@@ -27,7 +27,7 @@
             cursor: pointer;
         }
         .home {
-            position: absolute; /* relative or fixed or absolute; */
+            position: absolute;
             top: 3.8%;
             right: 218px;
             border: none;
@@ -36,7 +36,7 @@
             cursor: pointer;
         }
         .back {
-            position: absolute; /* relative or fixed or absolute; */
+            position: absolute;
             top: 3.8%;
             right: 130px;
             border: none;
@@ -45,7 +45,7 @@
             cursor: pointer;
         }
         .logout {
-            position: absolute; /* relative or fixed or absolute; */
+            position: absolute;
             top: 3.8%;
             right: 30px;
             border: none;
@@ -80,21 +80,24 @@
     </style>
     <!-- Size of video container and the player -->
     <style>
+        body {
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+        }
         #video-container {
             position: relative;
             width: 70%;
-            height: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            display: block
+            max-width: 100%; /* Set a maximum width to prevent overflow */
+            height: 80vh; /* Set height to 100% of the viewport height */
+            margin: 0 auto; /* Center the container horizontally */
+            overflow: hidden; /* Hide any overflowing content */
         }
         #video-player {
             position: relative;
             width: 100%;
             height: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            display: block
+            display: block;
         }
     </style>
 </head>

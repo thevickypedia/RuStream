@@ -31,15 +31,15 @@ pub fn base64_encode(value: &str) -> String {
 ///
 /// References:
 ///     https://docs.rs/base64/latest/base64/#url-safe-alphabet
-pub fn base64_decode(value: &str) -> String {
+pub fn base64_decode(value: &str) -> Result<String, &'static str> {
     if let Ok(decoded_bytes) = URL_SAFE.decode(value) {
         if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
-            decoded_str
+            Ok(decoded_str)
         } else {
-            panic!("Error decoding UTF-8");
+            Err("Error decoding UTF-8")
         }
     } else {
-        panic!("Error decoding base64");
+        Err("Error decoding base64")
     }
 }
 
