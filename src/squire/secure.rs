@@ -34,13 +34,14 @@ pub fn base64_encode(value: &str) -> String {
 pub fn base64_decode(value: &str) -> Result<String, &'static str> {
     if let Ok(decoded_bytes) = URL_SAFE.decode(value) {
         if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
-            Ok(decoded_str)
+            return Ok(decoded_str);
         } else {
-            Err("Error decoding UTF-8")
+            log::error!("Error decoding UTF-8");
         }
     } else {
-        Err("Error decoding base64")
+        log::error!("Error decoding base64");
     }
+    Err("Server was unable to decrypt the credentials")
 }
 
 /// Convert a string value into hex

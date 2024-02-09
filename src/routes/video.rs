@@ -59,6 +59,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     let filepath = track_path.to_string();
+    log::info!("File requested: {}", &filepath);
     match std::fs::read_to_string(&filepath) {
         Ok(content) => HttpResponse::Ok()
             .content_type("text/plain")

@@ -29,7 +29,6 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(config_clone.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
-            .service(routes::basics::status)
             .service(routes::basics::root)
             .service(routes::auth::login)
             .service(routes::auth::logout)

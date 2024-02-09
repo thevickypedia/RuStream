@@ -26,7 +26,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
     let verified = routes::authenticator::verify_login(&request, &config);
     if verified.is_err() {
         let err = verified.err().unwrap().to_string();
-        println!("Error response::{}", err);
+        log::warn!("Error response::{}", err);
         return HttpResponse::Unauthorized().json(DetailError {
             detail: err
         });
