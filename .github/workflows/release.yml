@@ -39,7 +39,6 @@ jobs:
     needs: Release
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
         platform:
           - release_for: Linux-x86_64
             os: ubuntu-20.04
@@ -62,11 +61,11 @@ jobs:
             name: RuStream-Darwin-x86_64.tar.gz
             command: build
 
-          - release_for: raspberrypi
+          - release_for: RaspberryPi
             os: ubuntu-20.04
             target: arm-unknown-linux-gnueabihf
             bin: rustream
-            name: RuStream-raspberrypi.tar.gz
+            name: RuStream-RaspberryPi.tar.gz
             command: build
 
     name: Upload asset for ${{ matrix.platform.release_for }}
@@ -80,7 +79,14 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
+
+      - name: Debug Python Environment
+        run: |
+          python --version
+          echo "PYTHONPATH: $PYTHONPATH"
+          echo "PATH: $PATH"
+        shell: bash
 
       - name: Build rust binary
         uses: houseabsolute/actions-rust-cross@v0
