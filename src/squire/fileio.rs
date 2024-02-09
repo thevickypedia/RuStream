@@ -29,7 +29,7 @@ fn convert_to_json(content: String) -> ContentPayload {
 }
 
 pub fn get_all_stream_content(args: (String, (&String, &String))) -> ContentPayload {
-    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
             .getattr("get_all_stream_content")?
@@ -40,7 +40,7 @@ pub fn get_all_stream_content(args: (String, (&String, &String))) -> ContentPayl
 }
 
 pub fn get_dir_stream_content(args: (String, String, (&String, &String))) -> ContentPayload {
-    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
             .getattr("get_dir_stream_content")?
@@ -57,7 +57,7 @@ pub struct Iter {
 }
 
 pub fn get_iter(args: (&String, (&String, &String))) -> Iter {
-    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
             .getattr("get_iter")?
@@ -81,7 +81,7 @@ pub fn get_iter(args: (&String, (&String, &String))) -> Iter {
 }
 
 pub fn srt_to_vtt(input_file: &String) -> bool {
-    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/python/fileio.py"));
+    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/python/fileio.py"));
     let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
             .getattr("srt_to_vtt")?

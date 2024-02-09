@@ -83,13 +83,13 @@ jobs:
           command: "build"
           target: ${{ matrix.platform.target }}
           args: "--release"
-          working-directory: api
+          working-directory: src
 
       - name: Copy artifacts to folder and compress non windows
         if: ${{ matrix.platform.os != 'windows-latest' }}
         run: |
           mkdir -p rustream
-          cp api/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
+          cp src/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
           cp -r frontend/build/* rustream/
           tar -zcvf ${{ matrix.platform.name }} rustream/
 
@@ -97,7 +97,7 @@ jobs:
         if: ${{ matrix.platform.os == 'windows-latest' }}
         run: |
           mkdir -p rustream
-          cp api/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
+          cp src/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
           cp -r frontend/build/* rustream/
           Compress-Archive -DestinationPath  ${{ matrix.platform.name }} -Path rustream/
 
