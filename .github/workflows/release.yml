@@ -12,8 +12,9 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create-release.outputs.upload_url }}
+      release-flag: ${{ steps.set-release-flag.outputs.release_flag }}
     steps:
+      - uses: actions/checkout@v3
       - name: Get Package Name
         run: |
           name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')
@@ -21,6 +22,7 @@ jobs:
           echo "pkg_name=$name" >> $GITHUB_ENV
         shell: bash
       - name: Set Release Flag  # Release flag is set only for a push on main branch
+        id: set-release-flag
         if: github.event_name == 'push'
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
@@ -30,9 +32,11 @@ jobs:
           if [ "$latest_version" != "$current_version" ]; then
             echo "Version has changed. Setting release flag to true."
             echo "release=true" >> $GITHUB_ENV
+            echo "release_flag=true" >> "$GITHUB_OUTPUT"
           else
             echo "Version has not changed. Setting release flag to false."
             echo "release=false" >> $GITHUB_ENV
+            echo "release_flag=false" >> "$GITHUB_OUTPUT"
           fi
           echo "pkg_version=$current_version" >> $GITHUB_ENV
         shell: bash
@@ -51,7 +55,7 @@ jobs:
 
   upload_assets:
     needs: release
-    if: env.release == 'true'
+    if: needs.release.outputs.release-flag == 'true'
     strategy:
       matrix:
         platform:
@@ -137,7 +141,6 @@ jobs:
           Compress-Archive -DestinationPath ${{ matrix.platform.name }} -Path rustream/
 
       - name: Upload Asset to Release
-        if: env.release == 'true'
         run: |
           curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
           -H "Content-Type: application/octet-stream" \
