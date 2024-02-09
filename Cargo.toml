@@ -1,7 +1,7 @@
 # https://doc.rust-lang.org/cargo/getting-started/first-steps.html#first-steps-with-cargo
 [package]
 name = "RuStream"
-version = "0.0.1"
+version = "0.0.0-alpha"
 description = "Rustic API to stream videos from localhost"
 license = "MIT"
 documentation = "https://thevickypedia.github.io/rustic-stream"

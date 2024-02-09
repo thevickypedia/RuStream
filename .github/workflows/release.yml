@@ -1,13 +1,7 @@
-name: Create release and upload artifact
+name: Build, test, upload artifact and release crate
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '*.md'
-      - '.github/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,51 +14,72 @@ jobs:
     outputs:
       upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - name: Bump version and push tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GIT_TOKEN }}
-
-      - name: Create a GitHub release
-        id: create-release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.tag_version.outputs.changelog }}
-          prerelease: ${{ github.ref != 'refs/heads/main' &&  'true' || 'false' }}
+      - name: Get Package Name
+        run: |
+          name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')
+          echo "Package Name: $name"
+          echo "pkg_name=$name" >> $GITHUB_ENV
+        shell: bash
+      - name: Set Release Flag  # Release flag is set only for a push on main branch
+        if: github.event_name == 'push'
+        run: |
+          current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          latest_version=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions[0].num')
+          echo "Current Package Version: ${current_version}"
+          echo "Latest Package Version: ${latest_version}"
+          if [ "$latest_version" != "$current_version" ]; then
+            echo "Version has changed. Setting release flag to true."
+            echo "release=true" >> $GITHUB_ENV
+          else
+            echo "Version has not changed. Setting release flag to false."
+            echo "release=false" >> $GITHUB_ENV
+          fi
+          echo "pkg_version=$current_version" >> $GITHUB_ENV
+        shell: bash
+      - name: Release Crate
+        if: env.release == 'true'
+        run: |
+          cargo login ${{ secrets.CRATES_TOKEN }}
+          cargo publish --allow-dirty  # Set allow-dirty since building will create a /target folder that will be uncommitted in git
+        shell: bash
+      - name: Build
+        if: env.release == 'false'
+        run: cargo build --verbose
+      - name: Run tests
+        if: env.release == 'false'
+        run: cargo test --verbose
 
   upload_assets:
-    needs: Release
+    needs: release
+    if: env.release == 'true'
     strategy:
       matrix:
         platform:
           - release_for: Linux-x86_64
             os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
-            bin: rustream
+            bin: stream
             name: RuStream-Linux-x86_64.tar.gz
             command: build
 
           - release_for: Windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: rustream.exe
+            bin: stream.exe
             name: RuStream-Windows-x86_64.zip
             command: build
 
           - release_for: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
-            bin: rustream
+            bin: stream
             name: RuStream-Darwin-x86_64.tar.gz
             command: build
 
           - release_for: RaspberryPi
             os: ubuntu-20.04
             target: arm-unknown-linux-gnueabihf
-            bin: rustream
+            bin: stream
             name: RuStream-RaspberryPi.tar.gz
             command: build
 
@@ -81,39 +96,51 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Debug Python Environment
+      - name: Install OpenSSL static for Windows
+        # https://github.com/sfackler/rust-openssl/issues/1086
+        if: ${{ matrix.platform.os == 'windows-latest' }}
         run: |
-          python --version
-          echo "PYTHONPATH: $PYTHONPATH"
-          echo "PATH: $PATH"
+          mkdir \Tools
+          cd \Tools
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          .\vcpkg.exe install openssl:x64-windows-static
+
+          $env:OPENSSL_DIR = 'C:\Tools\vcpkg\installed\x64-windows-static'
+          $env:OPENSSL_STATIC = 'Yes'
+          [System.Environment]::SetEnvironmentVariable('OPENSSL_DIR', $env:OPENSSL_DIR, [System.EnvironmentVariableTarget]::User)
+          [System.Environment]::SetEnvironmentVariable('OPENSSL_STATIC', $env:OPENSSL_STATIC, [System.EnvironmentVariableTarget]::User)
+
+      - name: Build
+        run: |
+          cargo build --release
         shell: bash
 
-      - name: Build rust binary
-        uses: houseabsolute/actions-rust-cross@v0
-        with:
-          command: "build"
-          target: ${{ matrix.platform.target }}
-          args: "--release"
-          working-directory: src
+      - name: Run tests
+        run: |
+          cargo test
+        shell: bash
 
       - name: Copy artifacts to folder and compress non windows
         if: ${{ matrix.platform.os != 'windows-latest' }}
         run: |
           mkdir -p rustream
-          cp src/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
-          cp -r frontend/build/* rustream/
+          cp target/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
           tar -zcvf ${{ matrix.platform.name }} rustream/
 
       - name: Copy artifacts to folder and compress Windows
         if: ${{ matrix.platform.os == 'windows-latest' }}
         run: |
           mkdir -p rustream
-          cp src/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
-          cp -r frontend/build/* rustream/
-          Compress-Archive -DestinationPath  ${{ matrix.platform.name }} -Path rustream/
+          cp target/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
+          Compress-Archive -DestinationPath ${{ matrix.platform.name }} -Path rustream/
 
-      - name: upload asset
-        uses: shogo82148/actions-upload-release-asset@v1
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ matrix.platform.name }}
+      - name: Upload Asset to Release
+        if: env.release == 'true'
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary @"${{ env.asset_name }}" \
+          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=${{ matrix.platform.name }}"
+        shell: bash
