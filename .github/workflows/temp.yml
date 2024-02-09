@@ -90,8 +90,7 @@ jobs:
       - name: Windows Specific
         # https://github.com/sfackler/rust-openssl/issues/1086
         run: |
-          if [[ ${{ matrix.platform.release_for }} == Windows-x86_64 ]];
-          then
+          if [[ "${{ matrix.platform.release_for }}" == "Windows-x86_64" ]]; then
             mkdir \Tools
             cd \Tools
             git clone https://github.com/Microsoft/vcpkg.git
