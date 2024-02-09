@@ -30,12 +30,11 @@ jobs:
           name: Release ${{ steps.tag_version.outputs.new_tag }}
           body: ${{ steps.tag_version.outputs.changelog }}
           prerelease: ${{ github.ref != 'refs/heads/main' &&  'true' || 'false' }}
-#      - name: Release Crate
-#        if: env.release == 'true'
-#        run: |
-#          cargo login ${{ secrets.CRATES_TOKEN }}
-#          cargo publish --allow-dirty  # Set allow-dirty since building will create a /target folder that will be uncommitted in git
-#        shell: bash
+  #      - name: Release Crate
+  #        run: |
+  #          cargo login ${{ secrets.CRATES_TOKEN }}
+  #          cargo publish --allow-dirty  # Set allow-dirty since building will create a /target folder that will be uncommitted in git
+  #        shell: bash
 
   valyria:
     needs: winterfell
@@ -45,28 +44,28 @@ jobs:
           - release_for: Linux-x86_64
             os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
-            bin: rustream
+            bin: stream
             name: RuStream-Linux-x86_64.tar.gz
             command: build
 
           - release_for: Windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: rustream.exe
+            bin: stream.exe
             name: RuStream-Windows-x86_64.zip
             command: build
 
           - release_for: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
-            bin: rustream
+            bin: stream
             name: RuStream-Darwin-x86_64.tar.gz
             command: build
 
           - release_for: RaspberryPi
             os: ubuntu-20.04
             target: arm-unknown-linux-gnueabihf
-            bin: rustream
+            bin: stream
             name: RuStream-RaspberryPi.tar.gz
             command: build
 
@@ -81,7 +80,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Windows Specific
+      - name: Install OpenSSL static for Windows
         # https://github.com/sfackler/rust-openssl/issues/1086
         if: ${{ matrix.platform.os == 'windows-latest' }}
         run: |
@@ -99,36 +98,32 @@ jobs:
 
       - name: Build
         run: |
-          if [ "${{ env.release }}" == "true" ]; then
-            cargo build --release
-          else
-            cargo build --verbose
-          fi
+          cargo build --release
         shell: bash
 
       - name: Run tests
         run: |
-          if [ "${{ env.release }}" == "true" ]; then
-            cargo test
-          else
-            cargo test --verbose
-          fi
+          cargo test
         shell: bash
+
+      - name: Debug
+        run: |
+          pwd
+          ls -ltrh
+          ls -LR
 
       - name: Copy artifacts to folder and compress non windows
         if: ${{ matrix.platform.os != 'windows-latest' }}
         run: |
           mkdir -p rustream
-          cp src/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
-          cp -r frontend/build/* rustream/
+          cp target/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
           tar -zcvf ${{ matrix.platform.name }} rustream/
 
       - name: Copy artifacts to folder and compress Windows
         if: ${{ matrix.platform.os == 'windows-latest' }}
         run: |
           mkdir -p rustream
-          cp src/target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
-          cp -r frontend/build/* rustream/
+          cp target/release/${{ matrix.platform.bin }} rustream/${{ matrix.platform.bin }}
           Compress-Archive -DestinationPath  ${{ matrix.platform.name }} -Path rustream/
 
       - name: upload asset
