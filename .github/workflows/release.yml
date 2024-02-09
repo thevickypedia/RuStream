@@ -36,39 +36,40 @@ jobs:
           prerelease: ${{ github.ref != 'refs/heads/main' &&  'true' || 'false' }}
 
   upload_assets:
-    needs: release
+    needs: Release
     strategy:
       matrix:
+        python-version: [3.8, 3.9]
         platform:
           - release_for: Linux-x86_64
             os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
             bin: rustream
-            name: rustream-Linux-x86_64.tar.gz
+            name: RuStream-Linux-x86_64.tar.gz
             command: build
 
           - release_for: Windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: rustream.exe
-            name: rustream-Windows-x86_64.zip
+            name: RuStream-Windows-x86_64.zip
             command: build
 
           - release_for: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
             bin: rustream
-            name: rustream-Darwin-x86_64.tar.gz
+            name: RuStream-Darwin-x86_64.tar.gz
             command: build
 
           - release_for: raspberrypi
             os: ubuntu-20.04
             target: arm-unknown-linux-gnueabihf
             bin: rustream
-            name: rustream-raspberrypi.tar.gz
+            name: RuStream-raspberrypi.tar.gz
             command: build
 
-    name: upload assets for ${{ matrix.platform.release_for }}
+    name: Upload asset for ${{ matrix.platform.release_for }}
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: write
@@ -76,6 +77,10 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Build rust binary
         uses: houseabsolute/actions-rust-cross@v0
