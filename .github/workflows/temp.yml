@@ -1,0 +1,105 @@
+name: Build, test, upload artifact and release crate
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  winterfell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Get Package Name
+        run: |
+          name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')
+          echo "Package Name: $name"
+          echo "pkg_name=$name" >> $GITHUB_ENV
+          echo "asset_name=asset_$name" >> $GITHUB_ENV
+        shell: bash
+      - name: Set Release Flag  # Release flag is set only for a push on main branch
+        if: github.event_name == 'push'
+        run: |
+          current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          latest_version=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions[0].num')
+          echo "Current Package Version: ${current_version}"
+          echo "Latest Package Version: ${latest_version}"
+          if [ "$latest_version" != "$current_version" ]; then
+            echo "Version has changed. Setting release flag to true."
+            echo "release=true" >> $GITHUB_ENV
+          else
+            echo "Version has not changed. Setting release flag to false."
+            echo "release=false" >> $GITHUB_ENV
+          fi
+          echo "pkg_version=$current_version" >> $GITHUB_ENV
+        shell: bash
+      - name: Build
+        run: |
+          if [ "${{ env.release }}" == "true" ]; then
+            cargo build --release
+          else
+            cargo build --verbose
+          fi
+        shell: bash
+      - name: Run tests
+        run: |
+          if [ "${{ env.release }}" == "true" ]; then
+            cargo test
+          else
+            cargo test --verbose
+          fi
+        shell: bash
+      - name: Copy Compiled Executable
+        if: env.release == 'true'
+        run: |
+          src_dir="target/release"
+          if [ -f "$src_dir/${{ env.pkg_name }}" ]; then
+            cp "$src_dir/${{ env.pkg_name }}" "${{ env.asset_name }}"
+            echo "Copied '${{ env.pkg_name }}' as '${{ env.asset_name }}' to $(pwd)"
+          else
+            echo "The file ${{ env.pkg_name }} does not exist in $src_dir."
+          fi
+        shell: bash
+      - name: Create New Release
+        if: env.release == 'true'
+        run: |
+          release_tag="v${{ env.pkg_version }}"
+          cargo_prerelease=("alpha" "beta" "rc")
+          prerelease=false
+          for cargo_pre in "${cargo_prerelease[@]}"; do
+            if [[ $pkg_version == *"$cargo_pre"* ]]; then
+              prerelease=true
+              break
+            fi
+          done
+          commit_msg="Release compiled executable for $release_tag"
+          release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
+          response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+            -d "$release_data" \
+            "https://api.github.com/repos/${{ github.repository }}/releases")
+          
+          release_id=$(echo $response | jq -r .id)
+          echo "Release ID: $release_id"
+          echo "release_id=$release_id" >> $GITHUB_ENV
+        shell: bash
+      - name: Upload Asset to Release
+        if: env.release == 'true'
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary @"${{ env.asset_name }}" \
+          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=${{ env.asset_name }}"
+        shell: bash
+#      - name: Release Crate
+#        if: env.release == 'true'
+#        run: |
+#          cargo login ${{ secrets.CRATES_TOKEN }}
+#          cargo publish --allow-dirty  # Set allow-dirty since building will create a /target folder that will be uncommitted in git
+#        shell: bash
