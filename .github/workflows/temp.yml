@@ -40,6 +40,53 @@ jobs:
           fi
           echo "pkg_version=$current_version" >> $GITHUB_ENV
         shell: bash
+
+  valyria:
+    needs: winterfell
+    strategy:
+      matrix:
+        platform:
+          - release_for: Linux-x86_64
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            bin: rustream
+            name: RuStream-Linux-x86_64.tar.gz
+            command: build
+
+          - release_for: Windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: rustream.exe
+            name: RuStream-Windows-x86_64.zip
+            command: build
+
+          - release_for: macOS-x86_64
+            os: macOS-latest
+            target: x86_64-apple-darwin
+            bin: rustream
+            name: RuStream-Darwin-x86_64.tar.gz
+            command: build
+
+          - release_for: RaspberryPi
+            os: ubuntu-20.04
+            target: arm-unknown-linux-gnueabihf
+            bin: rustream
+            name: RuStream-RaspberryPi.tar.gz
+            command: build
+
+    name: Build for ${{ matrix.platform.release_for }}
+    runs-on: ${{ matrix.platform.os }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+
       - name: Build
         run: |
           if [ "${{ env.release }}" == "true" ]; then
@@ -67,36 +114,39 @@ jobs:
             echo "The file ${{ env.pkg_name }} does not exist in $src_dir."
           fi
         shell: bash
-      - name: Create New Release
-        if: env.release == 'true'
-        run: |
-          release_tag="v${{ env.pkg_version }}"
-          cargo_prerelease=("alpha" "beta" "rc")
-          prerelease=false
-          for cargo_pre in "${cargo_prerelease[@]}"; do
-            if [[ $pkg_version == *"$cargo_pre"* ]]; then
-              prerelease=true
-              break
-            fi
-          done
-          commit_msg="Release compiled executable for $release_tag"
-          release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
-          response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
-            -d "$release_data" \
-            "https://api.github.com/repos/${{ github.repository }}/releases")
-          
-          release_id=$(echo $response | jq -r .id)
-          echo "Release ID: $release_id"
-          echo "release_id=$release_id" >> $GITHUB_ENV
-        shell: bash
-      - name: Upload Asset to Release
-        if: env.release == 'true'
-        run: |
-          curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
-          -H "Content-Type: application/octet-stream" \
-          --data-binary @"${{ env.asset_name }}" \
-          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=${{ env.asset_name }}"
-        shell: bash
+
+#      - name: Create New Release
+#        if: env.release == 'true'
+#        run: |
+#          release_tag="v${{ env.pkg_version }}"
+#          cargo_prerelease=("alpha" "beta" "rc")
+#          prerelease=false
+#          for cargo_pre in "${cargo_prerelease[@]}"; do
+#            if [[ $pkg_version == *"$cargo_pre"* ]]; then
+#              prerelease=true
+#              break
+#            fi
+#          done
+#          commit_msg="Release compiled executable for $release_tag"
+#          release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
+#          response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+#            -d "$release_data" \
+#            "https://api.github.com/repos/${{ github.repository }}/releases")
+#
+#          release_id=$(echo $response | jq -r .id)
+#          echo "Release ID: $release_id"
+#          echo "release_id=$release_id" >> $GITHUB_ENV
+#        shell: bash
+#      - name: Upload Asset to Release
+#        if: env.release == 'true'
+#        run: |
+#          curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+#          -H "Content-Type: application/octet-stream" \
+#          --data-binary @"${{ env.asset_name }}" \
+#          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=${{ env.asset_name }}"
+#        shell: bash
+
+#  todo: Come up with a way to upload individually for each OS
 #      - name: Release Crate
 #        if: env.release == 'true'
 #        run: |
