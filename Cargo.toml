@@ -1,7 +1,7 @@
 # https://doc.rust-lang.org/cargo/getting-started/first-steps.html#first-steps-with-cargo
 [package]
 name = "RuStream"
-version = "0.0.0-test"
+version = "0.0.0-a"
 description = "Rustic API to stream videos from localhost"
 license = "MIT"
 documentation = "https://thevickypedia.github.io/rustic-stream"
@@ -12,6 +12,9 @@ edition = "2021"
 [[bin]]
 name = "stream"
 path = "src/main.rs"
+
+[target.'cfg(windows)'.dependencies]
+openssl-sys = "0.9"
 
 [dependencies]
 actix-rt = "2.9.0"
