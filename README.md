@@ -2,14 +2,16 @@
 
 [![made-with-rust](https://img.shields.io/badge/Made%20with-Rust-black?style=for-the-badge&logo=Rust)][rust]
 
-[![build](https://github.com/thevickypedia/RuStream/actions/workflows/release.yml/badge.svg)][build]
+[![build](https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml/badge.svg)][build]
 
 #### Summary
 [`RuStream`][1] is an application written in Rust to stream videos using Actix API via authenticated sessions.
 
 ## Usage
 
-#### Download Executable
+<details>
+<summary><strong>Download OS specific Executable</strong></summary>
+
 ###### macOS
 ```shell
 curl -o asset -LH "Accept: application/octet-stream" "https://github.com/thevickypedia/RuStream/releases/latest/download/RuStream-Darwin-x86_64.tar.gz"
@@ -29,6 +31,7 @@ curl -o asset -LH "Accept: application/octet-stream" "https://github.com/thevick
 ```shell
 curl -o asset -LH "Accept: application/octet-stream" "https://github.com/thevickypedia/RuStream/releases/latest/download/RuStream-Windows-x86_64.zip"
 ```
+</details>
 
 #### Arguments
 - `debug` - Enable debug level logging
@@ -57,5 +60,5 @@ Licensed under the [MIT License][2]
 
 [1]: https://github.com/thevickypedia/RuStream
 [2]: https://github.com/thevickypedia/RuStream/blob/main/LICENSE
-[build]: https://github.com/thevickypedia/RuStream/actions/workflows/release.yml
+[build]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml
 [rust]: https://www.rust-lang.org/
