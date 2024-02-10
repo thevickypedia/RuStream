@@ -16,9 +16,9 @@ pub async fn start() -> io::Result<()> {
 
     let build_info = constant::build_info();
     squire::startup::init_logger(args.debug, &build_info);
-    println!("Welcome to RuStream[{}] - {}", build_info.pkg_version, build_info.description);
-    let arts = vec![squire::ascii_art::DOG, squire::ascii_art::DOLPHIN, squire::ascii_art::HORSE];
-    println!("{}", arts.choose(&mut rand::thread_rng()).unwrap().to_string());
+    println!("Welcome to RuStream [v{}] - {}", build_info.pkg_version, build_info.description);
+    let arts = [squire::ascii_art::DOG, squire::ascii_art::DOLPHIN, squire::ascii_art::HORSE];
+    println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
 
     let config = squire::startup::get_config(args);
     // Create a dedicated clone, since it will be used within closure

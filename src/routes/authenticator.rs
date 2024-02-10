@@ -100,7 +100,7 @@ pub fn verify_login(
         log::warn!("Authorization header was missing");
         err_response = "No credentials received";
     }
-    return Err(err_response.to_string());
+    Err(err_response.to_string())
 }
 
 pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
