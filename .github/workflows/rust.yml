@@ -23,7 +23,7 @@ jobs:
       pkg-name: ${{ steps.get-package-info.outputs.pkg_name }}
       bin-name: ${{ steps.get-package-info.outputs.bin_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Get Package Name
         id: get-package-info
         run: |
@@ -127,7 +127,7 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -194,7 +194,7 @@ jobs:
     if: needs.release.outputs.release-flag == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Release Crate
         run: |
           cargo login ${{ secrets.CRATES_TOKEN }}
