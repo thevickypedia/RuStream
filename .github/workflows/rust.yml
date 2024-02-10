@@ -32,13 +32,13 @@ jobs:
           echo "pkg_name=$pkg_name" >> $GITHUB_ENV
           echo "pkg_name=$pkg_name" >> "$GITHUB_OUTPUT"
 
-          bin_name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].targets[0].name')
+          bin_name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].targets[] | select(.kind[] == "bin" or .crate_types[] == "bin") | .name')
           echo "Bin Name: $bin_name"
           echo "bin_name=$bin_name" >> $GITHUB_ENV
           echo "bin_name=$bin_name" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Set Release Flag  # Release flag is set only for a push on main branch
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         id: set-release-flag
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
