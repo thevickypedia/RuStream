@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: write
     outputs:
+      release-id: ${{ steps.create-release.outputs.release_id }}
       release-flag: ${{ steps.set-release-flag.outputs.release_flag }}
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +24,6 @@ jobs:
         shell: bash
       - name: Set Release Flag  # Release flag is set only for a push on main branch
         id: set-release-flag
-        if: github.event_name == 'push'
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           latest_version=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions[0].num')
@@ -40,11 +40,28 @@ jobs:
           fi
           echo "pkg_version=$current_version" >> $GITHUB_ENV
         shell: bash
-      - name: Release Crate
+      - name: Create New Release
+        id: create-release
         if: env.release == 'true'
         run: |
-          cargo login ${{ secrets.CRATES_TOKEN }}
-          cargo publish --allow-dirty  # Set allow-dirty since building will create a /target folder that will be uncommitted in git
+          release_tag="v${{ env.pkg_version }}"
+          cargo_prerelease=("alpha" "beta" "rc")
+          prerelease=false
+          for cargo_pre in "${cargo_prerelease[@]}"; do
+            if [[ $pkg_version == *"$cargo_pre"* ]]; then
+              prerelease=true
+              break
+            fi
+          done
+          commit_msg="Release compiled executable for $release_tag"
+          release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
+          response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+            -d "$release_data" \
+            "https://api.github.com/repos/${{ github.repository }}/releases")
+
+          release_id=$(echo $response | jq -r .id)
+          echo "Release ID: $release_id"
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Build
         if: env.release == 'false'
@@ -66,12 +83,13 @@ jobs:
             name: RuStream-Linux-x86_64.tar.gz
             command: build
 
-          - release_for: Windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            bin: stream.exe
-            name: RuStream-Windows-x86_64.zip
-            command: build
+# todo: Currently failing due to OpenSSL requirement on Windows
+#          - release_for: Windows-x86_64
+#            os: windows-latest
+#            target: x86_64-pc-windows-msvc
+#            bin: stream.exe
+#            name: RuStream-Windows-x86_64.zip
+#            command: build
 
           - release_for: macOS-x86_64
             os: macOS-latest
@@ -144,6 +162,18 @@ jobs:
         run: |
           curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
           -H "Content-Type: application/octet-stream" \
-          --data-binary @"${{ env.asset_name }}" \
-          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=${{ matrix.platform.name }}"
+          --data-binary @"${{ matrix.platform.name }}" \
+          "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.release.outputs.release-id }}/assets?name=${{ matrix.platform.name }}"
+        shell: bash
+
+  publish-crate:
+    needs: release
+    if: needs.release.outputs.release-flag == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Release Crate
+        run: |
+          cargo login ${{ secrets.CRATES_TOKEN }}
+          cargo publish --allow-dirty  # Set allow-dirty since building will create a /target folder that will be uncommitted in git
         shell: bash
