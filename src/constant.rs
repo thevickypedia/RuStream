@@ -1,4 +1,3 @@
-use std::{env, path};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -7,45 +6,6 @@ use lazy_static::lazy_static;
 use minijinja::Environment;
 
 use crate::template;
-
-pub fn get_binary() -> String {
-    let binary = env::args().next().unwrap();
-    path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
-}
-
-#[derive(Debug)]
-pub struct Cargo {
-    pub binary: String,
-    pub manifest_dir: String,
-    pub authors: Vec<String>,
-    pub description: String,
-    pub homepage: String,
-    pub pkg_name: String,
-    pub pkg_repo: String,
-    pub pkg_version: String,
-    pub pkg_version_major: String,
-    pub pkg_version_minor: String,
-    pub pkg_version_patch: String,
-    pub pkg_version_pre: String,
-}
-
-pub fn build_info() -> Cargo {
-    let cargo = Cargo {
-        binary: get_binary(),
-        manifest_dir: env::var("CARGO_MANIFEST_DIR").unwrap_or("NA".to_string()),
-        authors: env::var("CARGO_PKG_AUTHORS").unwrap_or_default().split(',').map(String::from).collect(),
-        description: env::var("CARGO_PKG_DESCRIPTION").unwrap_or("NA".to_string()),
-        homepage: env::var("CARGO_PKG_HOMEPAGE").unwrap_or("NA".to_string()),
-        pkg_name: env::var("CARGO_PKG_NAME").unwrap_or("NA".to_string()),
-        pkg_repo: env::var("CARGO_PKG_REPOSITORY").unwrap_or("NA".to_string()),
-        pkg_version: env::var("CARGO_PKG_VERSION").unwrap_or("NA".to_string()),
-        pkg_version_major: env::var("CARGO_PKG_VERSION_MAJOR").unwrap_or("NA".to_string()),
-        pkg_version_minor: env::var("CARGO_PKG_VERSION_MINOR").unwrap_or("NA".to_string()),
-        pkg_version_patch: env::var("CARGO_PKG_VERSION_PATCH").unwrap_or("NA".to_string()),
-        pkg_version_pre: env::var("CARGO_PKG_VERSION_PRE").unwrap_or("NA".to_string()),
-    };
-    cargo
-}
 
 lazy_static! {
     pub static ref FERNET: Fernet = Fernet::new(&generate_key()).unwrap();

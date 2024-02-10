@@ -38,6 +38,24 @@ curl -o asset -LH "Accept: application/octet-stream" "https://github.com/thevick
 
 #### Flags
 - `--filename` / `-f` - Filename (JSON) for the secrets config
+- `--version` / `-v` - Get package version
+
+#### Config file
+[RuStream][1] requires a JSON file with secrets loaded as key-value paris.
+
+<details>
+<summary><i><strong>Sample content of JSON file</strong></i></summary>
+
+```json
+{
+  "authorization": {"rustic":  "S0m3rAn0mP@ssW0rD"},
+  "video_source": "/Users/hannibal/Downloads/stream",
+  "video_port": 5883,
+  "file_formats": [".mov", ".mp4", ".mkv"],
+  "workers": 10
+}
+```
+</details>
 
 ## Crate
 https://crates.io/crates/RuStream

@@ -14,9 +14,8 @@ mod routes;
 pub async fn start() -> io::Result<()> {
     let args = squire::parser::arguments();
 
-    let build_info = constant::build_info();
-    squire::startup::init_logger(args.debug, &build_info);
-    println!("Welcome to RuStream [v{}] - {}", build_info.pkg_version, build_info.description);
+    squire::startup::init_logger(args.debug);
+    println!("Welcome to RuStream - A Rust API, to stream videos using Actix framework, via authenticated sessions");
     let arts = [squire::ascii_art::DOG, squire::ascii_art::DOLPHIN, squire::ascii_art::HORSE];
     println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
 

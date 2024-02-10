@@ -38,15 +38,20 @@ pub fn arguments() -> Args {
                 debug = true;
             }
             "-h" | "--help" => {
-                let helper = "\nMandatory Args:\n
-        authorization: Dictionary of key-value pairs with username as key and password as value.\n
+                let helper = "RuStream takes the arguments, debug, \
+                --filename/-f and --version/-v\n\n\
+        debug: Optional flag to enable debug level logging\n\
+        --filename: JSON filename with the following arguments as a feed.\n\
+        --version: Get the package version.\n\
+        \nMandatory Args:\n
+        authorization: Dictionary of key-value pairs with username as key and password as value.
         video_source: Source path for video files.\n\n\
         Optional Args:\n
-        video_host: IP address to host the video. Defaults to 127.0.0.1\n
-        video_port: Port number to host the application. Defaults to 8000\n
-        file_formats: Sequence of supported video file formats. Defaults to (.mp4, .mov)\n
-        workers: Number of workers to spin up the uvicorn server. Defaults to 1\n
-        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n\n"
+        video_host: IP address to host the video. Defaults to 127.0.0.1
+        video_port: Port number to host the application. Defaults to 8000
+        file_formats: Sequence of supported video file formats. Defaults to (.mp4, .mov)
+        workers: Number of workers to spin up the server. Defaults to the number of physical cores.
+        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n"  // todo: to be implemented
                     .to_string();
                 println!("{}", helper);
                 exit(0)

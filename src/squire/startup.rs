@@ -1,20 +1,17 @@
 use std::{env, path};
 use std::sync::Arc;
 
-use crate::constant;
 use crate::squire::parser::Args;
 use crate::squire::settings::Config;
 
-pub fn init_logger(debug: bool, build_info: &constant::Cargo) {
+pub fn init_logger(debug: bool) {
     let logging_level;
     if debug {
-        logging_level = format!("actix_web=debug,actix_server=info,{}=debug,{}=debug",
-                                build_info.binary, build_info.pkg_name);
+        logging_level = "actix_web=debug,actix_server=info,stream=debug,RuStream=debug";
         env::set_var("RUST_BACKTRACE", "1");
     } else {
         // set actix logging to warning mode since it becomes too noisy when streaming a giant video file
-        logging_level = format!("actix_web=warn,actix_server=warn,{}=info,{}=info",
-                                build_info.binary, build_info.pkg_name);
+        logging_level = "actix_web=warn,actix_server=warn,stream=info,RuStream=info";
         env::set_var("RUST_BACKTRACE", "0");
     }
     env::set_var("RUST_LOG", logging_level);
@@ -23,6 +20,7 @@ pub fn init_logger(debug: bool, build_info: &constant::Cargo) {
 
 pub fn get_config(args: Args) -> Arc<Config> {
     let filename = if args.filename.is_empty() {
+        log::warn!("Missing 'filename' argument, assuming default ('config.json')");
         "config.json".to_string()
     } else {
         args.filename
