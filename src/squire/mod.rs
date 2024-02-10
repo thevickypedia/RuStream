@@ -4,3 +4,4 @@ pub mod startup;
 pub mod secure;
 pub mod fileio;
 pub mod logger;
+pub mod ascii_art;

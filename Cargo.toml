@@ -1,13 +1,14 @@
 # https://doc.rust-lang.org/cargo/getting-started/first-steps.html#first-steps-with-cargo
 [package]
-name = "RuStream"
+name = "rustream"
 version = "0.0.1-a"
-description = "Rustic API to stream videos using Actix API via authenticated sessions"
+description = "An API written in Rust, to stream videos using Actix framework, via authenticated sessions"
 license = "MIT"
 documentation = "https://thevickypedia.github.io/RuStream"
 homepage = "https://github.com/thevickypedia/RuStream"
 repository = "https://github.com/thevickypedia/RuStream"
 edition = "2021"
+authors = ["Vignesh Rao"]
 
 [[bin]]
 name = "stream"
