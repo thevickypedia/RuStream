@@ -1,10 +1,13 @@
 name: Build, test, upload artifact and release crate
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
 
 env:
   CARGO_TERM_COLOR: always

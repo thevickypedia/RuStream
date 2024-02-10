@@ -12,5 +12,6 @@ Cargo.lock
 
 # RustRover IDE
 .idea
+
+# Secrets mapping
 config.json
-src_test/
