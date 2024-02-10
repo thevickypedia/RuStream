@@ -129,21 +129,36 @@ jobs:
           cd \Tools
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
+          echo ("vcpkg_dir=" + $pwd) >> $env:GITHUB_ENV
           .\bootstrap-vcpkg.bat
           .\vcpkg.exe install openssl:x64-windows-static
 
-          $env:OPENSSL_DIR = 'C:\Tools\vcpkg\installed\x64-windows-static'
+          $env:OPENSSL_DIR = 'D:\Tools\vcpkg\installed\x64-windows-static'
           $env:OPENSSL_STATIC = 'Yes'
           [System.Environment]::SetEnvironmentVariable('OPENSSL_DIR', $env:OPENSSL_DIR, [System.EnvironmentVariableTarget]::User)
           [System.Environment]::SetEnvironmentVariable('OPENSSL_STATIC', $env:OPENSSL_STATIC, [System.EnvironmentVariableTarget]::User)
 
+          cd "D:\Tools\vcpkg\installed\x64-windows-static" && dir
+
       - name: Build
         run: |
+          if [ "${{ matrix.platform.os }}" == "windows-latest" ]; then
+            echo "Setting vcpkg env vars for OpenSSL in Windows"
+            export OPENSSL_DIR="${{ env.vcpkg_dir }}\installed\x64-windows-static"
+            export OPENSSL_STATIC="Yes"
+            export VCPKG_ROOT="${{ env.vcpkg_dir }}\installed\x64-windows-static"
+          fi
           cargo build --release
         shell: bash
 
       - name: Run tests
         run: |
+          if [ "${{ matrix.platform.os }}" == "windows-latest" ]; then
+            echo "Setting vcpkg env vars for OpenSSL in Windows"
+            export OPENSSL_DIR="${{ env.vcpkg_dir }}\installed\x64-windows-static"
+            export OPENSSL_STATIC="Yes"
+            export VCPKG_ROOT="${{ env.vcpkg_dir }}\installed\x64-windows-static"
+          fi
           cargo test
         shell: bash
 
