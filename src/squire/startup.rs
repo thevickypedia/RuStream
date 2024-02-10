@@ -1,25 +1,20 @@
 use std::{env, path};
 use std::sync::Arc;
-use crate::constant;
 
+use crate::constant;
 use crate::squire::parser::Args;
 use crate::squire::settings::Config;
-
-pub fn get_binary() -> String {
-    let binary = env::args().next().unwrap();
-    path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
-}
 
 pub fn init_logger(debug: bool, build_info: &constant::Cargo) {
     let logging_level;
     if debug {
         logging_level = format!("actix_web=debug,actix_server=info,{}=debug,{}=debug",
-                                    build_info.binary, build_info.pkg_name);
+                                build_info.binary, build_info.pkg_name);
         env::set_var("RUST_BACKTRACE", "1");
     } else {
         // set actix logging to warning mode since it becomes too noisy when streaming a giant video file
         logging_level = format!("actix_web=warn,actix_server=warn,{}=info,{}=info",
-                                    build_info.binary, build_info.pkg_name);
+                                build_info.binary, build_info.pkg_name);
         env::set_var("RUST_BACKTRACE", "0");
     }
     env::set_var("RUST_LOG", logging_level);

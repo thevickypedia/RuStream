@@ -1,6 +1,6 @@
+use std::{path, thread};
 use std::collections::HashMap;
 use std::net::ToSocketAddrs;
-use std::{path, thread};
 
 use serde::{Deserialize, Serialize};
 

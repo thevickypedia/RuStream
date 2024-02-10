@@ -1,17 +1,17 @@
-/// Create a Fernet object to encrypt and decrypt session token.
-///
-/// References:
-///     https://docs.rs/fernet/latest/fernet/
-
+use std::{env, path};
 use std::collections::HashMap;
-use std::env;
 use std::sync::Mutex;
 
 use fernet::Fernet;
 use lazy_static::lazy_static;
-use minijinja::{Environment};
+use minijinja::Environment;
+
 use crate::template;
-use crate::squire::startup::get_binary;
+
+pub fn get_binary() -> String {
+    let binary = env::args().next().unwrap();
+    path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
+}
 
 #[derive(Debug)]
 pub struct Cargo {
@@ -51,6 +51,10 @@ lazy_static! {
     pub static ref FERNET: Fernet = Fernet::new(&generate_key()).unwrap();
 }
 
+/// Create a Fernet object to encrypt and decrypt session token.
+///
+/// References:
+///     https://docs.rs/fernet/latest/fernet/
 fn generate_key() -> String {
     Fernet::generate_key()
 }

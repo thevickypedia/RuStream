@@ -1,5 +1,6 @@
-use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse};
+use actix_web::http::StatusCode;
+
 use crate::{squire, template};
 
 #[get("/health")]

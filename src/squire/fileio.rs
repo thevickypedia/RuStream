@@ -86,7 +86,7 @@ pub fn srt_to_vtt(input_file: &String) -> bool {
         let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
             .getattr("srt_to_vtt")?
             .into();
-        app.call1(py, (input_file,))
+        app.call1(py, (input_file, ))
     });
     match from_python.unwrap().to_string().as_str() {
         "true" => true,
