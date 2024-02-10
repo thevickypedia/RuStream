@@ -164,17 +164,19 @@ jobs:
           cargo test
         shell: bash
 
-      - name: Copy Artifacts
+      - name: Copy Artifacts (Windows)
+        if: ${{ matrix.platform.os == 'windows-latest' }}
         run: |
-          if [ "${{ matrix.platform.os }}" == "windows-latest" ]; then
-            mkdir -p ${{ needs.release.outputs.pkg-name }}
-            cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
-            Compress-Archive -DestinationPath ${{ matrix.platform.name }} -Path ${{ needs.release.outputs.pkg-name }}/
-          else
-            mkdir -p ${{ needs.release.outputs.pkg-name }}
-            cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
-            tar -zcvf ${{ matrix.platform.name }} ${{ needs.release.outputs.pkg-name }}/
-          fi
+          mkdir -p ${{ needs.release.outputs.pkg-name }}
+          cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
+          Compress-Archive -DestinationPath ${{ matrix.platform.name }} -Path ${{ needs.release.outputs.pkg-name }}/
+
+      - name: Copy Artifacts (macOS/Ubuntu)
+        if: ${{ matrix.platform.os != 'windows-latest' }}
+        run: |
+          mkdir -p ${{ needs.release.outputs.pkg-name }}
+          cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
+          tar -zcvf ${{ matrix.platform.name }} ${{ needs.release.outputs.pkg-name }}/
 
       - name: Upload Asset to Release
         run: |
