@@ -2,6 +2,9 @@ name: Build, test, upload artifact and release crate
 
 on:
   push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -23,6 +26,7 @@ jobs:
           echo "pkg_name=$name" >> $GITHUB_ENV
         shell: bash
       - name: Set Release Flag  # Release flag is set only for a push on main branch
+        if: github.event_name == 'push'
         id: set-release-flag
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
