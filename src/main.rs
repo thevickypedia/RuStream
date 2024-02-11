@@ -1,7 +1,6 @@
-#[allow(non_snake_case)]
-use RuStream::start;
+use rustream;
 
 #[actix_rt::main]
 async fn main() {
-    start().await.unwrap();
+    rustream::start().await.unwrap();
 }

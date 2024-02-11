@@ -33,6 +33,23 @@ curl -o asset -LH "Accept: application/octet-stream" "https://github.com/thevick
 ```
 </details>
 
+<details>
+<summary><strong>Add to existing project</strong></summary>
+
+> It is always update to the latest version before running.
+
+###### Sample main.rs
+```rust
+use rustream;
+
+#[actix_rt::main]
+async fn main() {
+    rustream::start().await.unwrap();
+}
+```
+
+</details>
+
 #### Arguments
 - `debug` - Enable debug level logging
 

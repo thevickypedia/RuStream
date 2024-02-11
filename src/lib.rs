@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate actix_web;
 
-use std::{env, io};
+use std::io;
 
 use actix_web::{App, HttpServer, middleware, web};
 use rand::prelude::SliceRandom;
@@ -12,10 +12,11 @@ mod constant;
 mod routes;
 
 pub async fn start() -> io::Result<()> {
+    let cargo = constant::build_info();
     let args = squire::parser::arguments();
 
-    squire::startup::init_logger(args.debug);
-    println!("Welcome to RuStream - A Rust API, to stream videos using Actix framework, via authenticated sessions");
+    squire::startup::init_logger(args.debug, &cargo);
+    println!("{}[v{}] - {}", cargo.pkg_name, cargo.pkg_version, cargo.description);
     let arts = [squire::ascii_art::DOG, squire::ascii_art::DOLPHIN, squire::ascii_art::HORSE];
     println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
 
@@ -23,7 +24,8 @@ pub async fn start() -> io::Result<()> {
     // Create a dedicated clone, since it will be used within closure
     let config_clone = config.clone();
     let host = format!("{}:{}", config.video_host, config.video_port);
-    log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)", env!("CARGO_PKG_NAME"), config.workers, host);
+    log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
+        cargo.pkg_name, config.workers, host);
     /*
         || syntax is creating a closure that serves as the argument to the HttpServer::new() method.
         The closure is defining the configuration for the Actix web server.

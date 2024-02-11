@@ -1,20 +1,21 @@
 use std::{env, path};
 use std::sync::Arc;
+use crate::constant::Cargo;
 
 use crate::squire::parser::Args;
 use crate::squire::settings::Config;
 
-pub fn init_logger(debug: bool) {
-    let logging_level;
+pub fn init_logger(debug: bool, cargo: &Cargo) {
     if debug {
-        logging_level = "actix_web=debug,actix_server=info,stream=debug,RuStream=debug";
+        env::set_var("RUST_LOG", format!("actix_web=debug,actix_server=info,{}=debug,{}=debug",
+                                         cargo.binary, cargo.crate_name));
         env::set_var("RUST_BACKTRACE", "1");
     } else {
         // set actix logging to warning mode since it becomes too noisy when streaming a giant video file
-        logging_level = "actix_web=warn,actix_server=warn,stream=info,RuStream=info";
+        env::set_var("RUST_LOG", format!("actix_web=warn,actix_server=warn,{}=info,{}=info",
+                                         cargo.binary, cargo.crate_name));
         env::set_var("RUST_BACKTRACE", "0");
     }
-    env::set_var("RUST_LOG", logging_level);
     env_logger::init();
 }
 
