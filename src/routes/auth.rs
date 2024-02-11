@@ -102,9 +102,17 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
+    let default_values = squire::settings::default_file_formats();
+    let file_format;
     // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
-    let file_format = config.file_formats.iter().collect_tuple().unwrap();
-    let args = (config.video_source.to_string_lossy().to_string(), file_format);
+    let _file_format = config.file_formats.iter().collect_tuple();
+    if _file_format.is_none() {
+        log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
+        file_format = default_values.iter().collect_tuple();
+    } else {
+        file_format = _file_format
+    }
+    let args = (config.video_source.to_string_lossy().to_string(), file_format.unwrap());
     let listing_page = squire::fileio::get_all_stream_content(args);
     let template = constant::ENV.lock().unwrap();
     let listing = template.get_template("listing").unwrap();

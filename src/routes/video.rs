@@ -90,8 +90,17 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     let template = constant::ENV.lock().unwrap();
     if target.is_file() {
         let landing = template.get_template("landing").unwrap();
-        let file_format = config.file_formats.iter().collect_tuple().unwrap();
-        let args = (&target_str, file_format);
+        let default_values = squire::settings::default_file_formats();
+        let file_format;
+        // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
+        let _file_format = config.file_formats.iter().collect_tuple();
+        if _file_format.is_none() {
+            log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
+            file_format = default_values.iter().collect_tuple();
+        } else {
+            file_format = _file_format
+        }
+        let args = (&target_str, file_format.unwrap());
         let iter = squire::fileio::get_iter(args);
         // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
         let render_path = format!("/video?file={}",
@@ -127,8 +136,17 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             .content_type("text/html; charset=utf-8").body(response_body);
     } else if target.is_dir() {
         let child_dir = target.iter().last().unwrap().to_string_lossy().to_string();
-        let file_format = config.file_formats.iter().collect_tuple().unwrap();
-        let args = (target_str, child_dir, file_format);
+        let default_values = squire::settings::default_file_formats();
+        let file_format;
+        // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
+        let _file_format = config.file_formats.iter().collect_tuple();
+        if _file_format.is_none() {
+            log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
+            file_format = default_values.iter().collect_tuple();
+        } else {
+            file_format = _file_format
+        }
+        let args = (target_str, child_dir, file_format.unwrap());
         let listing_page = squire::fileio::get_dir_stream_content(args);
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)

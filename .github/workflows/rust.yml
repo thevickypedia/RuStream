@@ -132,6 +132,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.9
+      - name: Update Rust
+        # print it with style
+        run: |
+          printf '*%.0s' {1..60} && printf "\n"
+          echo "Existing rust version: $(rustc --version)"
+          printf '*%.0s' {1..60} && printf "\n\n"
+          rustup update && printf "\n"
+          printf '*%.0s' {1..60} && printf "\n"
+          echo "Updated rust version: $(rustc --version)"
+          printf '*%.0s' {1..60} && printf "\n"
 
       - name: Install OpenSSL static for Windows
         # https://github.com/sfackler/rust-openssl/issues/1086
