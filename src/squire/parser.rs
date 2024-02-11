@@ -51,7 +51,7 @@ pub fn arguments() -> Args {
         video_port: Port number to host the application. Defaults to 8000
         file_formats: Sequence of supported video file formats. Defaults to (.mp4, .mov)
         workers: Number of workers to spin up the server. Defaults to the number of physical cores.
-        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n"  // todo: to be implemented
+        website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n"
                     .to_string();
                 println!("{}", helper);
                 exit(0)

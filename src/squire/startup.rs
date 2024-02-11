@@ -35,7 +35,8 @@ pub fn get_config(args: Args) -> Arc<Config> {
                         config = Arc::new(raw_config);
                     }
                     Err(err) => {
-                        panic!("Error deserializing JSON: {}", err);
+                        log::error!("Error deserializing JSON");
+                        panic!("\n{}\n", err);
                     }
                 }
             }
