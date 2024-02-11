@@ -11,6 +11,15 @@ mod template;
 mod constant;
 mod routes;
 
+/// Contains entrypoint and initializer settings to trigger the asynchronous HTTPServer
+///
+/// # Example
+/// ```no_run
+/// #[actix_rt::main]
+/// async fn main() {
+///     rustream::start().await.unwrap();
+/// }
+/// ```
 pub async fn start() -> io::Result<()> {
     let cargo = constant::build_info();
     let args = squire::parser::arguments();

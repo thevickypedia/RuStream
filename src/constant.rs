@@ -13,6 +13,7 @@ pub fn get_binary() -> String {
     path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
 }
 
+/// Struct to store the cargo information
 #[derive(Debug)]
 pub struct Cargo {
     pub binary: String,
@@ -30,10 +31,12 @@ pub struct Cargo {
     pub pkg_version_pre: String,
 }
 
+/// Uses compile time macros to load Cargo metadata via environment variables during compilation process
+///
 /// ## References
-/// - https://doc.rust-lang.org/cargo/reference/environment-variables.html
-/// - https://github.com/rust-lang/cargo/issues/8251#issuecomment-631731144
-/// - https://github.com/rust-lang/cargo/issues/11966#issue-1664748892
+/// - [Official Docs](https://doc.rust-lang.org/cargo/reference/environment-variables.html)
+/// - [GitHub Issues](https://github.com/rust-lang/cargo/issues/8251#issuecomment-631731144)
+/// - [GitHub Issues](https://github.com/rust-lang/cargo/issues/11966#issue-1664748892)
 pub fn build_info() -> Cargo {
     let cargo = Cargo {
         binary: get_binary(),
@@ -57,10 +60,7 @@ lazy_static! {
     pub static ref FERNET: Fernet = Fernet::new(&generate_key()).unwrap();
 }
 
-/// Create a Fernet object to encrypt and decrypt session token.
-///
-/// ## References:
-/// https://docs.rs/fernet/latest/fernet/
+/// Create a [Fernet](https://docs.rs/fernet/latest/fernet/) object to encrypt and decrypt session token.
 fn generate_key() -> String {
     Fernet::generate_key()
 }

@@ -7,8 +7,8 @@ use sha2::{Digest, Sha512};
 
 /// Generates hash value for the given payload using sha512 algorithm
 ///
-/// References:
-///     https://docs.rs/sha2/latest/sha2/#usage
+/// ## References:
+/// - [Official docs](https://docs.rs/sha2/latest/sha2/#usage)
 pub fn calculate_hash(value: String) -> String {
     let mut hasher = Sha512::new();
     hasher.update(value);
@@ -20,8 +20,8 @@ pub fn calculate_hash(value: String) -> String {
 ///
 /// (i.e., a string in which each character in the string is treated as a byte of binary data)
 ///
-/// References:
-///     https://docs.rs/base64/latest/base64/#url-safe-alphabet
+/// ## References:
+/// - [Official docs](https://docs.rs/base64/latest/base64/#url-safe-alphabet)
 #[allow(dead_code)]  // Just for reference
 pub fn base64_encode(value: &str) -> String {
     URL_SAFE.encode(value.as_bytes())
@@ -29,8 +29,8 @@ pub fn base64_encode(value: &str) -> String {
 
 /// Decode a string of data which has been encoded using base64 (similar to the built-in atob function in native JS)
 ///
-/// References:
-///     https://docs.rs/base64/latest/base64/#url-safe-alphabet
+/// ## References:
+/// - [Official Docs](https://docs.rs/base64/latest/base64/#url-safe-alphabet)
 pub fn base64_decode(value: &str) -> Result<String, &'static str> {
     if let Ok(decoded_bytes) = URL_SAFE.decode(value) {
         if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
