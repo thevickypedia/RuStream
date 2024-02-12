@@ -17,7 +17,14 @@ mod routes;
 /// ```no_run
 /// #[actix_rt::main]
 /// async fn main() {
-///     rustream::start().await.unwrap();
+///     match rustream::start().await {
+///         Ok(_) => {
+///             println!("Successfully served session")
+///         }
+///         Err(err) => {
+///             eprintln!("Error starting rustream: {}", err)
+///         }
+///     }
 /// }
 /// ```
 pub async fn start() -> io::Result<()> {
@@ -42,7 +49,7 @@ pub async fn start() -> io::Result<()> {
      */
     HttpServer::new(move || {
         App::new()  // Creates a new Actix web application
-            .wrap(squire::middleware::get_cors(&config_clone.clone().website))
+            .wrap(squire::middleware::get_cors(config_clone.website.clone()))
             .app_data(web::Data::new(config_clone.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests

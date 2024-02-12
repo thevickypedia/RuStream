@@ -14,11 +14,13 @@ use crate::{constant, squire};
 use crate::routes;
 use crate::routes::authenticator::AuthToken;
 
+/// Represents the payload structure for deserializing data from the request query parameters.
 #[derive(Deserialize)]
 pub struct Payload {
     file: String,
 }
 
+/// Represents the paths and filenames for subtitles, including both SRT and VTT formats.
 struct Subtitles {
     srt: PathBuf,
     srt_file: String,
@@ -26,6 +28,16 @@ struct Subtitles {
     vtt_file: String,
 }
 
+/// Constructs a `Subtitles` struct based on the provided `target` path and `target_str`.
+///
+/// # Arguments
+///
+/// * `target` - The target path for the subtitles.
+/// * `target_str` - The string representation of the target path.
+///
+/// # Returns
+///
+/// Returns a `Subtitles` struct containing paths and filenames for both SRT and VTT subtitle files.
 fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
     let sfx = target_str.replace(&*target.extension().unwrap().to_string_lossy(), "");
     let mut srt = target.join(sfx);
@@ -37,7 +49,15 @@ fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
     Subtitles { srt, srt_file, vtt, vtt_file }
 }
 
-/// Build an HTTPResponse for failed session_token verification.
+/// Constructs an `HttpResponse` for failed `session_token` verification.
+///
+/// # Arguments
+///
+/// * `auth_response` - The authentication response containing details of the failure.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` with a redirect, setting a cookie with the failure detail.
 fn failed_auth(auth_response: AuthToken) -> HttpResponse {
     let mut response = HttpResponse::Found();
     // Set to the lowest possible second since deletion is not an option
@@ -49,6 +69,17 @@ fn failed_auth(auth_response: AuthToken) -> HttpResponse {
     response.finish()
 }
 
+/// Handles requests for the '/track/{track_path:.*}' endpoint, serving track files.
+///
+/// # Arguments
+///
+/// * `config` - The configuration settings.
+/// * `request` - The HTTP request.
+/// * `track_path` - The path parameter representing the track file.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` containing the track file content or an error response.
 #[get("/track/{track_path:.*}")]
 pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest, track_path: web::Path<String>) -> HttpResponse {
@@ -70,6 +101,17 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
     }
 }
 
+/// Handles requests for the '/stream/{video_path:.*}' endpoint, serving video files and directories.
+///
+/// # Arguments
+///
+/// * `config` - The configuration settings.
+/// * `request` - The HTTP request.
+/// * `video_path` - The path parameter representing the video file or directory.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` containing the video content or directory listing, or an error response.
 #[get("/stream/{video_path:.*}")]
 pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
@@ -91,15 +133,14 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     if target.is_file() {
         let landing = template.get_template("landing").unwrap();
         let default_values = squire::settings::default_file_formats();
-        let file_format;
         // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
         let _file_format = config.file_formats.iter().collect_tuple();
-        if _file_format.is_none() {
+        let file_format = if _file_format.is_none() {
             log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
-            file_format = default_values.iter().collect_tuple();
+            default_values.iter().collect_tuple()
         } else {
-            file_format = _file_format
-        }
+            _file_format
+        };
         let args = (&target_str, file_format.unwrap());
         let iter = squire::fileio::get_iter(args);
         // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
@@ -124,8 +165,9 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                 subtitle.srt.file_name().unwrap().to_string_lossy(),
                 subtitle.vtt.file_name().unwrap().to_string_lossy());
             if squire::fileio::srt_to_vtt(&subtitle.srt_file.to_string()) {
-                let sfx_file = format!("/track/{}", subtitle.srt_file);
-                // let track_file = form_urlencoded::byte_serialize(sfx_file.as_bytes()).collect::<Vec<_>>().join("");
+                log::debug!("Successfully converted srt to vtt file");
+                let sfx_file = format!("/track/{}", subtitle.vtt_file);
+                // let track_file = form_urlencoded::byte_serialize(vtt_file.as_bytes()).collect::<Vec<_>>().join("");
                 response_body = landing.render(context!(
                     video_title => filepath, path => render_path, previous => iter.previous, next => iter.next,
                     track => sfx_file
@@ -137,15 +179,14 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     } else if target.is_dir() {
         let child_dir = target.iter().last().unwrap().to_string_lossy().to_string();
         let default_values = squire::settings::default_file_formats();
-        let file_format;
         // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
         let _file_format = config.file_formats.iter().collect_tuple();
-        if _file_format.is_none() {
+        let file_format = if _file_format.is_none() {
             log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
-            file_format = default_values.iter().collect_tuple();
+            default_values.iter().collect_tuple()
         } else {
-            file_format = _file_format
-        }
+            _file_format
+        };
         let args = (target_str, child_dir, file_format.unwrap());
         let listing_page = squire::fileio::get_dir_stream_content(args);
         let listing = template.get_template("listing").unwrap();
@@ -163,6 +204,17 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     })
 }
 
+/// Handles requests for the '/video' endpoint, serving video content for streaming.
+///
+/// # Arguments
+///
+/// * `config` - The configuration settings.
+/// * `request` - The HTTP request.
+/// * `info` - The query parameter containing the file information.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` containing the video content or an error response.
 #[get("/video")]
 pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>,
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {

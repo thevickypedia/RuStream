@@ -3,15 +3,35 @@ use actix_web::http::StatusCode;
 
 use crate::{squire, template};
 
+/// Handles the health endpoint, returning a JSON response indicating the server is healthy.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` with a status of 200 (OK), content type "application/json",
+/// and a JSON body containing the string "Healthy".
 #[get("/health")]
 pub async fn health() -> HttpResponse {
-    return HttpResponse::Ok().content_type("application/json").json("Healthy");
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json("Healthy")
 }
 
+/// Handles the root endpoint, logging the connection and returning an HTML response.
+///
+/// # Arguments
+///
+/// * `request` - The HTTP request received for the root endpoint.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` with a status of 200 (OK), content type "text/html; charset=utf-8",
+/// and the body containing HTML content from the `template::INDEX`.
 #[get("/")]
 pub async fn root(request: HttpRequest) -> HttpResponse {
+    // Log the connection using the squire::logger::log_connection function.
     squire::logger::log_connection(&request);
-    return HttpResponse::build(StatusCode::OK)
+
+    HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(template::INDEX);
+        .body(template::INDEX)
 }

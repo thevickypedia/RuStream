@@ -13,12 +13,18 @@ lazy_static::lazy_static! {
     static ref SESSION_MAPPING: std::sync::Mutex<HashMap<String, String>> = std::sync::Mutex::new(HashMap::new());
 }
 
+/// Represents user credentials extracted from an authorization header.
+///
+/// Contains the username, signature, and timestamp obtained by decoding and parsing the authorization header.
 struct Credentials {
     username: String,
     signature: String,
     timestamp: String,
 }
 
+/// Represents the result of authentication, indicating whether it was successful or not.
+///
+/// If successful, it includes the username and a generated key for the session.
 pub struct AuthToken {
     pub ok: bool,
     pub detail: String,
@@ -28,11 +34,18 @@ pub struct AuthToken {
 
 /// Extracts credentials from the authorization header in the following steps
 ///
-/// 1. Decodes the base64 encoded header
+/// # Arguments
 ///
-/// 2. Splits it into 3 parts with first one being the username followed by the signature and timestamp
+/// * `authorization` - An optional `HeaderValue` containing the authorization header.
 ///
-/// 3. Converts the username from hex into a string.
+/// # See Also
+/// - Decodes the base64 encoded header
+/// - Splits it into 3 parts with first one being the username followed by the signature and timestamp
+/// - Converts the username from hex into a string.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the extracted `Credentials` or an error message if extraction fails.
 fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credentials, &'static str> {
     let header = authorization.unwrap().to_str().unwrap().to_string();
     // base64 encoded in JavaScript using inbuilt btoa function
@@ -57,6 +70,17 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credential
     };
 }
 
+/// Verifies user login based on extracted credentials and configuration settings.
+///
+/// # Arguments
+///
+/// * `request` - The HTTP request containing the authorization header.
+/// * `config` - The configuration settings containing user credentials and session duration.
+///
+/// # Returns
+///
+/// Returns a `Result` containing a `HashMap` with session information if authentication is successful,
+/// otherwise returns an error message.
 pub fn verify_login(
     request: &HttpRequest,
     config: &Data<Arc<squire::settings::Config>>,
@@ -103,6 +127,16 @@ pub fn verify_login(
     Err(err_response.to_string())
 }
 
+/// Verifies a session token extracted from an HTTP request against stored session mappings and configuration.
+///
+/// # Arguments
+///
+/// * `request` - The HTTP request containing the session token in the form of a cookie.
+/// * `config` - The configuration settings containing session duration.
+///
+/// # Returns
+///
+/// Returns an `AuthToken` indicating the result of the token verification.
 pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");

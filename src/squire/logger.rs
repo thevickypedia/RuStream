@@ -2,6 +2,13 @@ use actix_web::HttpRequest;
 
 use crate::constant;
 
+/// Logs connection information for an incoming HTTP request.
+///
+/// # Arguments
+///
+/// * `request` - A reference to the Actix web `HttpRequest` object.
+///
+/// This function logs the host and user agent information of the incoming connection.
 pub fn log_connection(request: &HttpRequest) {
     let mut tracker = constant::HOST_SERVE.lock().unwrap();
     let host = request.connection_info().host().to_owned();

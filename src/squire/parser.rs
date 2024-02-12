@@ -1,29 +1,20 @@
 use std::env;
 use std::process::exit;
 
+/// Represents the command-line arguments for RuStream.
 pub struct Args {
+    /// JSON filename where the config information is stored.
     pub debug: bool,
     pub filename: String,
 }
 
-
+/// Parses and returns the command-line arguments for RuStream.
+///
+/// # Returns
+///
+/// An `Args` struct containing parsed command-line arguments.
 pub fn arguments() -> Args {
     let args: Vec<String> = env::args().collect();
-
-    let usage = format!(
-        "flags:\n\
-        \tdebug:{}Enable debug mode for detailed logging\n\
-        \tversion:{}Get version of the package\n\n\
-        arguments:\n\
-        \t-f / --filename{}JSON filename where the config information is stored \
-        (use -h/--help to vide the args required in the JSON file)\n",
-        " ".repeat(6), " ".repeat(8), " ".repeat(8)
-    );
-    if args.is_empty() {
-        // If no arguments are provided, display usage instructions
-        println!("Usage: {} [OPTIONS]\n\n{}", args[0], usage);
-        exit(1)
-    }
 
     let mut debug = false;
 
@@ -43,7 +34,7 @@ pub fn arguments() -> Args {
         debug: Optional flag to enable debug level logging\n\
         --filename: JSON filename with the following arguments as a feed.\n\
         --version: Get the package version.\n\
-        \nMandatory Args:\n
+        \nJSON file content\nMandatory Args:\n
         authorization: Dictionary of key-value pairs with username as key and password as value.
         video_source: Source path for video files.\n\n\
         Optional Args:\n
@@ -53,7 +44,7 @@ pub fn arguments() -> Args {
         workers: Number of workers to spin up the server. Defaults to the number of physical cores.
         website: List of websites (supports regex) to add to CORS configuration. Required only if tunneled via CDN\n"
                     .to_string();
-                println!("{}", helper);
+                println!("Usage: {} [OPTIONS]\n\n{}", args[0], helper);
                 exit(0)
             }
             "-V" | "-v" | "--version" => {
