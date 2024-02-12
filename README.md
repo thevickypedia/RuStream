@@ -36,8 +36,6 @@ curl -o asset -LH "Accept: application/octet-stream" "https://github.com/thevick
 <details>
 <summary><strong>Add to existing project</strong></summary>
 
-> It is always update to the latest version before running.
-
 ###### Sample main.rs
 ```rust
 use rustream;
