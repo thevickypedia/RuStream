@@ -9,6 +9,7 @@ use minijinja::context;
 use serde::Serialize;
 
 use crate::{constant, routes, squire, template};
+use crate::routes::authenticator::AuthToken;
 
 /// Struct for representing a JSON Response with a redirect URL.
 #[derive(Serialize)]
@@ -119,19 +120,9 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
-
     if !auth_response.ok {
-        let mut response = HttpResponse::Found();
-
-        // Set to the lowest possible second since deletion is not an option
-        let age = Duration::new(0, 1);
-        let cookie = Cookie::build("detail", auth_response.detail)
-            .http_only(true).max_age(age).finish();
-        response.cookie(cookie);
-        response.append_header(("Location", "/error"));
-        return response.finish();
+        return failed_auth(auth_response);
     }
-
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
 
@@ -164,6 +155,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/error")]
 pub async fn error(request: HttpRequest) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {
+        log::info!("Error response for /error: {}", detail.value());
         let template = constant::ENV.lock().unwrap();
         let session = template.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::OK)
@@ -171,7 +163,31 @@ pub async fn error(request: HttpRequest) -> HttpResponse {
             .body(session.render(context!(reason => detail.value())).unwrap());
     }
 
+    log::info!("Sending unauthorized response for /error");
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(template::UNAUTHORIZED);
+}
+
+/// Constructs an `HttpResponse` for failed `session_token` verification.
+///
+/// # Arguments
+///
+/// * `auth_response` - The authentication response containing details of the failure.
+///
+/// # Returns
+///
+/// Returns an `HttpResponse` with a redirect, setting a cookie with the failure detail.
+pub fn failed_auth(auth_response: AuthToken) -> HttpResponse {
+    let mut response = HttpResponse::build(StatusCode::FOUND);
+    let detail = auth_response.detail;
+    let age = Duration::new(3, 0);
+    let cookie = Cookie::build("detail", detail)
+        .path("/error")
+        .http_only(true)
+        .max_age(age)
+        .finish();
+    response.cookie(cookie);
+    response.append_header(("Location", "/error"));
+    response.finish()
 }

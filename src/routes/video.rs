@@ -2,8 +2,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
-use actix_web::cookie::Cookie;
-use actix_web::cookie::time::Duration;
 use actix_web::http::StatusCode;
 use itertools::Itertools;
 use minijinja::context;
@@ -12,7 +10,6 @@ use url::form_urlencoded;
 
 use crate::{constant, squire};
 use crate::routes;
-use crate::routes::authenticator::AuthToken;
 
 /// Represents the payload structure for deserializing data from the request query parameters.
 #[derive(Deserialize)]
@@ -47,27 +44,6 @@ fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
     Subtitles { srt, vtt, vtt_file }
 }
 
-/// Constructs an `HttpResponse` for failed `session_token` verification.
-///
-/// # Arguments
-///
-/// * `auth_response` - The authentication response containing details of the failure.
-///
-/// # Returns
-///
-/// Returns an `HttpResponse` with a redirect, setting a cookie with the failure detail.
-fn failed_auth(auth_response: AuthToken) -> HttpResponse {
-    let mut response = HttpResponse::Found();
-    // todo: session page never shows up, either due to low cookie lifetime or no cookie transfer
-    // Set to the lowest possible second since deletion is not an option
-    let age = Duration::new(1, 0);
-    let cookie = Cookie::build("detail", auth_response.detail)
-        .http_only(true).max_age(age).finish();
-    response.cookie(cookie);
-    response.append_header(("Location", "/error"));
-    response.finish()
-}
-
 /// Handles requests for the '/track/{track_path:.*}' endpoint, serving track files.
 ///
 /// # Arguments
@@ -84,13 +60,14 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest, track_path: web::Path<String>) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return failed_auth(auth_response);
+        return routes::auth::failed_auth(auth_response);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     let track_file = track_path.to_string();
     log::info!("Track requested: {}", &track_file);
     let filepath = PathBuf::new().join(&config.video_source).join(track_file);
+    log::debug!("Track file lookup: {}", &filepath.to_string_lossy());
     match std::fs::read_to_string(&filepath) {
         Ok(content) => HttpResponse::Ok()
             .content_type("text/plain")
@@ -117,7 +94,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return failed_auth(auth_response);
+        return routes::auth::failed_auth(auth_response);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
@@ -224,7 +201,7 @@ pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return failed_auth(auth_response);
+        return routes::auth::failed_auth(auth_response);
     }
     squire::logger::log_connection(&request);
     let host = request.connection_info().host().to_owned();

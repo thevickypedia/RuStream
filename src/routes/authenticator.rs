@@ -141,10 +141,11 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
     // fixme: debate if this is useful, since unauthorized page will be rendered instead of session if server restarts
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");
-        let ok = false;
-        let detail = "".to_string();
-        let username = "NA".to_string();
-        return AuthToken { ok, detail, username };
+        return AuthToken {
+            ok: false,
+            detail: "Server doesn't recognize your session".to_string(),
+            username: "NA".to_string()
+        };
     }
     if let Some(cookie) = request.cookie("session_token") {
         if let Ok(decrypted) = constant::FERNET.decrypt(cookie.value()) {
@@ -156,19 +157,21 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
             let current_time = Utc::now().timestamp();
             // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
             if stored_key != *cookie_key {
-                return AuthToken { ok: false, detail: "Invalid session token".to_string(), username };
+                return AuthToken {
+                    ok: false, detail: "Invalid session token".to_string(), username
+                };
             }
             if current_time - timestamp > config.session_duration as i64 {
                 return AuthToken { ok: false, detail: "Session Expired".to_string(), username };
             }
             return AuthToken {
-                ok: true, detail: format!("Session valid for {}s", timestamp +
-                    config.session_duration as i64 - current_time), username
+                ok: true,
+                detail: format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time),
+                username
             };
         }
     }
-    let ok = false;
-    let detail = "Invalid session token".to_string();
-    let username = "NA".to_string();
-    AuthToken { ok, detail, username }
+    AuthToken {
+        ok: false, detail: "Session information not found".to_string(), username: "NA".to_string()
+    }
 }

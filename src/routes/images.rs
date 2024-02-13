@@ -24,7 +24,7 @@ pub async fn image_endpoint(request: HttpRequest, filename: web::Path<String>) -
         });
     }
     let filepath = IMAGES.join(&filename.to_string());
-    log::info!("File lookup: {}", &filepath.to_string_lossy());
+    log::debug!("Image file lookup: {}", &filepath.to_string_lossy());
     match web::block(|| std::fs::read(filepath)).await {
         Ok(image_content) => HttpResponse::Ok()
             .content_type(filetype)
