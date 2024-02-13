@@ -16,3 +16,22 @@ pub static SESSION: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/sr
 
 /// Unauthorized page template that is served as HTML response after failed authentication.
 pub static UNAUTHORIZED: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/templates/unauthorized.html"));
+
+// fn template_path(filename: &'static str) -> String {
+//     PathBuf::new()
+//         .join(env!("CARGO_MANIFEST_DIR"))
+//         .join("src")
+//         .join("templates")
+//         .join(format!("{}.html", filename))
+//         .to_string_lossy()
+//         .to_string()
+// }
+//
+// pub fn jinja_template() -> Arc<Mutex<minijinja::Environment<'static>>> {
+//     let mut env = minijinja::Environment::new();
+//     for html in ["landing", "listing", "logout", "session", "unauthorized"] {
+//         env.add_template(&html, &template_path(html)).unwrap();
+//     }
+//     let mutex = Mutex::new(env.to_owned());
+//     Arc::new(mutex)
+// }

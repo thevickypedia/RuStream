@@ -78,6 +78,16 @@ jobs:
           echo "Release ID: $release_id"
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
         shell: bash
+      - name: Update Rust
+        if: env.release == 'false'
+        run: |
+          printf '*%.0s' {1..60} && printf "\n"
+          echo "Existing rust version: $(rustc --version)"
+          printf '*%.0s' {1..60} && printf "\n\n"
+          rustup update && printf "\n"
+          printf '*%.0s' {1..60} && printf "\n"
+          echo "Updated rust version: $(rustc --version)"
+          printf '*%.0s' {1..60} && printf "\n"
       - name: Build verbose
         if: env.release == 'false'
         run: cargo build --verbose
