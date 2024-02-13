@@ -13,17 +13,16 @@ lazy_static! {
 pub async fn image_endpoint(request: HttpRequest, filename: web::Path<String>) -> HttpResponse {
     squire::logger::log_connection(&request);
     log::info!("Image requested: {}", &filename);
-    let allowed_types = vec!["jpeg", "jpg", "png", "gif"];
+    let allowed_types = ["jpeg", "jpg", "png", "gif"];
     let extension = filename.split('.').last().unwrap_or("NA");
-    let filetype;
-    if allowed_types.contains(&extension) {
-        filetype = format!("image/{}", &extension);
+    let filetype = if allowed_types.contains(&extension) {
+        format!("image/{}", &extension)
     } else {
         return HttpResponse::BadRequest().json(routes::auth::DetailError {
             detail: format!("'{}' is not an allowed filetype", &extension)
         });
-    }
-    let filepath = IMAGES.join(&filename.to_string());
+    };
+    let filepath = IMAGES.join(filename.to_string());
     log::debug!("Image file lookup: {}", &filepath.to_string_lossy());
     match web::block(|| std::fs::read(filepath)).await {
         Ok(image_content) => HttpResponse::Ok()
