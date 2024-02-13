@@ -21,7 +21,7 @@
             display: block;
         }
         body {
-            background-image: url("https://vigneshrao.com/img/auth_server/bg.jpg");
+            background-color: #151515;
         }
     </style>
     <noscript>
@@ -32,16 +32,14 @@
                 overflow: hidden;
             }
         </style>
-        <div style="position: fixed; text-align:center;
-                height: 100%; width: 100%; background-image: url('https://vigneshrao.com/img/auth_server/bg.jpg')">
+        <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515;">
             <h2 style="margin-top:5%">This page requires JavaScript
                 to be enabled.
                 <br><br>
                 Please refer <a href="https://www.enable-javascript.com/">enable-javascript</a> for how to.
             </h2>
             <p>
-                <img src="https://vigneshrao.com/img/auth_server/javascript.gif" width="230" height="200"
-                     alt="loader" class="center">
+                <img id="javascript_img" src="" width="230" height="200" alt="loader" class="center">
             </p>
             <form>
                 <button type="submit" onClick="<meta httpEquiv='refresh' content='0'>">RETRY</button>
@@ -53,8 +51,7 @@
 <h2 style="margin-top:5%">LOGIN FAILED</h2>
 <h3>USER ERROR - REPLACE USER</h3>
 <p>
-    <img src="https://vigneshrao.com/img/auth_server/no_auth.gif" width="210" height="170" alt="loader"
-         class="center">
+    <img id="no_auth_img" src="" width="210" height="170" alt="loader" class="center">
 </p>
 <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
 <br>
@@ -62,4 +59,18 @@
 </button>
 <h4>Click <a href="https://vigneshrao.com/contact">HERE</a> to reach out.</h4>
 </body>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let image = document.getElementById("no_auth_img");
+        let currentLocation = window.origin;
+        image.src = currentLocation + "/images/no_auth.gif";
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let image = document.getElementById("javascript_img");
+        let currentLocation = window.origin;
+        image.src = currentLocation + "/images/javascript.gif";
+    });
+</script>
 </html>

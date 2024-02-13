@@ -138,6 +138,7 @@ pub fn verify_login(
 ///
 /// Returns an `AuthToken` indicating the result of the token verification.
 pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
+    // fixme: debate if this is useful, since unauthorized page will be rendered instead of session if server restarts
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");
         let ok = false;
@@ -155,18 +156,15 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
             let current_time = Utc::now().timestamp();
             // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
             if stored_key != *cookie_key {
-                let ok = false;
-                let detail = "Invalid session token".to_string();
-                return AuthToken { ok, detail, username };
+                return AuthToken { ok: false, detail: "Invalid session token".to_string(), username };
             }
             if current_time - timestamp > config.session_duration as i64 {
-                let ok = false;
-                let detail = "Session Expired".to_string();
-                return AuthToken { ok, detail, username };
+                return AuthToken { ok: false, detail: "Session Expired".to_string(), username };
             }
-            let ok = true;
-            let detail = format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time);
-            return AuthToken { ok, detail, username };
+            return AuthToken {
+                ok: true, detail: format!("Session valid for {}s", timestamp +
+                    config.session_duration as i64 - current_time), username
+            };
         }
     }
     let ok = false;

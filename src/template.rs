@@ -1,3 +1,4 @@
+// todo: Convert all this to PathBuff, and fix inconsistencies in usage
 /// Index page template that is served as HTML response for the root endpoint.
 pub static INDEX: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/templates/index.html"));
 

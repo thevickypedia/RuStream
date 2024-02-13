@@ -23,7 +23,6 @@ pub struct Payload {
 /// Represents the paths and filenames for subtitles, including both SRT and VTT formats.
 struct Subtitles {
     srt: PathBuf,
-    srt_file: String,
     vtt: PathBuf,
     vtt_file: String,
 }
@@ -44,9 +43,8 @@ fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
     let mut vtt = srt.clone();
     srt.set_extension("srt");
     vtt.set_extension("vtt");
-    let srt_file = srt.to_string_lossy().to_string();
-    let vtt_file = vtt.to_string_lossy().to_string();
-    Subtitles { srt, srt_file, vtt, vtt_file }
+    let vtt_file = vtt.file_name().unwrap().to_string_lossy().to_string();
+    Subtitles { srt, vtt, vtt_file }
 }
 
 /// Constructs an `HttpResponse` for failed `session_token` verification.
@@ -60,6 +58,7 @@ fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
 /// Returns an `HttpResponse` with a redirect, setting a cookie with the failure detail.
 fn failed_auth(auth_response: AuthToken) -> HttpResponse {
     let mut response = HttpResponse::Found();
+    // todo: session page never shows up, either due to low cookie lifetime or no cookie transfer
     // Set to the lowest possible second since deletion is not an option
     let age = Duration::new(1, 0);
     let cookie = Cookie::build("detail", auth_response.detail)
@@ -89,14 +88,15 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
-    let filepath = track_path.to_string();
-    log::info!("File requested: {}", &filepath);
+    let track_file = track_path.to_string();
+    log::info!("Track requested: {}", &track_file);
+    let filepath = PathBuf::new().join(&config.video_source).join(track_file);
     match std::fs::read_to_string(&filepath) {
         Ok(content) => HttpResponse::Ok()
             .content_type("text/plain")
             .body(content),
         Err(_) => HttpResponse::NotFound().json(routes::auth::DetailError {
-            detail: format!("'{}' was not found", filepath)
+            detail: format!("'{}' was not found", &filepath.to_string_lossy())
         })
     }
 }
@@ -154,8 +154,10 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             )).unwrap();
         let subtitle = subtitles(target, target_str);
         if subtitle.vtt.exists() {
-            let sfx_file = format!("/track/{}", subtitle.vtt_file);
-            // let track_file = form_urlencoded::byte_serialize(sfx_file.as_bytes()).collect::<Vec<_>>().join("");
+            let track_file = form_urlencoded::byte_serialize(
+                subtitle.vtt_file.as_bytes()
+            ).collect::<Vec<_>>().join("");
+            let sfx_file = format!("/track/{}", track_file);
             response_body = landing.render(context!(
                 video_title => filepath, path => render_path, previous => iter.previous, next => iter.next,
                 track => sfx_file
@@ -164,10 +166,12 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             log::info!("Converting '{}' to '{}' for subtitles",
                 subtitle.srt.file_name().unwrap().to_string_lossy(),
                 subtitle.vtt.file_name().unwrap().to_string_lossy());
-            if squire::fileio::srt_to_vtt(&subtitle.srt_file.to_string()) {
+            if squire::fileio::srt_to_vtt(&subtitle.srt.to_string_lossy().to_string()) {
                 log::debug!("Successfully converted srt to vtt file");
-                let sfx_file = format!("/track/{}", subtitle.vtt_file);
-                // let track_file = form_urlencoded::byte_serialize(vtt_file.as_bytes()).collect::<Vec<_>>().join("");
+                let track_file = form_urlencoded::byte_serialize(
+                    subtitle.vtt_file.as_bytes()
+                ).collect::<Vec<_>>().join("");
+                let sfx_file = format!("/track/{}", track_file);
                 response_body = landing.render(context!(
                     video_title => filepath, path => render_path, previous => iter.previous, next => iter.next,
                     track => sfx_file
