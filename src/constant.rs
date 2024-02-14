@@ -65,15 +65,36 @@ fn generate_key() -> String {
     Fernet::generate_key()
 }
 
+// fn get_landing(filename: &str) -> String {
+//     let filepath = Path::new(env!("CARGO_MANIFEST_DIR"))
+//         .join("src")
+//         .join("templates")
+//         .join(filename)
+//         .into_os_string().into_string().unwrap();
+//     std::fs::read_to_string(&filepath).unwrap_or_else(|_| String::new())
+// }
+//
+// pub fn jinja_template() -> Mutex<Environment<'static>> {
+//     let mut env = Environment::new();
+//     for html in ["landing", "listing", "logout", "session", "unauthorized"] {
+//         let extract = Path::new(env!("CARGO_MANIFEST_DIR"))
+//             .join("src")
+//             .join("templates")
+//             .join(format!("{}.html", html))
+//             .into_os_string().into_string().unwrap();
+//         env.add_template(&html, &std::fs::read_to_string(&extract).unwrap_or_else(|_| String::new())).unwrap();
+//     }
+//     let mutex = Mutex::new(env.to_owned());
+//     mutex
+// }
+
 lazy_static! {
     pub static ref ENV: Mutex<Environment<'static>> = Mutex::new({
         let mut env = Environment::new();
-        env.add_template("index", template::INDEX).unwrap();
         env.add_template("landing", template::LANDING).unwrap();
         env.add_template("listing", template::LISTING).unwrap();
         env.add_template("logout", template::LOGOUT).unwrap();
         env.add_template("session", template::SESSION).unwrap();
-        env.add_template("unauthorized", template::UNAUTHORIZED).unwrap();
         env
     });
 }
