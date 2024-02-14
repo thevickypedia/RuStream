@@ -23,6 +23,10 @@ path = "src/lib.rs"
 name = "rustream"
 path = "src/main.rs"
 
+# [build]
+# export RUSTDOCFLAGS="document-private-items no-deps"
+# rustdocflags = ["document-private-items no-deps"]
+
 [dependencies]
 actix-rt = "2.9.0"
 actix-web = "4.5.1"
