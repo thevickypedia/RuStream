@@ -138,7 +138,6 @@ pub fn verify_login(
 ///
 /// Returns an `AuthToken` indicating the result of the token verification.
 pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
-    // fixme: debate if this is useful, since unauthorized page will be rendered instead of session if server restarts
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");
         return AuthToken {
@@ -169,9 +168,14 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
                 detail: format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time),
                 username
             };
+        } else {
+            return AuthToken {
+                ok: false, detail: "Invalid session token".to_string(), username: "NA".to_string()
+            };
         }
-    }
-    AuthToken {
-        ok: false, detail: "Session information not found".to_string(), username: "NA".to_string()
+    } else {
+        return AuthToken {
+            ok: false, detail: "Session information not found".to_string(), username: "NA".to_string()
+        };
     }
 }

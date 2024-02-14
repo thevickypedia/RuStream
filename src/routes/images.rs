@@ -12,7 +12,7 @@ lazy_static! {
 #[get("/images/{filename:.*}")]
 pub async fn image_endpoint(request: HttpRequest, filename: web::Path<String>) -> HttpResponse {
     squire::logger::log_connection(&request);
-    log::info!("Image requested: {}", &filename);
+    log::debug!("Image requested: {}", &filename);
     let allowed_types = ["jpeg", "jpg", "png", "gif"];
     let extension = filename.split('.').last().unwrap_or("NA");
     let filetype = if allowed_types.contains(&extension) {

@@ -24,6 +24,24 @@ struct Subtitles {
     vtt_file: String,
 }
 
+/// URL encodes the provided path string.
+///
+/// This function takes a reference to a `String` representing a path,
+/// encodes it using the `form_urlencoded` crate, and returns the encoded string.
+///
+/// # Arguments
+///
+/// * `path` - The input path string to be URL encoded.
+///
+/// # Returns
+///
+/// Returns a URL encoded string.
+fn url_encode(path: &String) -> String {
+    form_urlencoded::byte_serialize(path.as_bytes())
+        .collect::<Vec<_>>()
+        .join("")
+}
+
 /// Constructs a `Subtitles` struct based on the provided `target` path and `target_str`.
 ///
 /// # Arguments
@@ -65,7 +83,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     let track_file = track_path.to_string();
-    log::info!("Track requested: {}", &track_file);
+    log::debug!("Track requested: {}", &track_file);
     let filepath = PathBuf::new().join(&config.video_source).join(track_file);
     log::debug!("Track file lookup: {}", &filepath.to_string_lossy());
     match std::fs::read_to_string(&filepath) {
@@ -99,15 +117,16 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     let filepath = video_path.to_string();
-    let target = config.video_source.join(&filepath);
-    let target_str = target.to_string_lossy().to_string();
-    if !target.exists() {
+    let __target = config.video_source.join(&filepath);
+    if !__target.exists() {
         return HttpResponse::NotFound().json(routes::auth::DetailError {
             detail: format!("'{}' was not found", filepath)
         });
     }
+    let __target_str = __target.to_string_lossy().to_string();
+    let __filename = __target.file_name().unwrap().to_string_lossy().to_string();
     let template = constant::ENV.lock().unwrap();
-    if target.is_file() {
+    if __target.is_file() {
         let landing = template.get_template("landing").unwrap();
         let default_values = squire::settings::default_file_formats();
         // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
@@ -118,25 +137,30 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         } else {
             _file_format
         };
-        let args = (&target_str, file_format.unwrap());
+        // full path required to read directory
+        let args = (&__target_str, file_format.unwrap());
         let iter = squire::fileio::get_iter(args);
         // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
-        let render_path = format!("/video?file={}",
-                                  form_urlencoded::byte_serialize(target_str.as_bytes())
-                                      .collect::<Vec<_>>()
-                                      .join(""));
+        let render_path = format!("/video?file={}", url_encode(&filepath));
         // Rust doesn't allow re-assignment, so might as well create a mutable variable
+        // Load the default response body and re-construct with subtitles if present
         let mut response_body = landing.render(context!(
-                video_title => filepath, path => render_path, previous => iter.previous, next => iter.next
-            )).unwrap();
-        let subtitle = subtitles(target, target_str);
+            video_title => &filepath, path => render_path,
+            previous => &iter.previous,
+            next => &iter.next,
+            previous_title => &iter.previous,
+            next_title => &iter.next,
+        )).unwrap();
+        let subtitle = subtitles(__target, __target_str);
         if subtitle.vtt.exists() {
-            let track_file = form_urlencoded::byte_serialize(
-                subtitle.vtt_file.as_bytes()
-            ).collect::<Vec<_>>().join("");
+            let track_file = url_encode(&subtitle.vtt_file);
             let sfx_file = format!("/track/{}", track_file);
             response_body = landing.render(context!(
-                video_title => filepath, path => render_path, previous => iter.previous, next => iter.next,
+                video_title => &filepath, path => render_path,
+                previous => &iter.previous,
+                next => &iter.next,
+                previous_title => &iter.previous,
+                next_title => &iter.next,
                 track => sfx_file
             )).unwrap();
         } else if subtitle.srt.exists() {
@@ -145,20 +169,22 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                 subtitle.vtt.file_name().unwrap().to_string_lossy());
             if squire::fileio::srt_to_vtt(&subtitle.srt.to_string_lossy().to_string()) {
                 log::debug!("Successfully converted srt to vtt file");
-                let track_file = form_urlencoded::byte_serialize(
-                    subtitle.vtt_file.as_bytes()
-                ).collect::<Vec<_>>().join("");
+                let track_file = url_encode(&subtitle.vtt_file);
                 let sfx_file = format!("/track/{}", track_file);
                 response_body = landing.render(context!(
-                    video_title => filepath, path => render_path, previous => iter.previous, next => iter.next,
+                    video_title => &filepath, path => render_path,
+                    previous => &iter.previous,
+                    next => &iter.next,
+                    previous_title => &iter.previous,
+                    next_title => &iter.next,
                     track => sfx_file
                 )).unwrap();
             }
         }
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8").body(response_body);
-    } else if target.is_dir() {
-        let child_dir = target.iter().last().unwrap().to_string_lossy().to_string();
+    } else if __target.is_dir() {
+        let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
         let default_values = squire::settings::default_file_formats();
         // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
         let _file_format = config.file_formats.iter().collect_tuple();
@@ -168,7 +194,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         } else {
             _file_format
         };
-        let args = (target_str, child_dir, file_format.unwrap());
+        let args = (__target_str, child_dir, file_format.unwrap());
         let listing_page = squire::fileio::get_dir_stream_content(args);
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
@@ -179,7 +205,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     }
     log::error!("Something went really wrong");
     log::error!("Video Path: {}", filepath);
-    log::error!("Target: {}", target_str);
+    log::error!("Target: {}", __target_str);
     HttpResponse::ExpectationFailed().json(routes::auth::DetailError {
         detail: format!("'{}' was neither a file nor a folder", filepath)
     })

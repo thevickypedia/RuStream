@@ -13,7 +13,8 @@ mod routes;
 
 /// Contains entrypoint and initializer settings to trigger the asynchronous HTTPServer
 ///
-/// # Example
+/// # Examples
+///
 /// ```no_run
 /// #[actix_rt::main]
 /// async fn main() {
