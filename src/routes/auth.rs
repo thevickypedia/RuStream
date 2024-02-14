@@ -28,7 +28,7 @@ pub struct DetailError {
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request` - HTTP request object.
+/// * `request`: Actix HttpRequest containing information about the incoming request.
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: HttpRequest) -> HttpResponse {
     let verified = routes::authenticator::verify_login(&request, &config);
@@ -67,7 +67,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request` - HTTP request object.
+/// * `request`: Actix HttpRequest containing information about the incoming request.
 #[get("/logout")]
 pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest) -> HttpResponse {
@@ -115,7 +115,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request` - HTTP request object.
+/// * `request`: Actix HttpRequest containing information about the incoming request.
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
@@ -151,7 +151,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `request` - HTTP request object.
+/// * `request`: Actix HttpRequest containing information about the incoming request.
 #[get("/error")]
 pub async fn error(request: HttpRequest) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {

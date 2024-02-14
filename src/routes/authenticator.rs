@@ -163,19 +163,19 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
             if current_time - timestamp > config.session_duration as i64 {
                 return AuthToken { ok: false, detail: "Session Expired".to_string(), username };
             }
-            return AuthToken {
+            AuthToken {
                 ok: true,
                 detail: format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time),
                 username
-            };
+            }
         } else {
-            return AuthToken {
+            AuthToken {
                 ok: false, detail: "Invalid session token".to_string(), username: "NA".to_string()
-            };
+            }
         }
     } else {
-        return AuthToken {
+        AuthToken {
             ok: false, detail: "Session information not found".to_string(), username: "NA".to_string()
-        };
+        }
     }
 }

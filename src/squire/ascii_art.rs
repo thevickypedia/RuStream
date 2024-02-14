@@ -1,3 +1,8 @@
+// References:
+//  https://www.asciiart.eu/
+//  https://asciiart.cc/
+
+/// ASCII art of a horse
 pub static HORSE: &str = r"
                                                  #    #
                                             %%% ##   ##
@@ -43,6 +48,7 @@ pub static HORSE: &str = r"
 ";
 
 
+/// ASCII art of a dog
 pub static DOG: &str = r###"
            __.
         .-".'                      .--.            _..._
@@ -80,6 +86,7 @@ pub static DOG: &str = r###"
                       '..__L.:-'
 "###;
 
+/// ASCII art of a dolphin
 pub static DOLPHIN: &str = r###"
                                                _______
                                          .,add88YYYYY88ba,
