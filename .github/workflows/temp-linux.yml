@@ -34,7 +34,7 @@ jobs:
         id: create-release
         run: |
           extn="$(date +%s)"
-          release_tag="v1-linux-prerelease${extn}"
+          release_tag="v1-linux-prerelease-${extn}"
           cargo_prerelease=("alpha" "beta" "rc")
           prerelease=true
           commit_msg="Release compiled executable for $release_tag"
