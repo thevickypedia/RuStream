@@ -83,13 +83,19 @@ jobs:
           echo "Updated rust version: $(rustc --version)"
           printf '*%.0s' {1..60} && printf "\n"
 
+      - name: Install binary prerequisites
+        run: |
+          sudo apt-get install libssl-dev python3.9 libpython3.9-dev
+          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+
       - name: Build and test
         run: |
-          sudo apt-get install libssl-dev
-          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
           cargo build --release
           cargo test
         shell: bash
+
+      - name: Verify Library Paths
+        run: ldd ./target/release/${{ matrix.platform.bin }}
 
       - name: Copy Artifacts
         run: |
