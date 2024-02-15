@@ -33,7 +33,8 @@ jobs:
       - name: Create New Release
         id: create-release
         run: |
-          release_tag="v${{ env.pkg_version }}"
+          extn="$(date +%s)"
+          release_tag="v1-linux-prerelease${extn}"
           cargo_prerelease=("alpha" "beta" "rc")
           prerelease=true
           commit_msg="Release compiled executable for $release_tag"
@@ -88,7 +89,6 @@ jobs:
           export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
           cargo build --release
           cargo test
-
         shell: bash
 
       - name: Copy Artifacts
@@ -96,6 +96,7 @@ jobs:
           mkdir -p ${{ needs.release.outputs.pkg-name }}
           cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
           tar -zcvf ${{ matrix.platform.name }} ${{ needs.release.outputs.pkg-name }}/
+        shell: bash
 
       - name: Upload Asset to Release
         run: |
