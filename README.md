@@ -44,7 +44,7 @@ use rustream;
 async fn main() {
     match rustream::start().await {
         Ok(_) => {
-            println!("Successfully served session")
+            println!("RuStream session terminated")
         }
         Err(err) => {
             eprintln!("Error starting rustream: {}", err)

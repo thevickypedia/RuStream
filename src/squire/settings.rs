@@ -35,9 +35,11 @@ pub struct Config {
     #[serde(default = "default_website")]
     pub website: Vec<String>,
 
-    // Certificate file
+    // Path to the full certificate chain file for SSL certificate
     #[serde(default="default_ssl")]
     pub cert_file: path::PathBuf,
+    // Path to the private key file for SSL certificate
+    #[serde(default="default_ssl")]
     pub key_file: path::PathBuf
 }
 
