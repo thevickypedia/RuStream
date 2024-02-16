@@ -5,6 +5,7 @@ use std::io;
 
 use actix_web::{App, HttpServer, middleware, web};
 use rand::prelude::SliceRandom;
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 mod squire;
 mod template;
@@ -48,7 +49,7 @@ pub async fn start() -> io::Result<()> {
         The closure is defining the configuration for the Actix web server.
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
-    HttpServer::new(move || {
+    let application = move || {
         App::new()  // Creates a new Actix web application
             .wrap(squire::middleware::get_cors(config_clone.website.clone()))
             .app_data(web::Data::new(config_clone.clone()))
@@ -63,10 +64,24 @@ pub async fn start() -> io::Result<()> {
             .service(routes::video::stream)
             .service(routes::video::streaming_endpoint)
             .service(routes::images::image_endpoint)
-    })
+    };
+    let server = HttpServer::new(application)
         .workers(config.workers as usize)
-        .max_connections(config.max_connections as usize)
-        .bind(host)?
+        .max_connections(config.max_connections as usize);
+    // Reference: https://actix.rs/docs/http2/
+    if config.cert_file.exists() && config.key_file.exists() {
+        log::info!("Binding SSL certificate to serve over HTTPS");
+        let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+        builder
+            .set_private_key_file(&config.key_file, SslFiletype::PEM)
+            .unwrap();
+        builder.set_certificate_chain_file(&config.cert_file).unwrap();
+        server.bind_openssl(host, builder)?
         .run()
         .await
+    } else {
+        server.bind(host)?
+        .run()
+        .await
+    }
 }

@@ -34,7 +34,15 @@ pub struct Config {
     /// List of websites (supports regex) to add to CORS configuration.
     #[serde(default = "default_website")]
     pub website: Vec<String>,
+
+    // Certificate file
+    #[serde(default="default_ssl")]
+    pub cert_file: path::PathBuf,
+    pub key_file: path::PathBuf
 }
+
+/// Returns the default value for ssl files
+fn default_ssl() -> path::PathBuf { path::PathBuf::new() }
 
 /// Returns the default video host based on the local machine's IP address.
 fn default_video_host() -> String {
