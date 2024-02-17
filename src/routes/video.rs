@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
@@ -46,19 +46,24 @@ fn url_encode(path: &String) -> String {
 ///
 /// # Arguments
 ///
-/// * `target` - The target path for the subtitles.
-/// * `target_str` - The string representation of the target path.
+/// * `true_path` - True path of the requested video file.
+/// * `relative_path` - The string representation of the relative video path.
 ///
 /// # Returns
 ///
 /// Returns a `Subtitles` struct containing paths and filenames for both SRT and VTT subtitle files.
-fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
-    let sfx = target_str.replace(&*target.extension().unwrap().to_string_lossy(), "");
-    let mut srt = target.join(sfx);
-    let mut vtt = srt.clone();
+fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
+    // Set srt and vtt extensions to true path to check if they exist
+    let mut srt = true_path.clone();
+    let mut vtt = true_path.clone();
     srt.set_extension("srt");
     vtt.set_extension("vtt");
-    let vtt_file = vtt.file_name().unwrap().to_string_lossy().to_string();
+
+    // Set vtt extension to the relative path, so it could be used as a parameter in HTML
+    let mut vtt_filepath = PathBuf::new().join(relative_path);
+    vtt_filepath.set_extension("vtt");
+    let vtt_file = vtt_filepath.to_string_lossy().to_string();
+
     Subtitles { srt, vtt, vtt_file }
 }
 
@@ -73,25 +78,24 @@ fn subtitles(target: PathBuf, target_str: String) -> Subtitles {
 /// # Returns
 ///
 /// Returns an `HttpResponse` containing the track file content or an error response.
-#[get("/track/{track_path:.*}")]
+#[get("/track")]
 pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
-                   request: HttpRequest, track_path: web::Path<String>) -> HttpResponse {
+                   request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
-    let track_file = track_path.to_string();
-    log::debug!("Track requested: {}", &track_file);
-    let filepath = PathBuf::new().join(&config.video_source).join(track_file);
+    log::debug!("Track requested: {}", &info.file);
+    let filepath = Path::new(&config.video_source).join(&info.file);
     log::debug!("Track file lookup: {}", &filepath.to_string_lossy());
     match std::fs::read_to_string(&filepath) {
         Ok(content) => HttpResponse::Ok()
             .content_type("text/plain")
             .body(content),
         Err(_) => HttpResponse::NotFound().json(routes::auth::DetailError {
-            detail: format!("'{}' was not found", &filepath.to_string_lossy())
+            detail: format!("'{}' was not found", &info.file)
         })
     }
 }
@@ -117,12 +121,14 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     let filepath = video_path.to_string();
+    // True path of the video file
     let __target = config.video_source.join(&filepath);
     if !__target.exists() {
         return HttpResponse::NotFound().json(routes::auth::DetailError {
             detail: format!("'{}' was not found", filepath)
         });
     }
+    // True path of the video file as a String
     let __target_str = __target.to_string_lossy().to_string();
     let __filename = __target.file_name().unwrap().to_string_lossy().to_string();
     let template = constant::ENV.lock().unwrap();
@@ -151,10 +157,9 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             previous_title => &iter.previous,
             next_title => &iter.next,
         )).unwrap();
-        let subtitle = subtitles(__target, __target_str);
+        let subtitle = subtitles(__target, &filepath);
         if subtitle.vtt.exists() {
-            let track_file = url_encode(&subtitle.vtt_file);
-            let sfx_file = format!("/track/{}", track_file);
+            let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
             response_body = landing.render(context!(
                 video_title => &filepath, path => render_path,
                 previous => &iter.previous,
@@ -169,8 +174,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                 subtitle.vtt.file_name().unwrap().to_string_lossy());
             if squire::fileio::srt_to_vtt(&subtitle.srt.to_string_lossy().to_string()) {
                 log::debug!("Successfully converted srt to vtt file");
-                let track_file = url_encode(&subtitle.vtt_file);
-                let sfx_file = format!("/track/{}", track_file);
+                let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
                 response_body = landing.render(context!(
                     video_title => &filepath, path => render_path,
                     previous => &iter.previous,
