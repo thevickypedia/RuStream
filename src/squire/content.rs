@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -80,4 +80,57 @@ pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &[String
     }
     files.sort_by_key(|a| natural_sort_key(a.get("name").unwrap()));
     ContentPayload { files, ..Default::default() }
+}
+
+/// Represents an iterator structure with optional previous and next elements.
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Iter {
+    /// Optional previous element in the iteration.
+    pub previous: Option<String>,
+    /// Optional next element in the iteration.
+    pub next: Option<String>,
+}
+
+/// Retrieves iterator information from Python based on the provided arguments.
+///
+/// # Arguments
+///
+/// * `args` - A tuple containing a stream identifier and references to two strings.
+///
+/// # Returns
+///
+/// An `Iter` struct representing the iterator information.
+pub fn get_iter(filepath: &PathBuf, file_formats: &[String]) -> Iter {
+    let parent = filepath.parent().unwrap();
+    let mut dir_content: Vec<String> = fs::read_dir(parent)
+        .ok().unwrap()
+        .flatten()
+        .filter_map(|entry| {
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            let file_extn = Path::new(&file_name).extension().unwrap_or_default().to_string_lossy().to_string();
+            if file_formats.contains(&file_extn) {
+                Some(file_name)
+            } else {
+                None
+            }
+        })
+        .collect();
+    dir_content.sort_by_key(|a| natural_sort_key(a));
+
+    let idx = dir_content.iter().position(|file| file == filepath.file_name().unwrap().to_str().unwrap()).unwrap();
+
+    let previous_ = if idx > 0 {
+        let previous_ = &dir_content[idx - 1];
+        if previous_ == filepath.file_name().unwrap().to_str().unwrap() {
+            None
+        } else {
+            Some(previous_.clone())
+        }
+    } else {
+        None
+    };
+
+    let next_ = dir_content.get(idx + 1).cloned();
+
+    Iter { previous: previous_, next: next_ }
 }

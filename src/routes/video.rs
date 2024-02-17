@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
@@ -132,6 +133,11 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     let template = environment.lock().unwrap();
     if __target.is_file() {
         let landing = template.get_template("landing").unwrap();
+        let start_rust = Instant::now();
+        let rust_iter = squire::content::get_iter(&__target, &config.file_formats);
+        let rust_time_taken = start_rust.elapsed();
+
+        let start_python = Instant::now();
         let default_values = squire::settings::default_file_formats();
         // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
         let _file_format = config.file_formats.iter().collect_tuple();
@@ -144,6 +150,17 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         // full path required to read directory
         let args = (&__target_str, file_format.unwrap());
         let iter = squire::fileio::get_iter(args);
+        let python_time_taken = start_python.elapsed();
+
+        if rust_iter.previous == iter.previous && rust_iter.next == iter.next {
+            // fixme: rust takes ~0.6s while python does the same in ~0.001s
+            println!("Python took: {} seconds", python_time_taken.as_secs_f64());
+            println!("Rust took: {} seconds", rust_time_taken.as_secs_f64());
+        } else {
+            println!("Rust Iterated::{:?}", &rust_iter);
+            println!("Python Iterated::{:?}", &iter);
+        }
+
         // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
         let render_path = format!("/video?file={}", url_encode(&filepath));
         // Rust doesn't allow re-assignment, so might as well create a mutable variable
