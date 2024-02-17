@@ -10,14 +10,14 @@ use std::sync::{Arc, Mutex};
 /// # Returns
 ///
 /// String representation of the file content.
-pub fn get_content(filename: &str) -> String {
+fn get_content(filename: &str) -> String {
     let filepath = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src")
         .join("templates")
         .join(format!("{}.html", filename))
         .to_string_lossy()
         .to_string();
-    std::fs::read_to_string(&filepath).unwrap_or_else(|_| String::new())
+    std::fs::read_to_string(filepath).unwrap_or_else(|_| String::new())
 }
 
 /// Reads all the HTML files in templates directory and loads the content into a Jinja Environment
@@ -31,8 +31,8 @@ pub fn get_content(filename: &str) -> String {
 /// - Unauthorized page template that is served as HTML response after failed authentication.
 pub fn environment() -> Arc<Mutex<minijinja::Environment<'static>>> {
     let mut env = minijinja::Environment::new();
-    for html in ["landing", "listing", "logout", "session"] {
-        let content = get_content(&html);
+    for html in ["index", "landing", "listing", "logout", "session", "unauthorized"] {
+        let content = get_content(html);
         env.add_template_owned(html, content).unwrap();
     }
     let mutex = Mutex::new(env.to_owned());

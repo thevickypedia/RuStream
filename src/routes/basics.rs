@@ -1,7 +1,9 @@
-use actix_web::{HttpRequest, HttpResponse};
+use std::sync::{Arc, Mutex};
+
+use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
 
-use crate::{squire, jinja};
+use crate::squire;
 
 /// Handles the health endpoint, returning a JSON response indicating the server is healthy.
 ///
@@ -26,11 +28,14 @@ pub async fn health() -> HttpResponse {
 ///
 /// Returns an `HttpResponse` with the index page as its body.
 #[get("/")]
-pub async fn root(request: HttpRequest) -> HttpResponse {
+pub async fn root(environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
+                  request: HttpRequest) -> HttpResponse {
     // Log the connection using the squire::logger::log_connection function.
     squire::logger::log_connection(&request);
 
+    let template = environment.lock().unwrap();
+    let index = template.get_template("index").unwrap();
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(jinja::get_content("index"))
+        .body(index.render(minijinja::context!()).unwrap())  // no arguments to render
 }

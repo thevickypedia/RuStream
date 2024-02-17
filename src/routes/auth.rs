@@ -5,10 +5,10 @@ use actix_web::cookie::Cookie;
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
 use itertools::Itertools;
-use minijinja::{context, Environment};
+use minijinja;
 use serde::Serialize;
 
-use crate::{constant, routes, squire, jinja};
+use crate::{constant, routes, squire};
 use crate::routes::authenticator::AuthToken;
 
 /// Struct for representing a JSON Response with a redirect URL.
@@ -70,7 +70,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 /// * `request` - Actix HttpRequest containing information about the incoming request.
 #[get("/logout")]
 pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
-                    environment: web::Data<Arc<Mutex<Environment<'static>>>>,
+                    environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                     request: HttpRequest) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
     let template = environment.lock().unwrap();
@@ -93,7 +93,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
         } else {
             log::warn!("Session information for {} was not stored or no video was played", host);
         }
-        rendered = logout_template.render(context!(detail => "You have been logged out successfully.")).unwrap();
+        rendered = logout_template.render(minijinja::context!(detail => "You have been logged out successfully.")).unwrap();
 
         // Set to the lowest possible second since deletion is not an option
         let age = Duration::new(0, 1);
@@ -103,7 +103,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
     } else {
         log::debug!("No stored session found for {}", host);
         rendered = logout_template.render(
-            context!(detail => "You are not logged in. Please click the button below to proceed.",
+            minijinja::context!(detail => "You are not logged in. Please click the button below to proceed.",
                 show_login => true)
         ).unwrap();
     }
@@ -119,7 +119,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 /// * `request` - Actix HttpRequest containing information about the incoming request.
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
-                  environment: web::Data<Arc<Mutex<Environment<'static>>>>,
+                  environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                   request: HttpRequest) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
@@ -142,11 +142,13 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
     let template = environment.lock().unwrap();
     let listing = template.get_template("listing").unwrap();
 
-    return HttpResponse::build(StatusCode::OK)
+    HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(listing.render(context!(
-                files => listing_page.files, directories => listing_page.directories)).unwrap()
-        );
+        .body(
+            listing.render(minijinja::context!(
+                files => listing_page.files, directories => listing_page.directories)
+            ).unwrap()
+        )
 }
 
 /// Handles the error endpoint, rendering the appropriate HTML page based on session issues.
@@ -155,21 +157,22 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// * `request` - Actix HttpRequest containing information about the incoming request.
 #[get("/error")]
-pub async fn error(environment: web::Data<Arc<Mutex<Environment<'static>>>>,
+pub async fn error(environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                    request: HttpRequest) -> HttpResponse {
+    let template = environment.lock().unwrap();
     if let Some(detail) = request.cookie("detail") {
         log::info!("Error response for /error: {}", detail.value());
-        let template = environment.lock().unwrap();
         let session = template.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
-            .body(session.render(context!(reason => detail.value())).unwrap());
+            .body(session.render(minijinja::context!(reason => detail.value())).unwrap());
     }
 
     log::info!("Sending unauthorized response for /error");
-    return HttpResponse::build(StatusCode::OK)
+    let unauthorized = template.get_template("unauthorized").unwrap();
+    HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(jinja::get_content("unauthorized"));
+        .body(unauthorized.render(minijinja::context!()).unwrap())  // no arguments to render
 }
 
 /// Constructs an `HttpResponse` for failed `session_token` verification.
