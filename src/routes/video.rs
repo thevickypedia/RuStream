@@ -153,12 +153,11 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         let python_time_taken = start_python.elapsed();
 
         if rust_iter.previous == iter.previous && rust_iter.next == iter.next {
-            // fixme: rust takes ~0.6s while python does the same in ~0.001s
-            println!("Python took: {} seconds", python_time_taken.as_secs_f64());
-            println!("Rust took: {} seconds", rust_time_taken.as_secs_f64());
+            println!("iter [py]: {} seconds", python_time_taken.as_secs_f64());
+            println!("iter [rs]: {} seconds", rust_time_taken.as_secs_f64());
         } else {
-            println!("Rust Iterated::{:?}", &rust_iter);
-            println!("Python Iterated::{:?}", &iter);
+            println!("iter [rs]::{:?}", &rust_iter);
+            println!("iter [py]::{:?}", &iter);
         }
 
         // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
@@ -207,7 +206,32 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             .content_type("text/html; charset=utf-8").body(response_body);
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
-        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
+        let start_rust = Instant::now();
+        let listing_page_rust = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
+        let rust_time_taken = start_rust.elapsed();
+
+        let start_python = Instant::now();
+        let default_values = squire::settings::default_file_formats();
+        // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
+        let _file_format = config.file_formats.iter().collect_tuple();
+        let file_format = if _file_format.is_none() {
+            log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
+            default_values.iter().collect_tuple()
+        } else {
+            _file_format
+        };
+        let args = (__target_str, child_dir, file_format.unwrap());
+        let listing_page = squire::fileio::get_dir_stream_content(args);
+        let python_time_taken = start_python.elapsed();
+
+        if listing_page_rust.files == listing_page.files && listing_page_rust.directories == listing_page.directories {
+            println!("listing_page [py]: {} seconds", python_time_taken.as_secs_f64());
+            println!("listing_page [rs]: {} seconds", rust_time_taken.as_secs_f64());
+        } else {
+            println!("listing_page [rs]::{:?}", &listing_page_rust);
+            println!("listing_page [py]::{:?}", &listing_page);
+        }
+
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
