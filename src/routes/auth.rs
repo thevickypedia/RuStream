@@ -28,6 +28,11 @@ pub struct DetailError {
 ///
 /// * `config` - Configuration data for the application.
 /// * `request` - Actix HttpRequest containing information about the incoming request.
+///
+/// # Returns
+///
+/// * `200` - HttpResponse with a session-token and redirect URL to the `/home` entrypoint.
+/// * `401` - HttpResponse with an error message for failed authentication.
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: HttpRequest) -> HttpResponse {
     let verified = routes::authenticator::verify_login(&request, &config);
@@ -145,6 +150,10 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 /// # Arguments
 ///
 /// * `request` - Actix HttpRequest containing information about the incoming request.
+///
+/// # Returns
+///
+/// HttpResponse with either a session expiry or unauthorized message.
 #[get("/error")]
 pub async fn error(environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                    request: HttpRequest) -> HttpResponse {

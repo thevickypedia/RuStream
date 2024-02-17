@@ -143,7 +143,7 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
         return AuthToken {
             ok: false,
             detail: "Server doesn't recognize your session".to_string(),
-            username: "NA".to_string()
+            username: "NA".to_string(),
         };
     }
     if let Some(cookie) = request.cookie("session_token") {
@@ -157,7 +157,9 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
             // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
             if stored_key != *cookie_key {
                 return AuthToken {
-                    ok: false, detail: "Invalid session token".to_string(), username
+                    ok: false,
+                    detail: "Invalid session token".to_string(),
+                    username,
                 };
             }
             if current_time - timestamp > config.session_duration as i64 {
@@ -166,16 +168,20 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
             AuthToken {
                 ok: true,
                 detail: format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time),
-                username
+                username,
             }
         } else {
             AuthToken {
-                ok: false, detail: "Invalid session token".to_string(), username: "NA".to_string()
+                ok: false,
+                detail: "Invalid session token".to_string(),
+                username: "NA".to_string(),
             }
         }
     } else {
         AuthToken {
-            ok: false, detail: "Session information not found".to_string(), username: "NA".to_string()
+            ok: false,
+            detail: "Session information not found".to_string(),
+            username: "NA".to_string(),
         }
     }
 }

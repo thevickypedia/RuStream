@@ -23,9 +23,12 @@ path = "src/lib.rs"
 name = "rustream"
 path = "src/main.rs"
 
-# [build]
+# https://docs.rs/releases/queue
+# https://docs.rs/about/metadata
+# https://doc.rust-lang.org/cargo/reference/config.html?highlight=RUSTDOCFLAGS
 # export RUSTDOCFLAGS="document-private-items no-deps"
-# rustdocflags = ["document-private-items no-deps"]
+[package.metadata.docs.rs]
+rustdoc-args = ["--document-private-items"]
 
 [dependencies]
 actix-rt = "2.9.0"

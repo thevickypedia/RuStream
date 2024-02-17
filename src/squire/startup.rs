@@ -1,7 +1,6 @@
 use std::{env, path};
 use std::sync::Arc;
 
-use crate::constant::Cargo;
 use crate::squire::parser::Args;
 use crate::squire::settings::Config;
 
@@ -11,18 +10,16 @@ use crate::squire::settings::Config;
 ///
 /// * `debug` - A flag indicating whether to enable debug mode for detailed logging.
 /// * `cargo` - A reference to the Cargo struct containing information about the application.
-pub fn init_logger(debug: bool, cargo: &Cargo) {
+pub fn init_logger(debug: bool, crate_name: &String) {
     if debug {
         env::set_var("RUST_LOG", format!(
-            "actix_web=debug,actix_server=info,{}=debug,{}=debug",
-            cargo.binary, cargo.crate_name
+            "actix_web=debug,actix_server=info,{}=debug", crate_name
         ));
         env::set_var("RUST_BACKTRACE", "1");
     } else {
         // Set Actix logging to warning mode since it becomes too noisy when streaming a giant video file.
         env::set_var("RUST_LOG", format!(
-            "actix_web=warn,actix_server=warn,{}=info,{}=info",
-            cargo.binary, cargo.crate_name
+            "actix_web=warn,actix_server=warn,{}=info", crate_name
         ));
         env::set_var("RUST_BACKTRACE", "0");
     }

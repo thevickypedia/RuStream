@@ -1,11 +1,13 @@
 # RuStream
 
-[![made-with-rust](https://img.shields.io/badge/Made%20with-Rust-black?style=for-the-badge&logo=Rust)][rust]
+[![made-with-rust][rust-logo]][rust-src-page]
 
-[![build](https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml/badge.svg)][build]
+[![build][gh-logo]][build]
+[![crates.io][crates-logo]][crates]
+[![docs.rs][docs-logo]][docs]
 
 #### Summary
-[`RuStream`][1] is an application written in Rust to stream videos using Actix API via authenticated sessions.
+[`RuStream`][repo] is an application written in Rust to stream videos using Actix API via authenticated sessions.
 
 ## Usage
 
@@ -63,7 +65,7 @@ async fn main() {
 - `--version` / `-v` - Get package version
 
 #### Config file
-[RuStream][1] requires a JSON file with secrets loaded as key-value paris.
+[RuStream][repo] requires a JSON file with secrets loaded as key-value paris.
 
 <details>
 <summary><i><strong>Sample content of JSON file</strong></i></summary>
@@ -96,9 +98,16 @@ cargo clippy --no-deps --fix --allow-dirty
 
 &copy; Vignesh Rao
 
-Licensed under the [MIT License][2]
+Licensed under the [MIT License][license]
 
-[1]: https://github.com/thevickypedia/RuStream
-[2]: https://github.com/thevickypedia/RuStream/blob/main/LICENSE
+[repo]: https://github.com/thevickypedia/RuStream
+[license]: https://github.com/thevickypedia/RuStream/blob/main/LICENSE
 [build]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml
-[rust]: https://www.rust-lang.org/
+[rust-src-page]: https://www.rust-lang.org/
+[rust-logo]: https://img.shields.io/badge/Made%20with-Rust-black?style=for-the-badge&logo=Rust
+[gh-logo]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml/badge.svg
+[docs-logo]: https://docs.rs/RuStream/badge.svg
+[docs]: https://docs.rs/RuStream
+[crates]: https://crates.io/crates/RuStream
+[gh-checks]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml
+[crates-logo]: https://img.shields.io/crates/v/RuStream.svg

@@ -5,7 +5,6 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE};
 use rand::{Rng, thread_rng};
 use sha2::{Digest, Sha512};
 
-
 /// Calculates the SHA-512 hash value for the given payload.
 ///
 /// # Arguments

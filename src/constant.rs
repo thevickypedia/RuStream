@@ -1,19 +1,13 @@
-use std::{env, path};
+use std::env;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
 use fernet::Fernet;
 use lazy_static::lazy_static;
 
-pub fn get_binary() -> String {
-    let binary = env::args().next().unwrap();
-    path::Path::new(&binary).file_name().unwrap().to_str().unwrap().to_string()
-}
-
-/// Struct to store the cargo information
+/// Struct to store the cargo information gathered at compile time using the `env!` macro.
 #[derive(Debug)]
 pub struct Cargo {
-    pub binary: String,
     pub crate_name: String,
     pub manifest_dir: String,
     pub authors: Vec<String>,
@@ -36,7 +30,6 @@ pub struct Cargo {
 /// - [GitHub Issues](https://github.com/rust-lang/cargo/issues/11966#issue-1664748892)
 pub fn build_info() -> Cargo {
     let cargo = Cargo {
-        binary: get_binary(),
         crate_name: env!("CARGO_CRATE_NAME").to_string(),
         manifest_dir: env!("CARGO_MANIFEST_DIR").to_string(),
         authors: env!("CARGO_PKG_AUTHORS").split(',').map(String::from).collect(),
@@ -54,11 +47,16 @@ pub fn build_info() -> Cargo {
 }
 
 lazy_static! {
-    pub static ref FERNET: Fernet = Fernet::new(&generate_key()).unwrap();
+    pub static ref FERNET: Fernet = Fernet::new(&fernet_key()).unwrap();
 }
 
 /// Create a [Fernet](https://docs.rs/fernet/latest/fernet/) object to encrypt and decrypt session token.
-fn generate_key() -> String {
+///
+/// Generates a random key, that can be safely passed to `Fernet::new()`
+///
+/// # Returns
+/// Random key as a `String`
+fn fernet_key() -> String {
     Fernet::generate_key()
 }
 
