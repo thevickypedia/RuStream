@@ -61,27 +61,23 @@ fn natural_sort_key(filename: &str) -> Vec<std::result::Result<i32, String>> {
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &Vec<String>) -> ContentPayload {
+pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &[String]) -> ContentPayload {
     let mut files = Vec::new();
-    for entry in fs::read_dir(parent).unwrap() {
-        if let Ok(entry) = entry {
-            let file_name = entry.file_name().into_string().unwrap();
-            if file_name.starts_with('_') || file_name.starts_with('.') {
-                continue;
-            }
-            let file_path = Path::new(subdir).join(&file_name);
-            let file_extn = &file_path.extension().unwrap().to_string_lossy().to_string();
-            if file_formats.contains(file_extn) {
-                let map = HashMap::from([
-                    ("name".to_string(), file_name),
-                    ("path".to_string(), file_path.to_string_lossy().to_string())
-                ]);
-                files.push(map);
-            }
+    for entry in fs::read_dir(parent).unwrap().flatten() {
+        let file_name = entry.file_name().into_string().unwrap();
+        if file_name.starts_with('_') || file_name.starts_with('.') {
+            continue;
+        }
+        let file_path = Path::new(subdir).join(&file_name);
+        let file_extn = &file_path.extension().unwrap().to_string_lossy().to_string();
+        if file_formats.contains(file_extn) {
+            let map = HashMap::from([
+                ("name".to_string(), file_name),
+                ("path".to_string(), file_path.to_string_lossy().to_string())
+            ]);
+            files.push(map);
         }
     }
     files.sort_by_key(|a| natural_sort_key(a.get("name").unwrap()));
-    let mut content_payload = ContentPayload::default();
-    content_payload.files = files;
-    content_payload
+    ContentPayload { files, ..Default::default() }
 }
