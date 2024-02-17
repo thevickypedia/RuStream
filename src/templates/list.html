@@ -56,72 +56,90 @@
         a:link { color: blue; }
         a:visited { color: blue; }
         ol {
-          list-style: none;
-          counter-reset: list-counter;
+            list-style: none;
+            counter-reset: list-counter;
         }
         li {
-          counter-increment: list-counter;
-          margin: 0.25rem;
+            counter-increment: list-counter;
+            margin: 0.25rem;
         }
         li::before {
-          content: counter(list-counter);
-          background: #4169E1;
-          width: 2rem;
-          height: 2rem;
-          border-radius: 50%;
-          display: inline-block;
-          line-height: 2rem;
-          color: white;
-          text-align: center;
-          margin-right: 0.5rem;
+            content: counter(list-counter);
+            background: #4169E1;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: inline-block;
+            line-height: 2rem;
+            color: white;
+            text-align: center;
+            margin-right: 0.5rem;
         }
         body {
             font-family: 'PT Serif', serif;
         }
     </style>
 </head>
+<noscript>
+    <style>
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+    <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515;">
+        <h2 style="margin-top:5%">This page requires JavaScript
+            to be enabled.
+            <br><br>
+            Please refer <a href="https://www.enable-javascript.com/">enable-javascript</a> for how to.
+        </h2>
+        <form>
+            <button type="submit" onClick="<meta httpEquiv='refresh' content='0'>">RETRY</button>
+        </form>
+    </div>
+</noscript>
 <body translate="no">
-<div class="toggler fa fa-moon-o"></div>
-<br><br>
-<h1>Video Streaming via Actix</h1>
-<hr>
-<button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
-<button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-<button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
-{% if dir_name or files or directories %}
-    {% if dir_name %}
-        <h3>{{dir_name}}</h3>
-    {% else %}
-        <h3>Files</h3>
-    {% endif %}
-    <ol>
+    <div class="toggler fa fa-moon-o"></div>
+    <br><br>
+    <h1>Video Streaming via Actix</h1>
+    <hr>
+    <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
+    <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
+    <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
+    {% if dir_name or files or directories %}
+        {% if dir_name %}
+            <h3>{{dir_name}}</h3>
+        {% else %}
+            <h3>Files</h3>
+        {% endif %}
+        <ol>
         {% for file in files %}
-        <li><a href="{{file.path}}">{{file.name}}</a></li>
+            <li><a href="{{file.path}}">{{file.name}}</a></li>
         {% endfor %}
-    </ol>
-    {% if directories %}
-    <h3>Directories</h3>
-    <ol>
-        {% for directory in directories %}
-        <li><a href="{{directory.path}}">{{directory.name}}</a></li>
-        {% endfor %}
-    </ol>
+        </ol>
+        {% if directories %}
+            <h3>Directories</h3>
+            <ol>
+            {% for directory in directories %}
+                <li><a href="{{directory.path}}">{{directory.name}}</a></li>
+            {% endfor %}
+            </ol>
+        {% endif %}
+    {% else %}
+        <h3 style="text-align: center">No content was rendered by the server</h3>
     {% endif %}
-{% else %}
-    <h3 style="text-align: center">No content was rendered by the server</h3>
-{% endif %}
-<hr>
-<script>
-    function logOut() {
-        window.location.href = window.location.origin + "/logout";
-    }
-    function goHome() {
-        window.location.href = window.location.origin + "/home";
-    }
-    function goBack() {
-        window.history.back();
-    }
-
-</script>
+    <hr>
+    <script>
+        function logOut() {
+            window.location.href = window.location.origin + "/logout";
+        }
+        function goHome() {
+            window.location.href = window.location.origin + "/home";
+        }
+        function goBack() {
+            window.history.back();
+        }
+    </script>
 </body>
 </html>

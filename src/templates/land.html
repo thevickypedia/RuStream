@@ -98,78 +98,97 @@
             display: block;
         }
     </style>
+    <noscript>
+        <style>
+            body {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+        </style>
+        <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515;">
+            <h2 style="margin-top:5%">This page requires JavaScript
+                to be enabled.
+                <br><br>
+                Please refer <a href="https://www.enable-javascript.com/">enable-javascript</a> for how to.
+            </h2>
+            <form>
+                <button type="submit" onClick="<meta httpEquiv='refresh' content='0'>">RETRY</button>
+            </form>
+        </div>
+    </noscript>
 </head>
 <body>
-<button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
-<button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-<button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
-<br><br>
-<h1>{{ video_title }}</h1>
-<div id="video-container">
-    <video id="video-player"
-           class="video-js"
-           preload="auto"
-           controls muted="muted"
-           style="position: relative; margin-left: auto; margin-right: auto; display: block"
-           data-setup='{
-         "playbackRates": [1, 1.5, 2, 5],
-         "controlBar": {
-           "skipButtons": {
-             "backward": 10,
-             "forward": 10
-           }
-         }
-       }'>
-        <source id="video-source" type="video/mp4" src=""/>
-        <track id="subtitles" kind="subtitles" src="" srclang="en"/>
-        <p class="vjs-no-js">
-            To view this video please enable JavaScript, and consider upgrading to a
-            web browser that
-            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-        </p>
-    </video>
-    {% if previous %}
-        <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous_title }}">
-            <i class="fa fa-backward"></i> Previous
-        </button>
-    {% endif %}
-    {% if next %}
-        <button class="iter" style="float: right" onclick="window.location='{{ next }}'" title="{{ next_title }}">
-            Next <i class="fa fa-forward"></i>
-        </button>
-    {% endif %}
+    <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
+    <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
+    <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
     <br><br>
-</div>
-<script>
-    let origin = window.location.origin; // Get the current origin using JavaScript
-    let path = "{{ path }}";
-    let track = "{{ track }}";
+    <h1>{{ video_title }}</h1>
+    <div id="video-container">
+        <video id="video-player"
+               class="video-js"
+               preload="auto"
+               controls muted="muted"
+               style="position: relative; margin-left: auto; margin-right: auto; display: block"
+               data-setup='{
+             "playbackRates": [1, 1.5, 2, 5],
+             "controlBar": {
+               "skipButtons": {
+                 "backward": 10,
+                 "forward": 10
+               }
+             }
+           }'>
+            <source id="video-source" type="video/mp4" src=""/>
+            <track id="subtitles" kind="subtitles" src="" srclang="en"/>
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a
+                web browser that
+                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+            </p>
+        </video>
+        {% if previous %}
+            <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous_title }}">
+                <i class="fa fa-backward"></i> Previous
+            </button>
+        {% endif %}
+        {% if next %}
+            <button class="iter" style="float: right" onclick="window.location='{{ next }}'" title="{{ next_title }}">
+                Next <i class="fa fa-forward"></i>
+            </button>
+        {% endif %}
+        <br><br>
+    </div>
+    <script>
+        let origin = window.location.origin; // Get the current origin using JavaScript
+        let path = "{{ path }}";
+        let track = "{{ track }}";
 
-    // Construct the source URL for video by combining origin and path
-    let videoSource = origin + path;
+        // Construct the source URL for video by combining origin and path
+        let videoSource = origin + path;
 
-    // Set the video source URL for the video-source element
-    let videoElement = document.getElementById("video-source");
-    videoElement.setAttribute("src", videoSource);
+        // Set the video source URL for the video-source element
+        let videoElement = document.getElementById("video-source");
+        videoElement.setAttribute("src", videoSource);
 
-    // Set the subtitles URL for the video
-    let trackElement = document.getElementById("subtitles");
-    trackElement.setAttribute("src", track);
+        // Set the subtitles URL for the video
+        let trackElement = document.getElementById("subtitles");
+        trackElement.setAttribute("src", track);
 
-    let videoPlayer = document.getElementById("video-player");
-    videoPlayer.load(); // Load the video
-    // videoPlayer.play(); // Play the video
-</script>
-<script>
-    function logOut() {
-        window.location.href = window.location.origin + "/logout";
-    }
-    function goHome() {
-        window.location.href = window.location.origin + "/home";
-    }
-    function goBack() {
-        window.history.back();
-    }
-</script>
+        let videoPlayer = document.getElementById("video-player");
+        videoPlayer.load(); // Load the video
+        // videoPlayer.play(); // Play the video
+    </script>
+    <script>
+        function logOut() {
+            window.location.href = window.location.origin + "/logout";
+        }
+        function goHome() {
+            window.location.href = window.location.origin + "/home";
+        }
+        function goBack() {
+            window.history.back();
+        }
+    </script>
 </body>
 </html>
