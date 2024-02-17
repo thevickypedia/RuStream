@@ -1,10 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
-use itertools::Itertools;
 use minijinja::{context, Environment};
 use serde::Deserialize;
 use url::form_urlencoded;
@@ -33,6 +31,9 @@ struct Subtitles {
 /// # Arguments
 ///
 /// * `path` - The input path string to be URL encoded.
+///
+/// # References:
+/// - [RustJobs](https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/)
 ///
 /// # Returns
 ///
@@ -133,34 +134,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     let template = environment.lock().unwrap();
     if __target.is_file() {
         let landing = template.get_template("landing").unwrap();
-        let start_rust = Instant::now();
         let rust_iter = squire::content::get_iter(&__target, &config.file_formats);
-        let rust_time_taken = start_rust.elapsed();
-
-        let start_python = Instant::now();
-        let default_values = squire::settings::default_file_formats();
-        // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
-        let _file_format = config.file_formats.iter().collect_tuple();
-        let file_format = if _file_format.is_none() {
-            log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
-            default_values.iter().collect_tuple()
-        } else {
-            _file_format
-        };
-        // full path required to read directory
-        let args = (&__target_str, file_format.unwrap());
-        let iter = squire::fileio::get_iter(args);
-        let python_time_taken = start_python.elapsed();
-
-        if rust_iter.previous == iter.previous && rust_iter.next == iter.next {
-            println!("iter [py]: {} seconds", python_time_taken.as_secs_f64());
-            println!("iter [rs]: {} seconds", rust_time_taken.as_secs_f64());
-        } else {
-            println!("iter [rs]::{:?}", &rust_iter);
-            println!("iter [py]::{:?}", &iter);
-        }
-
-        // https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/
         let render_path = format!("/video?file={}", url_encode(&filepath));
         // Rust doesn't allow re-assignment, so might as well create a mutable variable
         // Load the default response body and re-construct with subtitles if present
@@ -183,9 +157,9 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                 track => sfx_file
             )).unwrap();
         } else if subtitle.srt.exists() {
-            log::info!("Converting '{:?}' to '{:?}' for subtitles",
-                subtitle.srt.file_name(),
-                subtitle.vtt.file_name());
+            log::info!("Converting {:?} to {:?} for subtitles",
+                subtitle.srt.file_name().unwrap(),
+                subtitle.vtt.file_name().unwrap());
             match squire::subtitles::srt_to_vtt(&subtitle.srt) {
                 Ok(_) => {
                     log::debug!("Successfully converted srt to vtt file");
@@ -206,27 +180,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             .content_type("text/html; charset=utf-8").body(response_body);
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
-        let start_rust = Instant::now();
         let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
-        let rust_time_taken = start_rust.elapsed();
-
-        let start_python = Instant::now();
-        let default_values = squire::settings::default_file_formats();
-        // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
-        let _file_format = config.file_formats.iter().collect_tuple();
-        let file_format = if _file_format.is_none() {
-            log::debug!("CRITICAL::Failed to extract tuple from {:?}", config.file_formats);
-            default_values.iter().collect_tuple()
-        } else {
-            _file_format
-        };
-        let args = (__target_str, child_dir, file_format.unwrap());
-        let _listing_page = squire::fileio::get_dir_stream_content(args);
-        let python_time_taken = start_python.elapsed();
-
-        println!("listing_page [py]: {} seconds", python_time_taken.as_secs_f64());
-        println!("listing_page [rs]: {} seconds", rust_time_taken.as_secs_f64());
-
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")

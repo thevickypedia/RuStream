@@ -124,7 +124,7 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &Vec<String>) -> ContentPayload {
+pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &[String]) -> ContentPayload {
     let mut files = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
         let file_name = entry.file_name().into_string().unwrap();
