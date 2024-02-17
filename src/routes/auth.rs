@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
@@ -128,6 +129,11 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
 
+    let start_rust = Instant::now();
+    let listing_page = squire::content::get_all_stream_content(&config);
+    let rust_time_taken = start_rust.elapsed();
+
+    let start_python = Instant::now();
     let default_values = squire::settings::default_file_formats();
     // https://docs.rs/itertools/latest/itertools/trait.Itertools.html#method.collect_tuple
     let _file_format = config.file_formats.iter().collect_tuple();
@@ -138,7 +144,12 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
         _file_format
     };
     let args = (config.video_source.to_string_lossy().to_string(), file_format.unwrap());
-    let listing_page = squire::fileio::get_all_stream_content(args);
+    let _listing_page = squire::fileio::get_all_stream_content(args);
+    let python_time_taken = start_python.elapsed();
+
+    println!("home_page [py]: {} seconds", python_time_taken.as_secs_f64());
+    println!("home_page [rs]: {} seconds", rust_time_taken.as_secs_f64());
+
     let template = environment.lock().unwrap();
     let listing = template.get_template("listing").unwrap();
 

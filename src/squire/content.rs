@@ -4,6 +4,9 @@ use std::path::{Path, PathBuf};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use walkdir::WalkDir;
+
+use crate::squire::settings::Config;
 
 /// Represents the payload structure for content, including files and directories.
 ///
@@ -52,6 +55,52 @@ fn natural_sort_key(filename: &str) -> Vec<std::result::Result<i32, String>> {
         .collect()
 }
 
+
+pub fn get_all_stream_content(config: &Config) -> ContentPayload {
+    let mut payload = ContentPayload::default();
+
+    for entry in WalkDir::new(&config.video_source).into_iter().filter_map(|e| e.ok()) {
+        if entry.path().ends_with("__") {
+            continue;
+        }
+
+        if let Some(file_name) = entry.file_name().to_str() {
+            if file_name.starts_with('_') || file_name.starts_with('.') {
+                continue;
+            }
+
+            if let Some(extension) = PathBuf::from(file_name).extension().and_then(|ext| ext.to_str()) {
+                if config.file_formats.iter().any(|format| extension == format) {
+                    let path = entry.path().strip_prefix(&config.video_source)
+                        .unwrap_or_else(|_| Path::new(""));
+                    let components: &Vec<_> = &path.components().collect();
+                    if components.len() == 1 {
+                        let mut entry_map = HashMap::new();
+                        entry_map.insert("name".to_string(), file_name.to_string());
+                        entry_map.insert("path".to_string(), format!("stream/{}", file_name));
+                        payload.files.push(entry_map);
+                    } else {
+                        let filename = &path.file_name().unwrap().to_str().unwrap();
+                        let appender = &path.to_string_lossy().replace(filename, "");
+                        let valuated = appender.strip_suffix("/").unwrap();
+                        let mut entry_map = HashMap::new();
+                        entry_map.insert("name".to_string(), valuated.to_string());
+                        entry_map.insert("path".to_string(), format!("stream/{}", valuated));
+                        if payload.directories.contains(&entry_map) { continue; }
+                        payload.directories.push(entry_map);
+                    }
+                }
+            }
+        }
+    }
+
+    payload.files.sort_by(|a, b| natural_sort_key(&a["name"]).cmp(&natural_sort_key(&b["name"])));
+    payload.directories.sort_by(|a, b| natural_sort_key(&a["name"]).cmp(&natural_sort_key(&b["name"])));
+
+    payload
+}
+
+
 /// Retrieves content information for a specific directory within a stream.
 ///
 /// # Arguments
@@ -69,7 +118,7 @@ pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &[String
             continue;
         }
         let file_path = Path::new(subdir).join(&file_name);
-        let file_extn = &file_path.extension().unwrap().to_string_lossy().to_string();
+        let file_extn = &file_path.extension().unwrap_or_default().to_string_lossy().to_string();
         if file_formats.contains(file_extn) {
             let map = HashMap::from([
                 ("name".to_string(), file_name),

@@ -207,7 +207,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
         let start_rust = Instant::now();
-        let listing_page_rust = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
+        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
         let rust_time_taken = start_rust.elapsed();
 
         let start_python = Instant::now();
@@ -221,16 +221,11 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             _file_format
         };
         let args = (__target_str, child_dir, file_format.unwrap());
-        let listing_page = squire::fileio::get_dir_stream_content(args);
+        let _listing_page = squire::fileio::get_dir_stream_content(args);
         let python_time_taken = start_python.elapsed();
 
-        if listing_page_rust.files == listing_page.files && listing_page_rust.directories == listing_page.directories {
-            println!("listing_page [py]: {} seconds", python_time_taken.as_secs_f64());
-            println!("listing_page [rs]: {} seconds", rust_time_taken.as_secs_f64());
-        } else {
-            println!("listing_page [rs]::{:?}", &listing_page_rust);
-            println!("listing_page [py]::{:?}", &listing_page);
-        }
+        println!("listing_page [py]: {} seconds", python_time_taken.as_secs_f64());
+        println!("listing_page [rs]: {} seconds", rust_time_taken.as_secs_f64());
 
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
