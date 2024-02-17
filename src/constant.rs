@@ -55,6 +55,7 @@ lazy_static! {
 /// Generates a random key, that can be safely passed to `Fernet::new()`
 ///
 /// # Returns
+///
 /// Random key as a `String`
 fn fernet_key() -> String {
     Fernet::generate_key()

@@ -4,5 +4,5 @@ pub mod basics;
 pub mod video;
 /// Module for `/home`, `/login`, `/logout` and `/error` entrypoints.
 pub mod auth;
-pub mod authenticator;
+/// Module to render images for the HTML pages requested via JavaScript.
 pub mod images;

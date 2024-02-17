@@ -19,7 +19,7 @@ lazy_static! {
 ///
 /// # Returns
 ///
-/// - `HttpResponse`: Responds with the requested image content if found, or raises a 404.
+/// Returns an `HttpResponse` with the requested image content if found, or raises a 404.
 #[get("/images/{filename:.*}")]
 pub async fn image_endpoint(request: HttpRequest, filename: web::Path<String>) -> HttpResponse {
     // Log the incoming connection for monitoring purposes

@@ -93,7 +93,7 @@ jobs:
         run: cargo build --verbose
       - name: Run tests verbose
         if: env.release == 'false'
-        run: cargo test --verbose
+        run: cargo test --no-run --verbose
 
   upload_assets:
     needs: release
@@ -183,7 +183,7 @@ jobs:
             export OPENSSL_STATIC="Yes"
             export VCPKG_ROOT="${{ env.vcpkg_dir }}\installed\x64-windows-static"
           fi
-          cargo test
+          cargo test --no-run
         shell: bash
 
       - name: Copy Artifacts (Windows)

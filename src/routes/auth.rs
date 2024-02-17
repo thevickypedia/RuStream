@@ -7,8 +7,7 @@ use actix_web::http::StatusCode;
 use minijinja;
 use serde::Serialize;
 
-use crate::{constant, routes, squire};
-use crate::routes::authenticator::AuthToken;
+use crate::{constant, squire};
 
 /// Struct for representing a JSON Response with a redirect URL.
 #[derive(Serialize)]
@@ -35,7 +34,7 @@ pub struct DetailError {
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: HttpRequest) -> HttpResponse {
-    let verified = routes::authenticator::verify_login(&request, &config);
+    let verified = squire::authenticator::verify_login(&request, &config);
     if let Err(err) = verified {
         let err_message = err.to_string();
         log::warn!("Error response::{}", err_message);
@@ -72,6 +71,10 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 ///
 /// * `config` - Configuration data for the application.
 /// * `request` - Actix HttpRequest containing information about the incoming request.
+///
+/// # Returns
+///
+/// Returns an `HTTPResponse` with the cookie for `session_token` reset if available.
 #[get("/logout")]
 pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
                     environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
@@ -83,7 +86,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
     response.content_type("text/html; charset=utf-8");
 
     let rendered;
-    let auth_response = routes::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config);
     log::debug!("Session Validation Response: {}", auth_response.detail);
 
     if auth_response.username != "NA" {
@@ -121,11 +124,16 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// * `config` - Configuration data for the application.
 /// * `request` - Actix HttpRequest containing information about the incoming request.
+///
+/// # Returns
+///
+/// * `200` - Returns an `HTTPResponse` with the home/listing page if session token is valid.
+/// * `401` - HttpResponse with an error message for failed authentication.
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                   request: HttpRequest) -> HttpResponse {
-    let auth_response = routes::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         return failed_auth(auth_response);
     }
@@ -182,7 +190,7 @@ pub async fn error(environment: web::Data<Arc<Mutex<minijinja::Environment<'stat
 /// # Returns
 ///
 /// Returns an `HttpResponse` with a redirect, setting a cookie with the failure detail.
-pub fn failed_auth(auth_response: AuthToken) -> HttpResponse {
+pub fn failed_auth(auth_response: squire::authenticator::AuthToken) -> HttpResponse {
     let mut response = HttpResponse::build(StatusCode::FOUND);
     let detail = auth_response.detail;
     let age = Duration::new(3, 0);

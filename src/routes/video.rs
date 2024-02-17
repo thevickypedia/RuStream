@@ -80,7 +80,7 @@ fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
 #[get("/track")]
 pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
-    let auth_response = routes::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response);
     }
@@ -114,7 +114,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
 pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     environment: web::Data<Arc<Mutex<Environment<'static>>>>,
                     request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
-    let auth_response = routes::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response);
     }
@@ -210,7 +210,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
 #[get("/video")]
 pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>,
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
-    let auth_response = routes::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response);
     }
