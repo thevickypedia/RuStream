@@ -1,4 +1,5 @@
-name: Build, test, upload artifact and release crate
+name: Pipeline
+run-name: Build, test, upload artifact and release crate
 
 on:
   workflow_dispatch:

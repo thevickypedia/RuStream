@@ -1,14 +1,14 @@
 # https://doc.rust-lang.org/cargo/getting-started/first-steps.html#first-steps-with-cargo
 [package]
 name = "RuStream"
-version = "0.0.2"
+version = "0.0.3-a"
 description = "An API written in Rust, to stream videos using Actix framework, via authenticated sessions"
 license = "MIT"
 documentation = "https://docs.rs/RuStream"
 homepage = "https://github.com/thevickypedia/RuStream"
 repository = "https://github.com/thevickypedia/RuStream"
 rust-version = "1.76.0"
-keywords = ["streaming", "video-player", "media-server", "rust", "actix"]
+keywords = ["asynchronous-server", "self-hosted", "streaming-engine", "symmetric-encryption", "fernet-cryptography"]
 categories = ["web-programming::http-server", "asynchronous", "algorithms", "authentication", "rendering::engine"]
 include = ["/src", "LICENSE"]
 exclude = [".github", ".gitignore", "README.md"]
