@@ -76,6 +76,7 @@ fn default_session_duration() -> i32 {
 ///
 /// Set as public, since this function is re-used in `startup.rs`
 pub fn default_file_formats() -> Vec<String> {
+    // todo: remove the dot (.)
     vec![".mp4".to_string(), ".mov".to_string()]
 }
 

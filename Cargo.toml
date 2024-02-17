@@ -47,3 +47,4 @@ pyo3 = { version = "0.20.2", features = ["auto-initialize"] }
 url = "2.5.0"
 itertools = "0.12.1"
 openssl = "0.10"
+regex = "1.5"

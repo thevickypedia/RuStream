@@ -64,26 +64,6 @@ pub fn get_all_stream_content(args: (String, (&String, &String))) -> ContentPayl
     convert_to_json(from_python.unwrap().to_string())
 }
 
-/// Retrieves content information for a specific directory within a stream.
-///
-/// # Arguments
-///
-/// * `args` - A tuple containing a stream identifier, a directory path, and references to two strings.
-///
-/// # Returns
-///
-/// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(args: (String, String, (&String, &String))) -> ContentPayload {
-    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/python/fileio.py"));
-    let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
-        let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
-            .getattr("get_dir_stream_content")?
-            .into();
-        app.call1(py, args)
-    });
-    convert_to_json(from_python.unwrap().to_string())
-}
-
 /// Represents an iterator structure with optional previous and next elements.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Iter {
