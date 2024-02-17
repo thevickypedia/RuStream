@@ -166,20 +166,20 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         // Load the default response body and re-construct with subtitles if present
         let mut response_body = landing.render(context!(
             video_title => &filepath, path => render_path,
-            previous => &iter.previous,
-            next => &iter.next,
-            previous_title => &iter.previous,
-            next_title => &iter.next,
+            previous => &rust_iter.previous,
+            next => &rust_iter.next,
+            previous_title => &rust_iter.previous,
+            next_title => &rust_iter.next,
         )).unwrap();
         let subtitle = subtitles(__target, &filepath);
         if subtitle.vtt.exists() {
             let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
             response_body = landing.render(context!(
                 video_title => &filepath, path => render_path,
-                previous => &iter.previous,
-                next => &iter.next,
-                previous_title => &iter.previous,
-                next_title => &iter.next,
+                previous => &rust_iter.previous,
+                next => &rust_iter.next,
+                previous_title => &rust_iter.previous,
+                next_title => &rust_iter.next,
                 track => sfx_file
             )).unwrap();
         } else if subtitle.srt.exists() {
@@ -192,10 +192,10 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
                     response_body = landing.render(context!(
                         video_title => &filepath, path => render_path,
-                        previous => &iter.previous,
-                        next => &iter.next,
-                        previous_title => &iter.previous,
-                        next_title => &iter.next,
+                        previous => &rust_iter.previous,
+                        next => &rust_iter.next,
+                        previous_title => &rust_iter.previous,
+                        next_title => &rust_iter.next,
                         track => sfx_file
                     )).unwrap();
                 }

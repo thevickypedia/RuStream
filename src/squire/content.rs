@@ -56,6 +56,15 @@ fn natural_sort_key(filename: &str) -> Vec<std::result::Result<i32, String>> {
 }
 
 
+/// Retrieves content information for all streams.
+///
+/// # Arguments
+///
+/// * `config` - Configuration data for the application.
+///
+/// # Returns
+///
+/// A `ContentPayload` struct representing the content of all streams.
 pub fn get_all_stream_content(config: &Config) -> ContentPayload {
     let mut payload = ContentPayload::default();
 
@@ -76,16 +85,21 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
                     let components: &Vec<_> = &path.components().collect();
                     if components.len() == 1 {
                         let mut entry_map = HashMap::new();
+                        entry_map.insert("path".to_string(), format!("stream/{}", &file_name));
                         entry_map.insert("name".to_string(), file_name.to_string());
-                        entry_map.insert("path".to_string(), format!("stream/{}", file_name));
                         payload.files.push(entry_map);
                     } else {
-                        let filename = &path.file_name().unwrap().to_str().unwrap();
-                        let appender = &path.to_string_lossy().replace(filename, "");
-                        let valuated = appender.strip_suffix("/").unwrap();
+                        /*
+                        path.components(): returns an iterator over the components of the path
+                        .rev(): reverses the order of the iterator
+                        .skip(1): skips the first (originally last) component of the reversed path
+                         */
+                        let skimmed: String = path.components().rev().skip(1)
+                            .collect::<Vec<_>>().iter().rev()
+                            .collect::<PathBuf>().to_string_lossy().to_string();
                         let mut entry_map = HashMap::new();
-                        entry_map.insert("name".to_string(), valuated.to_string());
-                        entry_map.insert("path".to_string(), format!("stream/{}", valuated));
+                        entry_map.insert("path".to_string(), format!("stream/{}", &skimmed));
+                        entry_map.insert("name".to_string(), skimmed);
                         if payload.directories.contains(&entry_map) { continue; }
                         payload.directories.push(entry_map);
                     }
@@ -110,7 +124,7 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &[String]) -> ContentPayload {
+pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &Vec<String>) -> ContentPayload {
     let mut files = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
         let file_name = entry.file_name().into_string().unwrap();
@@ -140,16 +154,17 @@ pub struct Iter {
     pub next: Option<String>,
 }
 
-/// Retrieves iterator information from Python based on the provided arguments.
+/// Retrieves the previous and/or next file to the currently streaming file.
 ///
 /// # Arguments
 ///
-/// * `args` - A tuple containing a stream identifier and references to two strings.
+/// * `filepath` - File that is requested for streaming.
+/// * `file_formats` - Vector of file formats (as String) that are allowed.
 ///
 /// # Returns
 ///
 /// An `Iter` struct representing the iterator information.
-pub fn get_iter(filepath: &PathBuf, file_formats: &[String]) -> Iter {
+pub fn get_iter(filepath: &Path, file_formats: &[String]) -> Iter {
     let parent = filepath.parent().unwrap();
     let mut dir_content: Vec<String> = fs::read_dir(parent)
         .ok().unwrap()
