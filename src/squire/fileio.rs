@@ -129,36 +129,3 @@ pub fn get_iter(args: (&String, (&String, &String))) -> Iter {
         }
     }
 }
-
-/// Converts an SRT file to VTT format.
-///
-/// # Arguments
-///
-/// * `input_file` - The path to the input SRT file.
-///
-/// # Returns
-///
-/// A boolean indicating whether the conversion was successful.
-pub fn srt_to_vtt(input_file: &String) -> bool {
-    let py_app = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/python/fileio.py"));
-    let from_python = Python::with_gil(|py| -> PyResult<Py<PyAny>> {
-        let app: Py<PyAny> = PyModule::from_code(py, py_app, "", "")?
-            .getattr("srt_to_vtt")?
-            .into();
-        app.call1(py, (input_file, ))
-    });
-    match from_python {
-        Ok(result) => {
-            let result_string = result.to_string();
-            match result_string.as_str() {
-                "true" => true,
-                "false" => false,
-                _ => false,
-            }
-        }
-        Err(err) => {
-            log::error!("{}", err);
-            false
-        }
-    }
-}

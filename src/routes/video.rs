@@ -54,14 +54,11 @@ fn url_encode(path: &String) -> String {
 /// Returns a `Subtitles` struct containing paths and filenames for both SRT and VTT subtitle files.
 fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
     // Set srt and vtt extensions to true path to check if they exist
-    let mut srt = true_path.clone();
-    let mut vtt = true_path.clone();
-    srt.set_extension("srt");
-    vtt.set_extension("vtt");
+    let srt = true_path.with_extension("srt");
+    let vtt = true_path.with_extension("vtt");
 
     // Set vtt extension to the relative path, so it could be used as a parameter in HTML
-    let mut vtt_filepath = PathBuf::new().join(relative_path);
-    vtt_filepath.set_extension("vtt");
+    let vtt_filepath = PathBuf::new().join(relative_path).with_extension("vtt");
     let vtt_file = vtt_filepath.to_string_lossy().to_string();
 
     Subtitles { srt, vtt, vtt_file }
@@ -170,20 +167,23 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                 track => sfx_file
             )).unwrap();
         } else if subtitle.srt.exists() {
-            log::info!("Converting '{}' to '{}' for subtitles",
-                subtitle.srt.file_name().unwrap().to_string_lossy(),
-                subtitle.vtt.file_name().unwrap().to_string_lossy());
-            if squire::fileio::srt_to_vtt(&subtitle.srt.to_string_lossy().to_string()) {
-                log::debug!("Successfully converted srt to vtt file");
-                let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
-                response_body = landing.render(context!(
-                    video_title => &filepath, path => render_path,
-                    previous => &iter.previous,
-                    next => &iter.next,
-                    previous_title => &iter.previous,
-                    next_title => &iter.next,
-                    track => sfx_file
-                )).unwrap();
+            log::info!("Converting '{:?}' to '{:?}' for subtitles",
+                subtitle.srt.file_name(),
+                subtitle.vtt.file_name());
+            match squire::subtitles::srt_to_vtt(&subtitle.srt) {
+                Ok(_) => {
+                    log::debug!("Successfully converted srt to vtt file");
+                    let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
+                    response_body = landing.render(context!(
+                        video_title => &filepath, path => render_path,
+                        previous => &iter.previous,
+                        next => &iter.next,
+                        previous_title => &iter.previous,
+                        next_title => &iter.next,
+                        track => sfx_file
+                    )).unwrap();
+                }
+                Err(err) => log::error!("Failed to convert srt to vtt: {}", err),
             }
         }
         return HttpResponse::build(StatusCode::OK)

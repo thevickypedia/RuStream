@@ -6,3 +6,4 @@ pub mod fileio;
 pub mod logger;
 pub mod ascii_art;
 pub mod middleware;
+pub mod subtitles;
