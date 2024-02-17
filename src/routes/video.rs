@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
 use itertools::Itertools;
-use minijinja::context;
+use minijinja::{context, Environment};
 use serde::Deserialize;
 use url::form_urlencoded;
 
@@ -113,6 +113,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
 /// Returns an `HttpResponse` containing the video content or directory listing, or an error response.
 #[get("/stream/{video_path:.*}")]
 pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
+                    environment: web::Data<Arc<Mutex<Environment<'static>>>>,
                     request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
@@ -131,7 +132,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
     // True path of the video file as a String
     let __target_str = __target.to_string_lossy().to_string();
     let __filename = __target.file_name().unwrap().to_string_lossy().to_string();
-    let template = constant::ENV.lock().unwrap();
+    let template = environment.lock().unwrap();
     if __target.is_file() {
         let landing = template.get_template("landing").unwrap();
         let default_values = squire::settings::default_file_formats();

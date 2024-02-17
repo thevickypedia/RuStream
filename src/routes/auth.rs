@@ -1,14 +1,14 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::Cookie;
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
 use itertools::Itertools;
-use minijinja::context;
+use minijinja::{context, Environment};
 use serde::Serialize;
 
-use crate::{constant, routes, squire, template};
+use crate::{constant, routes, squire, jinja};
 use crate::routes::authenticator::AuthToken;
 
 /// Struct for representing a JSON Response with a redirect URL.
@@ -28,7 +28,7 @@ pub struct DetailError {
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request`: Actix HttpRequest containing information about the incoming request.
+/// * `request` - Actix HttpRequest containing information about the incoming request.
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: HttpRequest) -> HttpResponse {
     let verified = routes::authenticator::verify_login(&request, &config);
@@ -67,12 +67,13 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request`: Actix HttpRequest containing information about the incoming request.
+/// * `request` - Actix HttpRequest containing information about the incoming request.
 #[get("/logout")]
 pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
+                    environment: web::Data<Arc<Mutex<Environment<'static>>>>,
                     request: HttpRequest) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
-    let template = constant::ENV.lock().unwrap();
+    let template = environment.lock().unwrap();
     let logout_template = template.get_template("logout").unwrap();
     let mut response = HttpResponse::build(StatusCode::OK);
     response.content_type("text/html; charset=utf-8");
@@ -115,9 +116,10 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request`: Actix HttpRequest containing information about the incoming request.
+/// * `request` - Actix HttpRequest containing information about the incoming request.
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
+                  environment: web::Data<Arc<Mutex<Environment<'static>>>>,
                   request: HttpRequest) -> HttpResponse {
     let auth_response = routes::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
@@ -137,7 +139,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
     };
     let args = (config.video_source.to_string_lossy().to_string(), file_format.unwrap());
     let listing_page = squire::fileio::get_all_stream_content(args);
-    let template = constant::ENV.lock().unwrap();
+    let template = environment.lock().unwrap();
     let listing = template.get_template("listing").unwrap();
 
     return HttpResponse::build(StatusCode::OK)
@@ -151,12 +153,13 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `request`: Actix HttpRequest containing information about the incoming request.
+/// * `request` - Actix HttpRequest containing information about the incoming request.
 #[get("/error")]
-pub async fn error(request: HttpRequest) -> HttpResponse {
+pub async fn error(environment: web::Data<Arc<Mutex<Environment<'static>>>>,
+                   request: HttpRequest) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {
         log::info!("Error response for /error: {}", detail.value());
-        let template = constant::ENV.lock().unwrap();
+        let template = environment.lock().unwrap();
         let session = template.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
@@ -166,7 +169,7 @@ pub async fn error(request: HttpRequest) -> HttpResponse {
     log::info!("Sending unauthorized response for /error");
     return HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(template::UNAUTHORIZED);
+        .body(jinja::get_content("unauthorized"));
 }
 
 /// Constructs an `HttpResponse` for failed `session_token` verification.

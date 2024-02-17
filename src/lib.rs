@@ -8,7 +8,7 @@ use rand::prelude::SliceRandom;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 mod squire;
-mod template;
+mod jinja;
 mod constant;
 mod routes;
 
@@ -39,8 +39,10 @@ pub async fn start() -> io::Result<()> {
     println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
 
     let config = squire::startup::get_config(args);
+    let template = jinja::environment();
     // Create a dedicated clone, since it will be used within closure
     let config_clone = config.clone();
+    let template_clone = template.clone();
     let host = format!("{}:{}", config.video_host, config.video_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
         cargo.pkg_name, config.workers, host);
@@ -51,8 +53,9 @@ pub async fn start() -> io::Result<()> {
      */
     let application = move || {
         App::new()  // Creates a new Actix web application
-            .wrap(squire::middleware::get_cors(config_clone.website.clone()))
             .app_data(web::Data::new(config_clone.clone()))
+            .app_data(web::Data::new(template_clone.clone()))
+            .wrap(squire::middleware::get_cors(config_clone.website.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
             .service(routes::basics::root)

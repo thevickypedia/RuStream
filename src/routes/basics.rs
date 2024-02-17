@@ -1,7 +1,7 @@
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web::http::StatusCode;
 
-use crate::{squire, template};
+use crate::{squire, jinja};
 
 /// Handles the health endpoint, returning a JSON response indicating the server is healthy.
 ///
@@ -24,8 +24,7 @@ pub async fn health() -> HttpResponse {
 ///
 /// # Returns
 ///
-/// Returns an `HttpResponse` with a status of 200 (OK), content type "text/html; charset=utf-8",
-/// and the body containing HTML content from the `template::INDEX`.
+/// Returns an `HttpResponse` with the index page as its body.
 #[get("/")]
 pub async fn root(request: HttpRequest) -> HttpResponse {
     // Log the connection using the squire::logger::log_connection function.
@@ -33,5 +32,5 @@ pub async fn root(request: HttpRequest) -> HttpResponse {
 
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(template::INDEX)
+        .body(jinja::get_content("index"))
 }
