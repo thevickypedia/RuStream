@@ -1,5 +1,4 @@
-name: Pipeline
-run-name: Build, test, upload artifact and release crate
+name: Build, Test and Upload Artifact
 
 on:
   workflow_dispatch:
@@ -78,7 +77,7 @@ jobs:
             release_tag="v${new_version}-prerelease-${epoch}"
             prerelease=true
           fi
-          commit_msg="Release compiled executable for $release_tag"
+          commit_msg="$(git log -1 --pretty=%B | sed ':a;N;$!ba;s/\n/\\n/g')"
           release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
           response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
             -d "$release_data" \

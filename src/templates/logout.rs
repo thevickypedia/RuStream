@@ -60,8 +60,8 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">LOGOUT</h2>
 <h3>{{ detail }}</h3>
 <p>
-    <img src="https://github.com/thevickypedia/RuStream/blob/main/src/images/logout.gif?raw=true"
-        onerror="this.src='https://vigneshrao.com/img/auth_server/logout.gif'"
+    <img src="https://raw.githubusercontent.com/thevickypedia/open-source/main/images/logout.gif"
+        onerror="this.src='https://vigneshrao.com/open-source/images/logout.gif'"
         width="200" height="200" alt="Image" class="center">
 </p>
 {% if show_login %}

@@ -61,8 +61,8 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">{{ reason }}</h2>
 <h3>Authentication doesn't last forever ¯\_(ツ)_/¯ </h3>
 <p>
-    <img src="https://github.com/thevickypedia/RuStream/blob/main/src/images/session.gif?raw=true"
-        onerror="this.src='https://vigneshrao.com/img/auth_server/session.gif'"
+    <img src="https://raw.githubusercontent.com/thevickypedia/open-source/main/images/session.gif"
+        onerror="this.src='https://vigneshrao.com/open-source/images/session.gif'"
         width="200" height="200" alt="Image" class="center">
 </p>
 <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>

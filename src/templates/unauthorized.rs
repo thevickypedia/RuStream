@@ -59,8 +59,8 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">LOGIN FAILED</h2>
 <h3>USER ERROR - REPLACE USER</h3>
 <p>
-    <img src="https://github.com/thevickypedia/RuStream/blob/main/src/images/no_auth.gif?raw=true"
-        onerror="this.src='https://vigneshrao.com/img/auth_server/no_auth.gif'"
+    <img src="https://raw.githubusercontent.com/thevickypedia/open-source/main/images/no_auth.gif"
+        onerror="this.src='https://vigneshrao.com/open-source/images/no_auth.gif'"
         width="200" height="170" alt="Image" class="center">
 </p>
 <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
