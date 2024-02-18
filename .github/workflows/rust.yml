@@ -58,7 +58,8 @@ jobs:
       - name: Create New Release
         id: create-release
         run: |
-          if [ "$env.release" == "true" ]; then
+          if [ "${{ env.release }}" == "true" ]; then
+            echo "Creating PROD release"
             release_tag="v${{ env.pkg_version }}"
             cargo_prerelease=("alpha" "beta" "rc")
             prerelease=false
@@ -69,6 +70,7 @@ jobs:
               fi
             done
           else
+            echo "Creating TEST release"
             epoch="$(date +%s)"
             current_version=${{ env.pkg_version }}
             part=2
