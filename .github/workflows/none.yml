@@ -1,4 +1,4 @@
-name: none-shall-pass
+name: Validate Hyperlinks
 
 on:
   workflow_dispatch:
@@ -14,3 +14,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: thevickypedia/none-shall-pass@v4
+        with:
+          excludeHostnames: "crates docs"

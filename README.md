@@ -2,13 +2,10 @@
 
 [![made-with-rust][rust-logo]][rust-src-page]
 
-[![build][gh-logo]][build]
-
 [![crates.io][crates-logo]][crate]
 
-**Platform Supported**
-
-[![platform][platform]][cross-platform]
+[![build][gh-logo]][build]
+[![none-shall-pass][nsp-logo]][nsp]
 
 #### Summary
 [`RuStream`][repo] is a self-hosted streaming engine, that can render videos via authenticated sessions.
@@ -85,9 +82,6 @@ async fn main() {
 ```
 </details>
 
-## Crate
-[https://crates.io/crates/RuStream][crate]
-
 ## Linting
 ### Requirement
 ```shell
@@ -97,6 +91,17 @@ rustup component add clippy
 ```shell
 cargo clippy --no-deps --fix --allow-dirty
 ```
+
+## Docs
+### [Cargo Docs][docs]
+```shell
+cargo doc --document-private-items --no-deps
+```
+
+#### [GitHub Wiki][gh-wiki]
+
+## Crate
+[https://crates.io/crates/RuStream][crate]
 
 ## License & copyright
 
@@ -110,8 +115,10 @@ Licensed under the [MIT License][license]
 [rust-src-page]: https://www.rust-lang.org/
 [rust-logo]: https://img.shields.io/badge/Made%20with-Rust-black?style=for-the-badge&logo=Rust
 [gh-logo]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml/badge.svg
+[nsp-logo]: https://github.com/thevickypedia/RuStream/actions/workflows/none.yml/badge.svg
+[nsp]: https://github.com/thevickypedia/RuStream/actions/workflows/none.yml
 [crate]: https://crates.io/crates/RuStream
 [gh-checks]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml
 [crates-logo]: https://img.shields.io/crates/v/RuStream.svg
-[platform]: https://img.shields.io/badge/Platform-Linux_|_macOS_|_Windows-blue?style=for-the-badge&logo=ubuntu
-[cross-platform]: https://www.computerlanguage.com/results.php?definition=cross+platform
+[gh-wiki]: https://github.com/thevickypedia/RuStream/wiki
+[docs]: https://docs.rs/RuStream/latest/rustream/
