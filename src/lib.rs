@@ -75,7 +75,6 @@ pub async fn start() -> io::Result<()> {
             .service(routes::video::track)
             .service(routes::video::stream)
             .service(routes::video::streaming_endpoint)
-            .service(routes::images::image_endpoint)
     };
     let server = HttpServer::new(application)
         .workers(config.workers as usize)

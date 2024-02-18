@@ -59,7 +59,9 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">LOGIN FAILED</h2>
 <h3>USER ERROR - REPLACE USER</h3>
 <p>
-    <img id="no_auth_img" src="" width="210" height="170" alt="loader" class="center">
+    <img src="https://github.com/thevickypedia/RuStream/blob/main/src/images/no_auth.gif?raw=true"
+        onerror="this.src='https://vigneshrao.com/img/auth_server/no_auth.gif'"
+        width="200" height="170" alt="Image" class="center">
 </p>
 <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
 <br>
@@ -67,13 +69,6 @@ pub fn get_content() -> String {
 </button>
 <h4>Click <a href="https://vigneshrao.com/contact">HERE</a> to reach out.</h4>
 </body>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let image = document.getElementById("no_auth_img");
-        let currentLocation = window.origin;
-        image.src = currentLocation + "/images/no_auth.gif";
-    });
-</script>
 </html>
 "###.to_string()
 }

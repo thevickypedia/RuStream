@@ -61,7 +61,9 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">{{ reason }}</h2>
 <h3>Authentication doesn't last forever ¯\_(ツ)_/¯ </h3>
 <p>
-    <img id="session_img" src="" width="200" height="200" alt="loader" class="center">
+    <img src="https://github.com/thevickypedia/RuStream/blob/main/src/images/session.gif?raw=true"
+        onerror="this.src='https://vigneshrao.com/img/auth_server/session.gif'"
+        width="200" height="200" alt="Image" class="center">
 </p>
 <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
 <br>
@@ -69,13 +71,6 @@ pub fn get_content() -> String {
 </button>
 <h4>Click <a href="https://vigneshrao.com/contact">HERE</a> to reach out.</h4>
 </body>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let image = document.getElementById("session_img");
-        let currentLocation = window.location.origin;
-        image.src = currentLocation + "/images/session.gif";
-    });
-</script>
 </html>
 "###.to_string()
 }

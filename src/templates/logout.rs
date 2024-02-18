@@ -60,7 +60,9 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">LOGOUT</h2>
 <h3>{{ detail }}</h3>
 <p>
-    <img id="logout_img" src="" width="200" height="200" alt="loader" class="center">
+    <img src="https://github.com/thevickypedia/RuStream/blob/main/src/images/logout.gif?raw=true"
+        onerror="this.src='https://vigneshrao.com/img/auth_server/logout.gif'"
+        width="200" height="200" alt="Image" class="center">
 </p>
 {% if show_login %}
     <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
@@ -69,13 +71,6 @@ pub fn get_content() -> String {
 {% endif %}
 <h4>Click <a href="https://vigneshrao.com/contact">ME</a> to reach out.</h4>
 </body>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let image = document.getElementById("logout_img");
-        let currentLocation = window.origin;
-        image.src = currentLocation + "/images/logout.gif";
-    });
-</script>
 </html>
 "###.to_string()
 }
