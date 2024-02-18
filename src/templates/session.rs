@@ -1,4 +1,15 @@
-<!DOCTYPE html>
+/// Get the HTML content to render the session expired/invalid page.
+///
+/// # See Also
+///
+/// - This page is served as a response for all the content delivery entry points,
+/// when the user session-token is invalid or expired.
+///
+/// # Returns
+///
+/// A `String` version of the HTML, CSS and JS content.
+pub fn get_content() -> String {
+    r###"<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Rustic video streaming</title>
@@ -34,7 +45,7 @@
                 overflow: hidden;
             }
         </style>
-        <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515;">
+        <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515">
             <h2 style="margin-top:5%">This page requires JavaScript
                 to be enabled.
                 <br><br>
@@ -47,23 +58,24 @@
     </noscript>
 </head>
 <body>
-<h2 style="margin-top:5%">LOGOUT</h2>
-<h3>{{ detail }}</h3>
+<h2 style="margin-top:5%">{{ reason }}</h2>
+<h3>Authentication doesn't last forever ¯\_(ツ)_/¯ </h3>
 <p>
-    <img id="logout_img" src="" width="200" height="200" alt="loader" class="center">
+    <img id="session_img" src="" width="200" height="200" alt="loader" class="center">
 </p>
-{% if show_login %}
-    <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
-{% else %}
-    <h3>Please close the session window</h3>
-{% endif %}
-<h4>Click <a href="https://vigneshrao.com/contact">ME</a> to reach out.</h4>
+<button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
+<br>
+<button style="text-align:center" onClick="alert('Forgot Password?\n\nRelax and try to remember your password.');">HELP
+</button>
+<h4>Click <a href="https://vigneshrao.com/contact">HERE</a> to reach out.</h4>
 </body>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        let image = document.getElementById("logout_img");
-        let currentLocation = window.origin;
-        image.src = currentLocation + "/images/logout.gif";
+        let image = document.getElementById("session_img");
+        let currentLocation = window.location.origin;
+        image.src = currentLocation + "/images/session.gif";
     });
 </script>
 </html>
+"###.to_string()
+}

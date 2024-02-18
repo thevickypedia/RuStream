@@ -1,4 +1,15 @@
-<!DOCTYPE html>
+/// Get the HTML content to render the session unauthorized page.
+///
+/// # See Also
+///
+/// - This page is served as a response for all the entry points,
+/// when the user tries to access a page without valid authentication.
+///
+/// # Returns
+///
+/// A `String` version of the HTML, CSS and JS content.
+pub fn get_content() -> String {
+    r###"<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Rustic video streaming</title>
@@ -9,19 +20,17 @@
             margin-left: auto;
             margin-right: auto;
         }
-
-        :is(h1, h2, h3, h4, h5, h6) {
+        :is(h1, h2, h3, h4, h5, h6)
+        {
             text-align: center;
             color: #F0F0F0;
             font-family: 'Courier New', sans-serif;
         }
-
         button {
             width: 100px;
             margin: 0 auto;
             display: block;
         }
-
         body {
             background-color: #151515;
         }
@@ -34,7 +43,7 @@
                 overflow: hidden;
             }
         </style>
-        <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515">
+        <div style="position: fixed; text-align:center; height: 100%; width: 100%; background-color: #151515;">
             <h2 style="margin-top:5%">This page requires JavaScript
                 to be enabled.
                 <br><br>
@@ -47,10 +56,10 @@
     </noscript>
 </head>
 <body>
-<h2 style="margin-top:5%">{{ reason }}</h2>
-<h3>Authentication doesn't last forever ¯\_(ツ)_/¯ </h3>
+<h2 style="margin-top:5%">LOGIN FAILED</h2>
+<h3>USER ERROR - REPLACE USER</h3>
 <p>
-    <img id="session_img" src="" width="200" height="200" alt="loader" class="center">
+    <img id="no_auth_img" src="" width="210" height="170" alt="loader" class="center">
 </p>
 <button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
 <br>
@@ -60,9 +69,11 @@
 </body>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        let image = document.getElementById("session_img");
-        let currentLocation = window.location.origin;
-        image.src = currentLocation + "/images/session.gif";
+        let image = document.getElementById("no_auth_img");
+        let currentLocation = window.origin;
+        image.src = currentLocation + "/images/no_auth.gif";
     });
 </script>
 </html>
+"###.to_string()
+}

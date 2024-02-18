@@ -1,4 +1,14 @@
-<!DOCTYPE html>
+/// Get the HTML content to render the index/root page.
+///
+/// # See Also
+///
+/// - This page is served as a response for the `/` entry point.
+///
+/// # Returns
+///
+/// A `String` version of the HTML, CSS and JS content.
+pub fn get_content() -> String {
+    r###"<!DOCTYPE html>
 <!--suppress JSUnresolvedLibraryURL -->
 <html lang="en">
 <head>
@@ -196,3 +206,5 @@
 
 </script>
 </html>
+"###.to_string()
+}

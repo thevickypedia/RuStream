@@ -3,11 +3,15 @@
 [![made-with-rust][rust-logo]][rust-src-page]
 
 [![build][gh-logo]][build]
-[![crates.io][crates-logo]][crates]
-[![docs.rs][docs-logo]][docs]
+
+[![crates.io][crates-logo]][crate]
+
+**Platform Supported**
+
+[![platform][platform]][cross-platform]
 
 #### Summary
-[`RuStream`][repo] is an application written in Rust to stream videos using Actix API via authenticated sessions.
+[`RuStream`][repo] is a self-hosted streaming engine, that can render videos via authenticated sessions.
 
 ## Usage
 
@@ -75,14 +79,14 @@ async fn main() {
   "authorization": {"rustic":  "S0m3rAn0mP@ssW0rD"},
   "video_source": "/Users/hannibal/Downloads/stream",
   "video_port": 5883,
-  "file_formats": [".mov", ".mp4", ".mkv"],
+  "file_formats": ["mov", "mp4", "mkv"],
   "workers": 10
 }
 ```
 </details>
 
 ## Crate
-https://crates.io/crates/RuStream
+[https://crates.io/crates/RuStream][crate]
 
 ## Linting
 ### Requirement
@@ -106,8 +110,8 @@ Licensed under the [MIT License][license]
 [rust-src-page]: https://www.rust-lang.org/
 [rust-logo]: https://img.shields.io/badge/Made%20with-Rust-black?style=for-the-badge&logo=Rust
 [gh-logo]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml/badge.svg
-[docs-logo]: https://docs.rs/RuStream/badge.svg
-[docs]: https://docs.rs/RuStream
-[crates]: https://crates.io/crates/RuStream
+[crate]: https://crates.io/crates/RuStream
 [gh-checks]: https://github.com/thevickypedia/RuStream/actions/workflows/rust.yml
 [crates-logo]: https://img.shields.io/crates/v/RuStream.svg
+[platform]: https://img.shields.io/badge/Platform-Linux_|_macOS_|_Windows-blue?style=for-the-badge&logo=ubuntu
+[cross-platform]: https://www.computerlanguage.com/results.php?definition=cross+platform

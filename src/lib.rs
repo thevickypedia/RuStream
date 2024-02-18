@@ -18,6 +18,8 @@ mod jinja;
 mod routes;
 /// Module to store all the helper functions.
 mod squire;
+/// Module to load all the templates for the UI.
+mod templates;
 
 /// Contains entrypoint and initializer settings to trigger the asynchronous HTTPServer
 ///
