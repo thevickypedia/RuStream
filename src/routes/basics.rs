@@ -35,7 +35,11 @@ pub async fn root(environment: web::Data<Arc<Mutex<minijinja::Environment<'stati
 
     let template = environment.lock().unwrap();
     let index = template.get_template("index").unwrap();
+    // todo: Binary executable built via GH actions does not render the HTML page
+    //  remove after investigation
+    let index_content = index.render(minijinja::context!()).unwrap();
+    println!("{:?}", &index_content);
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(index.render(minijinja::context!()).unwrap())  // no arguments to render
+        .body(index_content)  // no arguments to render
 }
