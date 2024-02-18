@@ -6,8 +6,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '.github/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -58,17 +56,28 @@ jobs:
         shell: bash
       - name: Create New Release
         id: create-release
-        if: env.release == 'true'
         run: |
-          release_tag="v${{ env.pkg_version }}"
-          cargo_prerelease=("alpha" "beta" "rc")
-          prerelease=false
-          for cargo_pre in "${cargo_prerelease[@]}"; do
-            if [[ $pkg_version == *"$cargo_pre"* ]]; then
-              prerelease=true
-              break
-            fi
-          done
+          if [ "$env.release" == "true" ]; then
+            release_tag="v${{ env.pkg_version }}"
+            cargo_prerelease=("alpha" "beta" "rc")
+            prerelease=false
+            for cargo_pre in "${cargo_prerelease[@]}"; do
+              if [[ $pkg_version == *"$cargo_pre"* ]]; then
+                prerelease=true
+                break
+              fi
+            done
+          else
+            epoch="$(date +%s)"
+            current_version=${{ env.pkg_version }}
+            part=2
+            IFS='.' read -r -a version_parts <<< "$current_version"
+            ((version_parts[$part]++))
+            new_version="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+            echo "Bumped version to: $new_version"
+            release_tag="v${new_version}-prerelease-${epoch}"
+            prerelease=true
+          fi
           commit_msg="Release compiled executable for $release_tag"
           release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
           response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
@@ -83,26 +92,9 @@ jobs:
           echo "Release ID: $release_id"
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
         shell: bash
-      - name: Update Rust
-        if: env.release == 'false'
-        run: |
-          printf '*%.0s' {1..60} && printf "\n"
-          echo "Existing rust version: $(rustc --version)"
-          printf '*%.0s' {1..60} && printf "\n\n"
-          rustup update && printf "\n"
-          printf '*%.0s' {1..60} && printf "\n"
-          echo "Updated rust version: $(rustc --version)"
-          printf '*%.0s' {1..60} && printf "\n"
-      - name: Build verbose
-        if: env.release == 'false'
-        run: cargo build --verbose
-      - name: Run tests verbose
-        if: env.release == 'false'
-        run: cargo test --no-run --verbose
 
   upload_assets:
     needs: release
-    if: needs.release.outputs.release-flag == 'true'
     strategy:
       matrix:
         platform:
