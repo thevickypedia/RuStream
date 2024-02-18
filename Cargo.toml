@@ -47,6 +47,8 @@ rand = "0.8.5"
 fernet = "0.2.1"
 minijinja = { version =  "1.0.12", features = ["loader"] }
 url = "2.5.0"
-openssl = "0.10"
 regex = "1.5"
 walkdir = "2.3.2"
+openssl = "0.10"
+[target.'cfg(target_os = "linux")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
