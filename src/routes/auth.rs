@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use actix_web::{HttpRequest, HttpResponse, web};
-use actix_web::cookie::Cookie;
+use actix_web::cookie::{Cookie, SameSite};
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
 use minijinja;
@@ -30,7 +30,7 @@ pub struct DetailError {
 ///
 /// # Returns
 ///
-/// * `200` - HttpResponse with a session-token and redirect URL to the `/home` entrypoint.
+/// * `200` - HttpResponse with a `session_token` and redirect URL to the `/home` entrypoint.
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[post("/login")]
 pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: HttpRequest) -> HttpResponse {
@@ -49,12 +49,14 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
     let payload = serde_json::to_string(&mapped).unwrap();
     let encrypted_payload = constant::FERNET.encrypt(payload.as_bytes());
 
-    let mut cookie = Cookie::build("session_token", encrypted_payload)
+    let cookie_duration = Duration::seconds(config.session_duration as i64);
+    let expiration = OffsetDateTime::now_utc() + cookie_duration;
+    let cookie = Cookie::build("session_token", encrypted_payload)
         .http_only(true)
+        .same_site(SameSite::Strict)
+        .max_age(cookie_duration)
+        .expires(expiration)
         .finish();
-
-    let expiration = OffsetDateTime::now_utc() + Duration::seconds(config.session_duration as i64);
-    cookie.set_expires(expiration);
 
     log::info!("Session for '{}' will be valid until {}", mapped.get("username").unwrap(), expiration);
 
@@ -102,10 +104,9 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
         }
         rendered = logout_template.render(minijinja::context!(detail => "You have been logged out successfully.")).unwrap();
 
-        // Set to the lowest possible second since deletion is not an option
-        let age = Duration::new(0, 1);
-        let cookie = Cookie::build("session_token", "logout")
-            .http_only(true).max_age(age).finish();
+        let mut cookie = Cookie::new("session_token", "");
+        cookie.set_same_site(SameSite::Strict);
+        cookie.make_removal();
         response.cookie(cookie);
     } else {
         log::debug!("No stored session found for {}", host);
@@ -197,6 +198,7 @@ pub fn failed_auth(auth_response: squire::authenticator::AuthToken) -> HttpRespo
     let cookie = Cookie::build("detail", detail)
         .path("/error")
         .http_only(true)
+        .same_site(SameSite::Strict)
         .max_age(age)
         .finish();
     response.cookie(cookie);

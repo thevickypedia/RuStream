@@ -3,7 +3,7 @@
 /// # See Also
 ///
 /// - This page is served as a response for all the content delivery entry points,
-/// when the user session-token is invalid or expired.
+/// when the user's `session_token` is invalid or expired.
 ///
 /// # Returns
 ///
