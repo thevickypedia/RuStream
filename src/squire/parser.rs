@@ -14,6 +14,8 @@ pub struct Args {
 ///
 /// An `Args` struct containing parsed command-line arguments.
 pub fn arguments() -> Args {
+    // todo: allow optional environment variables for 'debug' and 'filename'
+    //  stretch: remove arguments entirely and onboard a .env file parser
     let args: Vec<String> = env::args().collect();
 
     let mut debug = false;

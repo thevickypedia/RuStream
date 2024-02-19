@@ -10,7 +10,28 @@
 #### Summary
 [`RuStream`][repo] is a self-hosted streaming engine, that can render videos via authenticated sessions.
 
-## Usage
+### Installation
+
+```shell
+cargo add RuStream
+```
+
+### Usage
+```rust
+use rustream;
+
+#[actix_rt::main]
+async fn main() {
+    match rustream::start().await {
+        Ok(_) => {
+            println!("RuStream session terminated")
+        }
+        Err(err) => {
+            eprintln!("Error starting rustream: {}", err)
+        }
+    }
+}
+```
 
 <details>
 <summary><strong>Download OS specific Executable</strong></summary>
@@ -36,33 +57,11 @@ curl -o RuStream-Windows-x86_64.zip -LH "Accept: application/octet-stream" "http
 ```
 </details>
 
-<details>
-<summary><strong>Add to existing project</strong></summary>
-
-###### Sample main.rs
-```rust
-use rustream;
-
-#[actix_rt::main]
-async fn main() {
-    match rustream::start().await {
-        Ok(_) => {
-            println!("RuStream session terminated")
-        }
-        Err(err) => {
-            eprintln!("Error starting rustream: {}", err)
-        }
-    }
-}
-```
-
-</details>
-
 #### Arguments
 - `debug` - Enable debug level logging
 
 #### Flags
-- `--filename` / `-f` - Filename (JSON) for the secrets config
+- `--filename` / `-f` - Filename (JSON) for the secrets' config. Defaults to `config.json`
 - `--version` / `-v` - Get package version
 
 #### Config file
@@ -101,6 +100,20 @@ async fn main() {
 ```
 </details>
 
+## Crate
+[https://crates.io/crates/RuStream][crate]
+
+### Cargo Docs - Official Runbook
+[https://docs.rs/RuStream/latest/rustream/][docs]
+
+**Generator**
+```shell
+cargo doc --document-private-items --no-deps
+```
+
+### GitHub Wiki - Project Insights
+[https://github.com/thevickypedia/RuStream/wiki][gh-wiki]
+
 ## Linting
 ### Requirement
 ```shell
@@ -110,17 +123,6 @@ rustup component add clippy
 ```shell
 cargo clippy --no-deps --fix
 ```
-
-## Docs
-### [Cargo Docs][docs]
-```shell
-cargo doc --document-private-items --no-deps
-```
-
-#### [GitHub Wiki][gh-wiki]
-
-## Crate
-[https://crates.io/crates/RuStream][crate]
 
 ## License & copyright
 
