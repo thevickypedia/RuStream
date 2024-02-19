@@ -51,13 +51,19 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 
     let cookie_duration = Duration::seconds(config.session_duration as i64);
     let expiration = OffsetDateTime::now_utc() + cookie_duration;
-    let cookie = Cookie::build("session_token", encrypted_payload)
+    let base_cookie = Cookie::build("session_token", encrypted_payload)
         .http_only(true)
         .same_site(SameSite::Strict)
         .max_age(cookie_duration)
-        .expires(expiration)
-        .finish();
+        .expires(expiration);
 
+    let cookie;
+    if config.secure_session {
+        log::info!("Marking 'session_token' cookie as secure!!");
+        cookie = base_cookie.secure(true).finish();
+    } else {
+        cookie = base_cookie.finish();
+    }
     log::info!("Session for '{}' will be valid until {}", mapped.get("username").unwrap(), expiration);
 
     let mut response = HttpResponse::Ok().json(RedirectResponse {
@@ -136,7 +142,7 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
                   request: HttpRequest) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return failed_auth(auth_response);
+        return failed_auth(auth_response, &config);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
@@ -191,16 +197,23 @@ pub async fn error(environment: web::Data<Arc<Mutex<minijinja::Environment<'stat
 /// # Returns
 ///
 /// Returns an `HttpResponse` with a redirect, setting a cookie with the failure detail.
-pub fn failed_auth(auth_response: squire::authenticator::AuthToken) -> HttpResponse {
+pub fn failed_auth(auth_response: squire::authenticator::AuthToken,
+                   config: &squire::settings::Config) -> HttpResponse {
     let mut response = HttpResponse::build(StatusCode::FOUND);
     let detail = auth_response.detail;
     let age = Duration::new(3, 0);
-    let cookie = Cookie::build("detail", detail)
+    let base_cookie = Cookie::build("detail", detail)
         .path("/error")
         .http_only(true)
         .same_site(SameSite::Strict)
-        .max_age(age)
-        .finish();
+        .max_age(age);
+    let cookie;
+    if config.secure_session {
+        log::debug!("Marking 'detail' cookie as secure!!");
+        cookie = base_cookie.secure(true).finish();
+    } else {
+        cookie = base_cookie.finish();
+    }
     response.cookie(cookie);
     response.append_header(("Location", "/error"));
     response.finish()

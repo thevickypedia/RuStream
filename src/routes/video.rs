@@ -82,7 +82,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
                    request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return routes::auth::failed_auth(auth_response);
+        return routes::auth::failed_auth(auth_response, &config);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
@@ -116,7 +116,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return routes::auth::failed_auth(auth_response);
+        return routes::auth::failed_auth(auth_response, &config);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
@@ -212,7 +212,7 @@ pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
-        return routes::auth::failed_auth(auth_response);
+        return routes::auth::failed_auth(auth_response, &config);
     }
     squire::logger::log_connection(&request);
     let host = request.connection_info().host().to_owned();

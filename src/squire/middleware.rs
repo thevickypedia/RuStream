@@ -5,15 +5,15 @@ use actix_web::http::header;
 ///
 /// # Arguments
 ///
-/// * `website` - A vector of allowed website origins for CORS.
+/// * `websites` - A vector of allowed website origins for CORS.
 ///
 /// # Returns
 ///
 /// A configured `Cors` middleware instance.
-pub fn get_cors(website: Vec<String>) -> Cors {
+pub fn get_cors(websites: Vec<String>) -> Cors {
     let mut origins = vec!["http://localhost.com".to_string(), "https://localhost.com".to_string()];
-    if !website.is_empty() {
-        origins.extend_from_slice(&website);
+    if !websites.is_empty() {
+        origins.extend_from_slice(&websites);
     }
     // Create a clone to append /* to each endpoint, and further extend the same vector
     let cloned = origins.clone().into_iter().map(|x| format!("{}/{}", x, "*"));

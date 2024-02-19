@@ -32,15 +32,19 @@ pub struct Config {
     #[serde(default = "default_max_connections")]
     pub max_connections: i32,
     /// List of websites (supports regex) to add to CORS configuration.
-    #[serde(default = "default_website")]
-    pub website: Vec<String>,
+    #[serde(default = "default_websites")]
+    pub websites: Vec<String>,
 
+    // Boolean flag to restrict session_token to be sent only via HTTPS
+    #[serde(default = "default_secure_session")]
+    pub secure_session: bool,
+
+    // Path to the private key file for SSL certificate
+    #[serde(default = "default_ssl")]
+    pub key_file: path::PathBuf,
     // Path to the full certificate chain file for SSL certificate
     #[serde(default = "default_ssl")]
     pub cert_file: path::PathBuf,
-    // Path to the private key file for SSL certificate
-    #[serde(default = "default_ssl")]
-    pub key_file: path::PathBuf
 }
 
 /// Returns the default value for ssl files
@@ -91,12 +95,14 @@ fn default_workers() -> i32 {
     }
 }
 
-/// Returns the default maximum number of concurrent connections (300).
+/// Returns the default maximum number of concurrent connections (3).
 fn default_max_connections() -> i32 {
-    300
+    3
 }
 
 /// Returns an empty list as the default website (CORS configuration).
-fn default_website() -> Vec<String> {
+fn default_websites() -> Vec<String> {
     Vec::new()
 }
+
+fn default_secure_session() -> bool { false }

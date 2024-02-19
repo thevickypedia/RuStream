@@ -68,6 +68,25 @@ async fn main() {
 #### Config file
 [RuStream][repo] requires a JSON file with secrets loaded as key-value paris.
 
+**Mandatory**
+- **authorization**: Dictionary of key-value pairs with `username` as key and `password` as value.
+- **video_source**: Source path for video files.
+> Files starting with `_` _(underscore)_ and `.` _(dot)_ will be ignored
+
+**Optional**
+- **video_host**: IP address to host the video. Defaults to `127.0.0.1` / `localhost`
+- **video_port**: Port number to host the application. Defaults to `8000`
+- **session_duration**: Time _(in seconds)_ each authenticated session should last. Defaults to `3600`
+- **file_formats**: Vector of supported video file formats. Defaults to `[.mp4, .mov]`
+- **workers**: Number of workers to spin up for the server. Defaults to the number of physical cores.
+- **max_connections**: Maximum number of concurrent connections per worker. Defaults to `3`
+- **websites**: Vector of websites (_supports regex_) to add to CORS configuration. _Required only if tunneled via CDN_
+- **key_file**: Path to the private key file for SSL certificate. Defaults to `None`
+- **cert_file**: Path to the full chain file for SSL certificate. Defaults to `None`
+- **secure_session**: Boolean flag to secure the cookie `session_token`. Defaults to `false`
+> If `SECURE_SESSION` to set to `true`, the cookie `session_token` will only be sent via HTTPS<br>
+> This means that the server can **ONLY** be hosted via `HTTPS` or `localhost`
+
 <details>
 <summary><i><strong>Sample content of JSON file</strong></i></summary>
 
@@ -89,7 +108,7 @@ rustup component add clippy
 ```
 ### Usage
 ```shell
-cargo clippy --no-deps --fix --allow-dirty
+cargo clippy --no-deps --fix
 ```
 
 ## Docs

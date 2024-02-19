@@ -12,8 +12,12 @@ pub fn get_content() -> String {
     r###"<!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Rustic video streaming</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Rustic video streaming</title>
+    <meta property="og:type" content="VideoStreaming">
+    <meta name="keywords" content="Python, streaming, fastapi, JavaScript, HTML, CSS">
+    <meta name="author" content="Vignesh Rao">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <style>
         img {
             display: block;

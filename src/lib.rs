@@ -48,6 +48,11 @@ pub async fn start() -> io::Result<()> {
     println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
 
     let config = squire::startup::get_config(args);
+    if config.secure_session {
+        log::warn!(
+            "Secure session is turned on! This means that the server can ONLY be hosted via HTTPS or localhost"
+        );
+    }
     let template = jinja::environment();
     // Create a dedicated clone, since it will be used within closure
     let config_clone = config.clone();
@@ -64,7 +69,7 @@ pub async fn start() -> io::Result<()> {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
             .app_data(web::Data::new(template_clone.clone()))
-            .wrap(squire::middleware::get_cors(config_clone.website.clone()))
+            .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
             .service(routes::basics::root)
