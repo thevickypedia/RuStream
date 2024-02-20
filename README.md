@@ -57,14 +57,10 @@ curl -o RuStream-Windows-x86_64.zip -LH "Accept: application/octet-stream" "http
 ```
 </details>
 
-#### Arguments
-- `debug` - Enable debug level logging
-
-#### Flags
-- `--filename` / `-f` - Filename (JSON) for the secrets' config. Defaults to `config.json`
-- `--version` / `-v` - Get package version
-
 #### Config file
+
+[//]: # (todo: update to use .env)
+
 [RuStream][repo] requires a JSON file with secrets loaded as key-value paris.
 
 **Mandatory**

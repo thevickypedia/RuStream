@@ -15,8 +15,6 @@ Cargo.lock
 
 # Secrets mapping
 .env
-# todo: remove me
-config.json
 
 # Certificates
 *.pem
