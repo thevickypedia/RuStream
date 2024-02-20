@@ -1,5 +1,3 @@
-/// Module for the commandline interface creation kit that parses the commandline arguments
-pub mod parser;
 /// Module for the web data configuration that holds the secrets required by the application.
 pub mod settings;
 /// Module that initializes the logger and loads the configuration into a dedicated Struct.

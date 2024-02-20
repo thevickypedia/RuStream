@@ -12,6 +12,9 @@ pub struct Config {
     /// Source path for video files.
     pub video_source: path::PathBuf,
 
+    /// Debug flag to enable debug level logging.
+    #[serde(default = "default_debug")]
+    pub debug: bool,
     /// Host IP address for video hosting.
     #[serde(default = "default_video_host")]
     pub video_host: String,
@@ -47,6 +50,10 @@ pub struct Config {
     pub cert_file: path::PathBuf,
 }
 
+/// Returns the default value for debug flag
+fn default_debug() -> bool { false }
+
+
 /// Returns the default value for ssl files
 fn default_ssl() -> path::PathBuf { path::PathBuf::new() }
 
@@ -67,21 +74,15 @@ fn default_video_host() -> String {
 }
 
 /// Returns the default video port (8000).
-fn default_video_port() -> i32 {
-    8000
-}
+fn default_video_port() -> i32 { 8000 }
 
 /// Returns the default session duration (3600 seconds).
-fn default_session_duration() -> i32 {
-    3600
-}
+fn default_session_duration() -> i32 { 3600 }
 
 /// Returns the default supported file formats (.mp4 and .mov).
 ///
 /// Set as public, since this function is re-used in `startup.rs`
-pub fn default_file_formats() -> Vec<String> {
-    vec!["mp4".to_string(), "mov".to_string()]
-}
+pub fn default_file_formats() -> Vec<String> { vec!["mp4".to_string(), "mov".to_string()] }
 
 /// Returns the default number of worker threads (half of logical cores).
 fn default_workers() -> i32 {
@@ -96,13 +97,9 @@ fn default_workers() -> i32 {
 }
 
 /// Returns the default maximum number of concurrent connections (3).
-fn default_max_connections() -> i32 {
-    3
-}
+fn default_max_connections() -> i32 { 3 }
 
 /// Returns an empty list as the default website (CORS configuration).
-fn default_websites() -> Vec<String> {
-    Vec::new()
-}
+fn default_websites() -> Vec<String> { Vec::new() }
 
 fn default_secure_session() -> bool { false }

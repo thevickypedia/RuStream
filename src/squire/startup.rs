@@ -1,7 +1,6 @@
-use std::{env, path};
+use std::env;
 use std::sync::Arc;
 
-use crate::squire::parser::Args;
 use crate::squire::settings::Config;
 
 /// Initializes the logger based on the provided debug flag and cargo information.
@@ -28,70 +27,58 @@ pub fn init_logger(debug: bool, crate_name: &String) {
 
 /// Retrieves the configuration from the provided command-line arguments.
 ///
-/// # Arguments
-///
-/// * `args` - Command-line arguments provided to the application.
-///
 /// # Returns
 ///
 /// An `Arc` of the Config struct containing the application configuration.
-pub fn get_config(args: Args) -> Arc<Config> {
-    let filename = if args.filename.is_empty() {
-        log::warn!("Missing 'filename' argument, assuming default ('config.json')");
-        "config.json".to_string()
-    } else {
-        args.filename
-    };
+pub fn get_config() -> Arc<Config> {
+    let env_file = env::var("env_file").unwrap_or(".env".to_string());
+    let env_file_path = env::current_dir()
+        .unwrap_or_default()
+        .join(env_file);
+    match dotenv::from_path(env_file_path.as_path()) {
+        Ok(_) => {
+            // todo: fix envy parsing or parse manually
+            // todo: neatly format the message in panic
+            // println!("Env vars loaded successfully");
+            // let authorization_str = env::var("authorization").expect("authorization not set in .env");
+            // let authorization: HashMap<String, String> =
+            //     serde_json::from_str(&authorization_str).expect("Error parsing JSON");
+            // println!("AUTH::{:?}", authorization);
 
-    let config;
-    if path::Path::new(&filename).exists() {
-        match std::fs::read_to_string(&filename) {
-            Ok(content) => {
-                let result: serde_json::Result<Config> = serde_json::from_str(&content);
-                match result {
-                    Ok(raw_config) => {
-                        config = Arc::new(raw_config);
+            match envy::from_env::<Config>() {
+                Ok(config) => {
+                    let mut errors = "".to_owned();
+                    if !config.video_source.exists() || !config.video_source.is_dir() {
+                        let err1 = format!(
+                            "\nvideo_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
+                            config.video_source.to_string_lossy()
+                        );
+                        errors.push_str(&err1);
                     }
-                    Err(err) => {
-                        log::error!("Error deserializing JSON");
-                        panic!("\n{}\n", err);
+                    for (username, password) in &config.authorization {
+                        if username.len() < 4 {
+                            let err2 = format!(
+                                "\nauthorization\n\t[{}: {}] username should be at least 4 or more characters [value=invalid]\n",
+                                username, "*".repeat(password.len())
+                            );
+                            errors.push_str(&err2);
+                        }
+                        if password.len() < 8 {
+                            let err3 = format!(
+                                "\nauthorization\n\t[{}: {}] password should be at least 8 or more characters [value=invalid]\n",
+                                username, "*".repeat(password.len())
+                            );
+                            errors.push_str(&err3);
+                        }
                     }
+                    if !errors.is_empty() {
+                        panic!("{}", errors);
+                    }
+                    return Arc::new(config);
                 }
-            }
-            Err(err) => {
-                panic!("Error reading file: {}", err);
+                Err(err) => panic!("Error parsing environment variables: {}", err)
             }
         }
-    } else {
-        panic!("\nfilename\n\tInput [{}] is not a valid filepath [value=missing]\n", filename)
+        Err(err) => panic!("Error loading environment variables: {}", err)
     }
-
-    let mut errors = "".to_owned();
-    if !config.video_source.exists() || !config.video_source.is_dir() {
-        let err1 = format!(
-            "\nvideo_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
-            config.video_source.to_string_lossy()
-        );
-        errors.push_str(&err1);
-    }
-    for (username, password) in &config.authorization {
-        if username.len() < 4 {
-            let err2 = format!(
-                "\nauthorization\n\t[{}: {}] username should be at least 4 or more characters [value=invalid]\n",
-                username, "*".repeat(password.len())
-            );
-            errors.push_str(&err2);
-        }
-        if password.len() < 8 {
-            let err3 = format!(
-                "\nauthorization\n\t[{}: {}] password should be at least 8 or more characters [value=invalid]\n",
-                username, "*".repeat(password.len())
-            );
-            errors.push_str(&err3);
-        }
-    }
-    if !errors.is_empty() {
-        panic!("{}", errors);
-    }
-    config
 }

@@ -40,14 +40,13 @@ mod templates;
 /// ```
 pub async fn start() -> io::Result<()> {
     let cargo = constant::build_info();
-    let args = squire::parser::arguments();
+    let config = squire::startup::get_config();
 
-    squire::startup::init_logger(args.debug, &cargo.crate_name);
+    squire::startup::init_logger(config.debug, &cargo.crate_name);
     println!("{}[v{}] - {}", &cargo.pkg_name, &cargo.pkg_version, &cargo.description);
     let arts = [squire::ascii_art::DOG, squire::ascii_art::DOLPHIN, squire::ascii_art::HORSE];
     println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
 
-    let config = squire::startup::get_config(args);
     if config.secure_session {
         log::warn!(
             "Secure session is turned on! This means that the server can ONLY be hosted via HTTPS or localhost"
