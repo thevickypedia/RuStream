@@ -24,6 +24,19 @@ pub fn init_logger(debug: bool, crate_name: &String) {
     env_logger::init();
 }
 
+/// Extracts the mandatory env vars by key and parses it as `HashMap<String, String>` and `PathBuf`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns a tuple of `HashMap<String, String>` and `PathBuf`.
+///
+/// # Panics
+///
+/// If the value is missing or if there is an error parsing the `HashMap`
 fn mandatory_vars() -> (std::collections::HashMap<String, String>, std::path::PathBuf) {
     let authorization_str = match std::env::var("authorization") {
         Ok(val) => val,
@@ -53,6 +66,19 @@ fn mandatory_vars() -> (std::collections::HashMap<String, String>, std::path::Pa
     (authorization, std::path::PathBuf::from(video_source_str))
 }
 
+/// Extracts the env var by key and parses it as a `bool`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns an `Option<bool>` if the value is available.
+///
+/// # Panics
+///
+/// If the value is present, but it is an invalid data-type.
 fn parse_bool(key: &str) -> Option<bool> {
     match std::env::var(key) {
         Ok(val) => match val.parse() {
@@ -65,6 +91,19 @@ fn parse_bool(key: &str) -> Option<bool> {
     }
 }
 
+/// Extracts the env var by key and parses it as a `i32`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns an `Option<i32>` if the value is available.
+///
+/// # Panics
+///
+/// If the value is present, but it is an invalid data-type.
 fn parse_i32(key: &str) -> Option<i32> {
     match std::env::var(key) {
         Ok(val) => match val.parse() {
@@ -77,6 +116,19 @@ fn parse_i32(key: &str) -> Option<i32> {
     }
 }
 
+/// Extracts the env var by key and parses it as a `Vec<String>`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns an `Option<Vec<String>>` if the value is available.
+///
+/// # Panics
+///
+/// If the value is present, but it is an invalid data-type.
 fn parse_vec(key: &str) -> Option<Vec<String>> {
     match std::env::var(key) {
         Ok(val) => match serde_json::from_str::<Vec<String>>(&val) {
@@ -89,6 +141,15 @@ fn parse_vec(key: &str) -> Option<Vec<String>> {
     }
 }
 
+/// Extracts the env var by key and parses it as a `PathBuf`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns an option of `PathBuf` if the value is available.
 fn parse_path(key: &str) -> Option<std::path::PathBuf> {
     match std::env::var(key) {
         Ok(value) => {
@@ -100,6 +161,11 @@ fn parse_path(key: &str) -> Option<std::path::PathBuf> {
     }
 }
 
+/// Handler that's responsible to parse all the env vars.
+///
+/// # Returns
+///
+/// `Config` struct containing the required parameters.
 fn load_env_vars() -> settings::Config {
     let (authorization, video_source) = mandatory_vars();
     let debug = parse_bool("debug").unwrap_or(settings::default_debug());
@@ -130,13 +196,12 @@ fn load_env_vars() -> settings::Config {
     }
 }
 
-/// Retrieves the configuration from the provided command-line arguments.
+/// Retrieves the environment variables and parses as the data-type specified in Config struct.
 ///
 /// # Returns
 ///
-/// An `Arc` of the Config struct containing the application configuration.
+/// Returns an `Arc` of the `Config` struct containing the required parameters.
 pub fn get_config() -> std::sync::Arc<settings::Config> {
-    // todo: Update docs to be explicit about what `env_file` means
     let env_file = std::env::var("env_file").unwrap_or(".env".to_string());
     let env_file_path = std::env::current_dir()
         .unwrap_or_default()
@@ -171,7 +236,7 @@ pub fn get_config() -> std::sync::Arc<settings::Config> {
             if !errors.is_empty() {
                 panic!("{}", errors);
             }
-            return std::sync::Arc::new(config);
+            std::sync::Arc::new(config)
         }
         Err(err) => panic!("Error loading environment variables: {}", err)
     }

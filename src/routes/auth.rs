@@ -57,13 +57,12 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
         .max_age(cookie_duration)
         .expires(expiration);
 
-    let cookie;
-    if config.secure_session {
+    let cookie = if config.secure_session {
         log::info!("Marking 'session_token' cookie as secure!!");
-        cookie = base_cookie.secure(true).finish();
+        base_cookie.secure(true).finish()
     } else {
-        cookie = base_cookie.finish();
-    }
+        base_cookie.finish()
+    };
     log::info!("Session for '{}' will be valid until {}", mapped.get("username").unwrap(), expiration);
 
     let mut response = HttpResponse::Ok().json(RedirectResponse {
@@ -207,13 +206,12 @@ pub fn failed_auth(auth_response: squire::authenticator::AuthToken,
         .http_only(true)
         .same_site(SameSite::Strict)
         .max_age(age);
-    let cookie;
-    if config.secure_session {
+    let cookie = if config.secure_session {
         log::debug!("Marking 'detail' cookie as secure!!");
-        cookie = base_cookie.secure(true).finish();
+        base_cookie.secure(true).finish()
     } else {
-        cookie = base_cookie.finish();
-    }
+        base_cookie.finish()
+    };
     response.cookie(cookie);
     response.append_header(("Location", "/error"));
     response.finish()

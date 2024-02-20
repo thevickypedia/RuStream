@@ -12,8 +12,6 @@ use rand::prelude::SliceRandom;
 
 /// Module to load all the static values and required structs during startup.
 mod constant;
-/// Module to read the HTML files and load as Jinja templates.
-mod jinja;
 /// Module for all the API entry points.
 mod routes;
 /// Module to store all the helper functions.
@@ -21,7 +19,7 @@ mod squire;
 /// Module to load all the templates for the UI.
 mod templates;
 
-/// Contains entrypoint and initializer settings to trigger the asynchronous HTTPServer
+/// Contains entrypoint and initializer settings to trigger the asynchronous `HTTPServer`
 ///
 /// # Examples
 ///
@@ -52,10 +50,10 @@ pub async fn start() -> io::Result<()> {
             "Secure session is turned on! This means that the server can ONLY be hosted via HTTPS or localhost"
         );
     }
-    let template = jinja::environment();
+    let jinja_env = templates::environment();
     // Create a dedicated clone, since it will be used within closure
     let config_clone = config.clone();
-    let template_clone = template.clone();
+    let jinja_clone = jinja_env.clone();
     let host = format!("{}:{}", config.video_host, config.video_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
         &cargo.pkg_name, &config.workers, &host);
@@ -67,7 +65,7 @@ pub async fn start() -> io::Result<()> {
     let application = move || {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
-            .app_data(web::Data::new(template_clone.clone()))
+            .app_data(web::Data::new(jinja_clone.clone()))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
