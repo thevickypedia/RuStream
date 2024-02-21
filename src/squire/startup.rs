@@ -165,7 +165,7 @@ fn parse_path(key: &str) -> Option<std::path::PathBuf> {
 ///
 /// # Returns
 ///
-/// `Config` struct containing the required parameters.
+/// Instantiates the `Config` struct with the required parameters.
 fn load_env_vars() -> settings::Config {
     let (authorization, video_source) = mandatory_vars();
     let debug = parse_bool("debug").unwrap_or(settings::default_debug());
@@ -196,48 +196,53 @@ fn load_env_vars() -> settings::Config {
     }
 }
 
+/// Validates all the required environment variables with the required settings.
+///
+/// # Returns
+///
+/// Returns the `Config` struct containing the required parameters.
+fn validate_vars() -> settings::Config {
+    let config = load_env_vars();
+    let mut errors = "".to_owned();
+    if !config.video_source.exists() || !config.video_source.is_dir() {
+        let err1 = format!(
+            "\nvideo_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
+            config.video_source.to_string_lossy()
+        );
+        errors.push_str(&err1);
+    }
+    for (username, password) in &config.authorization {
+        if username.len() < 4 {
+            let err2 = format!(
+                "\nauthorization\n\t[{}: {}] username should be at least 4 or more characters [value=invalid]\n",
+                username, "*".repeat(password.len())
+            );
+            errors.push_str(&err2);
+        }
+        if password.len() < 8 {
+            let err3 = format!(
+                "\nauthorization\n\t[{}: {}] password should be at least 8 or more characters [value=invalid]\n",
+                username, "*".repeat(password.len())
+            );
+            errors.push_str(&err3);
+        }
+    }
+    if !errors.is_empty() {
+        panic!("{}", errors);
+    }
+    config
+}
+
 /// Retrieves the environment variables and parses as the data-type specified in Config struct.
 ///
 /// # Returns
 ///
-/// Returns an `Arc` of the `Config` struct containing the required parameters.
+/// Converts the config struct into an `Arc` and returns it.
 pub fn get_config() -> std::sync::Arc<settings::Config> {
     let env_file = std::env::var("env_file").unwrap_or(".env".to_string());
     let env_file_path = std::env::current_dir()
         .unwrap_or_default()
         .join(env_file);
-    match dotenv::from_path(env_file_path.as_path()) {
-        Ok(_) => {
-            let config = load_env_vars();
-            let mut errors = "".to_owned();
-            if !config.video_source.exists() || !config.video_source.is_dir() {
-                let err1 = format!(
-                    "\nvideo_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
-                    config.video_source.to_string_lossy()
-                );
-                errors.push_str(&err1);
-            }
-            for (username, password) in &config.authorization {
-                if username.len() < 4 {
-                    let err2 = format!(
-                        "\nauthorization\n\t[{}: {}] username should be at least 4 or more characters [value=invalid]\n",
-                        username, "*".repeat(password.len())
-                    );
-                    errors.push_str(&err2);
-                }
-                if password.len() < 8 {
-                    let err3 = format!(
-                        "\nauthorization\n\t[{}: {}] password should be at least 8 or more characters [value=invalid]\n",
-                        username, "*".repeat(password.len())
-                    );
-                    errors.push_str(&err3);
-                }
-            }
-            if !errors.is_empty() {
-                panic!("{}", errors);
-            }
-            std::sync::Arc::new(config)
-        }
-        Err(err) => panic!("Error loading environment variables: {}", err)
-    }
+    let _ = dotenv::from_path(env_file_path.as_path());
+    std::sync::Arc::new(validate_vars())
 }
