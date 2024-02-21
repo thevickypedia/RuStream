@@ -139,7 +139,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         // Rust doesn't allow re-assignment, so might as well create a mutable variable
         // Load the default response body and re-construct with subtitles if present
         let mut response_body = landing.render(context!(
-            video_title => &filepath, path => render_path,
+            video_title => &__filename, path => render_path,
             previous => &rust_iter.previous,
             next => &rust_iter.next,
             previous_title => &rust_iter.previous,
@@ -149,7 +149,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         if subtitle.vtt.exists() {
             let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
             response_body = landing.render(context!(
-                video_title => &filepath, path => render_path,
+                video_title => &__filename, path => render_path,
                 previous => &rust_iter.previous,
                 next => &rust_iter.next,
                 previous_title => &rust_iter.previous,
@@ -165,7 +165,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     log::debug!("Successfully converted srt to vtt file");
                     let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
                     response_body = landing.render(context!(
-                        video_title => &filepath, path => render_path,
+                        video_title => &__filename, path => render_path,
                         previous => &rust_iter.previous,
                         next => &rust_iter.next,
                         previous_title => &rust_iter.previous,

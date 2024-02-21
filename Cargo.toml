@@ -1,6 +1,6 @@
 [package]
 name = "RuStream"
-version = "1.0.0"
+version = "1.0.1"
 description = "Self-hosted Streaming Engine, that can render videos via authenticated sessions."
 license = "MIT"
 documentation = "https://docs.rs/RuStream"

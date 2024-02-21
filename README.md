@@ -58,8 +58,6 @@ curl -o RuStream-Windows-x86_64.zip -LH "Accept: application/octet-stream" "http
 </details>
 
 #### Environment Variables
-> Environment variables can (optionally) be loaded from any plain text file.<br>
-> Refer the [wiki page][gh-wiki-env] for more information.
 
 **Mandatory**
 - **authorization**: Dictionary of key-value pairs with `username` as key and `password` as value.
@@ -80,6 +78,8 @@ curl -o RuStream-Windows-x86_64.zip -LH "Accept: application/octet-stream" "http
 > If `SECURE_SESSION` is to set to `true`, the cookie `session_token` will only be sent via HTTPS<br>
 > This means that the server can **ONLY** be hosted via `HTTPS` or `localhost`
 
+> Checkout [GitHub Wiki][gh-wiki-env] for more information about environment variables and `dotenv` usage.
+
 ## Crate
 [https://crates.io/crates/RuStream][crate]
 
@@ -91,9 +91,6 @@ curl -o RuStream-Windows-x86_64.zip -LH "Accept: application/octet-stream" "http
 cargo doc --document-private-items --no-deps
 ```
 
-### GitHub Wiki - Project Insights
-[https://github.com/thevickypedia/RuStream/wiki][gh-wiki]
-
 ## Linting
 ### Requirement
 ```shell
@@ -103,6 +100,9 @@ rustup component add clippy
 ```shell
 cargo clippy --no-deps --fix
 ```
+
+## GitHub Wiki - Project Insights
+[https://github.com/thevickypedia/RuStream/wiki][gh-wiki]
 
 ## License & copyright
 
