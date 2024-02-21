@@ -1,17 +1,17 @@
 use std::sync::{Arc, Mutex};
 
 /// Index page template that is served as HTML response for the root endpoint.
-pub mod index;
+mod index;
 /// Landing page template that is served as HTML response while streaming videos.
-pub mod landing;
+mod landing;
 /// Listing page template that is served as HTML response after successful authentication.
-pub mod listing;
+mod listing;
 /// Logout page template that is served as HTML response when the user decides to end the session.
-pub mod logout;
+mod logout;
 /// Session page template that is served as HTML response when invalid/expired session tokens are received.
-pub mod session;
+mod session;
 /// Unauthorized page template that is served as HTML response after failed authentication.
-pub mod unauthorized;
+mod unauthorized;
 
 /// Loads all the HTML templates' content into a Jinja Environment
 pub fn environment() -> Arc<Mutex<minijinja::Environment<'static>>> {

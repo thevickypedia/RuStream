@@ -1,7 +1,6 @@
-# https://doc.rust-lang.org/cargo/getting-started/first-steps.html#first-steps-with-cargo
 [package]
 name = "RuStream"
-version = "1.0.0-a"
+version = "1.0.0"
 description = "Self-hosted Streaming Engine, that can render videos via authenticated sessions."
 license = "MIT"
 documentation = "https://docs.rs/RuStream"
@@ -23,10 +22,6 @@ path = "src/lib.rs"
 name = "rustream"
 path = "src/main.rs"
 
-# https://docs.rs/releases/queue
-# https://docs.rs/about/metadata
-# https://doc.rust-lang.org/cargo/reference/config.html?highlight=RUSTDOCFLAGS
-# export RUSTDOCFLAGS="document-private-items no-deps"
 [package.metadata.docs.rs]
 rustdoc-args = ["--document-private-items"]
 

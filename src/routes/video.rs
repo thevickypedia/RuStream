@@ -32,7 +32,7 @@ struct Subtitles {
 ///
 /// * `path` - The input path string to be URL encoded.
 ///
-/// # References:
+/// ## References
 /// - [RustJobs](https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/)
 ///
 /// # Returns

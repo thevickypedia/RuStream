@@ -15,7 +15,7 @@ use sha2::{Digest, Sha512};
 ///
 /// A hexadecimal string representing the SHA-512 hash value.
 ///
-/// ## References:
+/// ## References
 /// - [Official docs](https://docs.rs/sha2/latest/sha2/#usage)
 pub fn calculate_hash(value: String) -> String {
     let mut hasher = Sha512::new();
@@ -37,7 +37,7 @@ pub fn calculate_hash(value: String) -> String {
 ///
 /// A Base64-encoded ASCII string.
 ///
-/// ## References:
+/// ## References
 /// - [Official docs](https://docs.rs/base64/latest/base64/#url-safe-alphabet)
 #[allow(dead_code)]  // Just for reference
 pub fn base64_encode(value: &str) -> String {
@@ -56,7 +56,7 @@ pub fn base64_encode(value: &str) -> String {
 ///
 /// A `Result` containing the decoded string or an error message.
 ///
-/// ## References:
+/// ## References
 /// - [Official Docs](https://docs.rs/base64/latest/base64/#url-safe-alphabet)
 pub fn base64_decode(value: &str) -> Result<String, &'static str> {
     if let Ok(decoded_bytes) = URL_SAFE.decode(value) {
