@@ -101,6 +101,15 @@ pub fn get_content() -> String {
             height: 75vh; /* Set height to 75% of the viewport height */
             margin: 0 auto; /* Center the container horizontally */
         }
+        #image-source {
+            height: 75vh;
+            width: auto;
+            max-width: 100%;
+            margin: 0 auto; /* Center the container horizontally */
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Center the container vertically */
+        }
         #video-player {
             position: relative;
             width: 100%;
@@ -135,28 +144,33 @@ pub fn get_content() -> String {
     <br><br>
     <h1>{{ video_title }}</h1>
     <div id="video-container">
-        <video id="video-player"
-               class="video-js"
-               preload="auto"
-               controls muted="muted"
-               style="position: relative; margin-left: auto; margin-right: auto; display: block"
-               data-setup='{
-             "playbackRates": [1, 1.5, 2, 5],
-             "controlBar": {
-               "skipButtons": {
-                 "backward": 10,
-                 "forward": 10
-               }
-             }
-           }'>
-            <source id="video-source" type="video/mp4" src=""/>
-            <track id="subtitles" kind="subtitles" src="" srclang="en"/>
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a
-                web browser that
-                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-            </p>
-        </video>
+        {% if render_image %}
+            <img id="image-source" src="">
+        {% else %}
+            <video id="video-player"
+                   class="video-js"
+                   preload="auto"
+                   controls muted="muted"
+                   style="position: relative; margin-left: auto; margin-right: auto; display: block"
+                   data-setup='{
+                 "playbackRates": [1, 1.5, 2, 5],
+                 "controlBar": {
+                   "skipButtons": {
+                     "backward": 10,
+                     "forward": 10
+                   }
+                 }
+               }'>
+                <source id="video-source" type="video/mp4" src=""/>
+                <track id="subtitles" kind="subtitles" src="" srclang="en"/>
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a
+                    web browser that
+                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video>
+        {% endif %}
+        <br>
         {% if previous %}
             <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous_title }}">
                 <i class="fa fa-backward"></i> Previous
@@ -172,22 +186,31 @@ pub fn get_content() -> String {
     <script>
         let origin = window.location.origin; // Get the current origin using JavaScript
         let path = "{{ path }}";
-        let track = "{{ track }}";
+        {% if render_image %}
+            // Construct the source URL for video by combining origin and path
+            let imageSource = origin + path;
 
-        // Construct the source URL for video by combining origin and path
-        let videoSource = origin + path;
+            // Set the video source URL for the video-source element
+            let videoElement = document.getElementById("image-source");
+            videoElement.setAttribute("src", imageSource);
+        {% else %}
+            let track = "{{ track }}";
 
-        // Set the video source URL for the video-source element
-        let videoElement = document.getElementById("video-source");
-        videoElement.setAttribute("src", videoSource);
+            // Construct the source URL for video by combining origin and path
+            let videoSource = origin + path;
 
-        // Set the subtitles URL for the video
-        let trackElement = document.getElementById("subtitles");
-        trackElement.setAttribute("src", track);
+            // Set the video source URL for the video-source element
+            let videoElement = document.getElementById("video-source");
+            videoElement.setAttribute("src", videoSource);
 
-        let videoPlayer = document.getElementById("video-player");
-        videoPlayer.load(); // Load the video
-        // videoPlayer.play(); // Play the video
+            // Set the subtitles URL for the video
+            let trackElement = document.getElementById("subtitles");
+            trackElement.setAttribute("src", track);
+
+            let videoPlayer = document.getElementById("video-player");
+            videoPlayer.load(); // Load the video
+            // videoPlayer.play(); // Play the video
+        {% endif %}
     </script>
     <script>
         function logOut() {

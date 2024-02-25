@@ -136,6 +136,34 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         let landing = template.get_template("landing").unwrap();
         let rust_iter = squire::content::get_iter(&__target, &config.file_formats);
         let render_path = format!("/video?file={}", url_encode(&filepath));
+        let image_extensions: Vec<&str> = vec![
+            "jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp", "svg", "ico", "raw", "psd", "ai", "eps", "pdf",
+        ];
+        if image_extensions.contains(&render_path.split('.').last()
+            .unwrap_or_default()
+            .to_lowercase().as_str()) {
+            match landing.render(context!(
+                video_title => &__filename, path => render_path,
+                render_image => true,
+                previous => &rust_iter.previous,
+                next => &rust_iter.next,
+                previous_title => &rust_iter.previous,
+                next_title => &rust_iter.next,
+            )) {
+                Ok(response_body) => {
+                    log::debug!("Rendering {} as image", &__filename);
+                    return HttpResponse::build(StatusCode::OK)
+                        .content_type("text/html; charset=utf-8").body(response_body);
+                }
+                Err(error) => {
+                    log::error!("Failed to render {} as image", &__filename);
+                    log::error!("{}", error);
+                    // todo: raise an appropriate message and display in the UI
+                }
+            };
+        }
+        // todo: move all jinja rendering to a function and use match instead of blind unwrap
+        //  raise an appropriate HTTPResponse and display in the UI
         // Rust doesn't allow re-assignment, so might as well create a mutable variable
         // Load the default response body and re-construct with subtitles if present
         let mut response_body = landing.render(context!(
