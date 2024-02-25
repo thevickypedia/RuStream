@@ -166,7 +166,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             ("next", &next)
         ].into_iter().collect::<HashMap<_, _>>();
         if vec!["jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp",
-                "svg", "ico", "raw", "psd", "ai", "eps", "pdf"]
+                "svg", "ico", "raw", "psd", "ai", "eps", "pdf", "webp"]
             .contains(&render_path.split('.').last()
                 .unwrap()  // file extension WILL be present at this point
                 .to_lowercase().as_str()) {

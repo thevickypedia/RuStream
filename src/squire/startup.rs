@@ -1,4 +1,6 @@
 use std;
+use crate::constant::Cargo;
+use crate::squire;
 
 use crate::squire::settings;
 
@@ -234,8 +236,13 @@ fn validate_vars() -> settings::Config {
 /// # Returns
 ///
 /// Converts the config struct into an `Arc` and returns it.
-pub fn get_config() -> std::sync::Arc<settings::Config> {
-    let env_file = std::env::var("env_file").unwrap_or(".env".to_string());
+pub fn get_config(cargo: &Cargo) -> std::sync::Arc<settings::Config> {
+    let mut env_file = squire::parser::arguments(cargo);
+    if env_file.is_empty() {
+        env_file = std::env::var("env_file")
+            .unwrap_or(std::env::var("ENV_FILE")
+                .unwrap_or(".env".to_string()));
+    }
     let env_file_path = std::env::current_dir()
         .unwrap_or_default()
         .join(env_file);

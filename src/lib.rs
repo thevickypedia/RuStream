@@ -37,7 +37,7 @@ mod templates;
 /// ```
 pub async fn start() -> io::Result<()> {
     let cargo = constant::build_info();
-    let config = squire::startup::get_config();
+    let config = squire::startup::get_config(&cargo);
 
     squire::startup::init_logger(config.debug, &cargo.crate_name);
     println!("{}[v{}] - {}", &cargo.pkg_name, &cargo.pkg_version, &cargo.description);

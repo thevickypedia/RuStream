@@ -16,3 +16,5 @@ pub mod subtitles;
 pub mod content;
 /// Module that handles the authentication and
 pub mod authenticator;
+/// Module that handles parsing command line arguments.
+pub mod parser;

@@ -2,10 +2,10 @@
 async fn main() {
     match rustream::start().await {
         Ok(_) => {
-            println!("RuStream session terminated")
+            println!("\nRuStream session has ended")
         }
         Err(err) => {
-            eprintln!("Error starting rustream: {}", err)
+            eprintln!("\nError starting RuStream: {}", err)
         }
     }
 }

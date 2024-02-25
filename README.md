@@ -24,10 +24,10 @@ use rustream;
 async fn main() {
     match rustream::start().await {
         Ok(_) => {
-            println!("RuStream session terminated")
+            println!("RuStream session has ended")
         }
         Err(err) => {
-            eprintln!("Error starting rustream: {}", err)
+            eprintln!("Error starting RuStream: {}", err)
         }
     }
 }
