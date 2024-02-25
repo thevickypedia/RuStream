@@ -71,9 +71,9 @@ fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
 ///
 /// # Arguments
 ///
-/// * `config` - The configuration settings.
-/// * `request` - The HTTP request.
-/// * `track_path` - The path parameter representing the track file.
+/// * `config` - Configuration data for the application.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `info` - Query string from the request.
 ///
 /// # Returns
 ///
@@ -100,12 +100,32 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
     }
 }
 
+/// Create an `HttpResponse` based on the context built and rendered template.
+///
+/// # Arguments
+///
+/// * `landing` - `Template` retrieved from the configuration container.
+/// * `serializable` - `HashMap` that can be serialized into a single String block which will be rendered.
+fn render_content(landing: Template, serializable: HashMap<&str, &String>) -> HttpResponse {
+    return match landing.render(serializable) {
+        Ok(response_body) => {
+            HttpResponse::build(StatusCode::OK)
+                .content_type("text/html; charset=utf-8").body(response_body)
+        }
+        Err(err) => {
+            log::error!("{}", err);
+            HttpResponse::FailedDependency().json("Failed to render content.")
+        }
+    }
+}
+
 /// Handles requests for the '/stream/{video_path:.*}' endpoint, serving video files and directories.
 ///
 /// # Arguments
 ///
-/// * `config` - The configuration settings.
-/// * `request` - The HTTP request.
+/// * `config` - Configuration data for the application.
+/// * `environment` - Configuration container for the loaded templates.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `video_path` - The path parameter representing the video file or directory.
 ///
 /// # Returns
@@ -148,19 +168,10 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         if vec!["jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp",
                 "svg", "ico", "raw", "psd", "ai", "eps", "pdf"]
             .contains(&render_path.split('.').last()
-            .unwrap()  // file extension WILL be present at this point
-            .to_lowercase().as_str()) {
+                .unwrap()  // file extension WILL be present at this point
+                .to_lowercase().as_str()) {
             context_builder.insert("render_image", &render_path);
-            return match landing.render(context_builder) {
-                Ok(response_body) => {
-                    HttpResponse::build(StatusCode::OK)
-                        .content_type("text/html; charset=utf-8").body(response_body)
-                }
-                Err(err) => {
-                    log::error!("{}", err);
-                    HttpResponse::FailedDependency().json("Failed to render content.")
-                }
-            }
+            return render_content(landing, context_builder);
         }
         let subtitle = subtitles(__target, &filepath);
         let mut sfx_file = String::new();
@@ -181,16 +192,7 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         if !sfx_file.is_empty() {
             context_builder.insert("track", &sfx_file);
         }
-        return match landing.render(context_builder) {
-            Ok(response_body) => {
-                HttpResponse::build(StatusCode::OK)
-                    .content_type("text/html; charset=utf-8").body(response_body)
-            }
-            Err(err) => {
-                log::error!("{}", err);
-                HttpResponse::FailedDependency().json("Failed to render content.")
-            }
-        }
+        return render_content(landing, context_builder);
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
         let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
@@ -213,8 +215,8 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `config` - The configuration settings.
-/// * `request` - The HTTP request.
+/// * `config` - Configuration data for the application.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `info` - The query parameter containing the file information.
 ///
 /// # Returns

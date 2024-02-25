@@ -22,7 +22,8 @@ pub async fn health() -> HttpResponse {
 ///
 /// # Arguments
 ///
-/// * `request` - The HTTP request received for the root endpoint.
+/// * `environment` - Configuration container for the loaded templates.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 ///
 /// # Returns
 ///

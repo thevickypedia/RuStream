@@ -8,7 +8,6 @@ use std::io;
 
 use actix_web::{App, HttpServer, middleware, web};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use rand::prelude::SliceRandom;
 
 /// Module to load all the static values and required structs during startup.
 mod constant;
@@ -42,8 +41,7 @@ pub async fn start() -> io::Result<()> {
 
     squire::startup::init_logger(config.debug, &cargo.crate_name);
     println!("{}[v{}] - {}", &cargo.pkg_name, &cargo.pkg_version, &cargo.description);
-    let arts = [squire::ascii_art::DOG, squire::ascii_art::DOLPHIN, squire::ascii_art::HORSE];
-    println!("{}", arts.choose(&mut rand::thread_rng()).unwrap());
+    squire::ascii_art::random();
 
     if config.secure_session {
         log::warn!(

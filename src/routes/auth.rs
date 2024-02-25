@@ -26,7 +26,7 @@ pub struct DetailError {
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request` - Actix HttpRequest containing information about the incoming request.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 ///
 /// # Returns
 ///
@@ -77,7 +77,8 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request` - Actix HttpRequest containing information about the incoming request.
+/// * `environment` - Configuration container for the loaded templates.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 ///
 /// # Returns
 ///
@@ -129,7 +130,8 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `request` - Actix HttpRequest containing information about the incoming request.
+/// * `environment` - Configuration container for the loaded templates.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 ///
 /// # Returns
 ///
@@ -163,7 +165,8 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `request` - Actix HttpRequest containing information about the incoming request.
+/// * `environment` - Configuration container for the loaded templates.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
 ///
 /// # Returns
 ///

@@ -14,6 +14,11 @@ mod session;
 mod unauthorized;
 
 /// Loads all the HTML templates' content into a Jinja Environment
+///
+/// # Returns
+///
+/// Returns the `Environment` object that holds the central configuration state for templates.
+/// It is also the container for all loaded templates.
 pub fn environment() -> Arc<Mutex<minijinja::Environment<'static>>> {
     let mut env = minijinja::Environment::new();
     env.add_template_owned("index", index::get_content()).unwrap();

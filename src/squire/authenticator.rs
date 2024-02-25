@@ -74,8 +74,8 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credential
 ///
 /// # Arguments
 ///
-/// * `request` - The HTTP request containing the authorization header.
-/// * `config` - The configuration settings containing user credentials and session duration.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `config` - Configuration data for the application.
 ///
 /// # Returns
 ///
@@ -131,12 +131,12 @@ pub fn verify_login(
 ///
 /// # Arguments
 ///
-/// * `request` - The HTTP request containing the session token in the form of a cookie.
-/// * `config` - The configuration settings containing session duration.
+/// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `config` - Configuration data for the application.
 ///
 /// # Returns
 ///
-/// Returns an `AuthToken` indicating the result of the token verification.
+/// Returns an instance of the `AuthToken` struct indicating the result of the token verification.
 pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");

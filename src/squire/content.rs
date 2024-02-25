@@ -42,7 +42,7 @@ pub fn default_structure() -> Vec<HashMap<String, String>> {
 ///
 /// A vector of `Result<i32, String>` where each element is either an integer representing a numeric part
 /// or a string representing a non-numeric part converted to lowercase.
-fn natural_sort_key(filename: &str) -> Vec<std::result::Result<i32, String>> {
+fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
     let re = Regex::new(r"(\D+|\d+)").unwrap();
     re.find_iter(filename)
         .map(|part| {
@@ -119,19 +119,21 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
 ///
 /// # Arguments
 ///
-/// * `args` - A tuple containing a stream identifier, a directory path, and references to two strings.
+/// * `parent` - Path to the parent directory.
+/// * `child` - Path to the child directory.
+/// * `file_formats` - File formats (set as env vars) that are allowed for streaming.
 ///
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(parent: &str, subdir: &str, file_formats: &[String]) -> ContentPayload {
+pub fn get_dir_stream_content(parent: &str, child: &str, file_formats: &[String]) -> ContentPayload {
     let mut files = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
         let file_name = entry.file_name().into_string().unwrap();
         if file_name.starts_with('_') || file_name.starts_with('.') {
             continue;
         }
-        let file_path = Path::new(subdir).join(&file_name);
+        let file_path = Path::new(child).join(&file_name);
         let file_extn = &file_path.extension().unwrap_or_default().to_string_lossy().to_string();
         if file_formats.contains(file_extn) {
             let map = HashMap::from([

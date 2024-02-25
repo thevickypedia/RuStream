@@ -1,9 +1,12 @@
-// References:
-//  https://www.asciiart.eu/
-//  https://asciiart.cc/
+use rand::prelude::SliceRandom;
 
-/// ASCII art of a horse
-pub static HORSE: &str = r"
+/// Prints random ASCII art of a horse, dog or a dolphin.
+///
+/// ## References
+/// - [https://www.asciiart.eu](https://www.asciiart.eu)
+/// - [https://asciiart.cc](https://asciiart.cc)
+pub fn random() {
+    let horse = r"
                                                  #    #
                                             %%% ##   ##
                                          %%%%% ###%%###
@@ -47,9 +50,7 @@ pub static HORSE: &str = r"
                                                          ##
 ";
 
-
-/// ASCII art of a dog
-pub static DOG: &str = r###"
+    let dog = r###"
            __.
         .-".'                      .--.            _..._
       .' .'                     .'    \       .-""  __ ""-.
@@ -86,8 +87,7 @@ pub static DOG: &str = r###"
                       '..__L.:-'
 "###;
 
-/// ASCII art of a dolphin
-pub static DOLPHIN: &str = r###"
+    let dolphin = r###"
                                                _______
                                          .,add88YYYYY88ba,
                                     .,adPP""'         `"Yba___,aaadYPPba,
@@ -111,8 +111,8 @@ pub static DOLPHIN: &str = r###"
         dP                           ,dP'  `Yb, ,d8'
        ,8'                         ,dP"      `"Y8P'
        dP                        ,8P"
-      ,8'                      ,dP"    Normand
-      dP                     ,dP"      Veilleux
+      ,8'                      ,dP"
+      dP                     ,dP"
      ,8'                    ,8P'
      I8                    dP"
      IP                   dP'
@@ -146,3 +146,6 @@ pub static DOLPHIN: &str = r###"
                        `""Y8baadP'
                             `""'
 "###;
+
+    println!("{}", [dog, dolphin, horse].choose(&mut rand::thread_rng()).unwrap())
+}

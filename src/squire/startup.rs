@@ -7,7 +7,7 @@ use crate::squire::settings;
 /// # Arguments
 ///
 /// * `debug` - A flag indicating whether to enable debug mode for detailed logging.
-/// * `cargo` - A reference to the Cargo struct containing information about the application.
+/// * `crate_name` - Name of the crate loaded during compile time.
 pub fn init_logger(debug: bool, crate_name: &String) {
     if debug {
         std::env::set_var("RUST_LOG", format!(
@@ -25,10 +25,6 @@ pub fn init_logger(debug: bool, crate_name: &String) {
 }
 
 /// Extracts the mandatory env vars by key and parses it as `HashMap<String, String>` and `PathBuf`
-///
-/// # Arguments
-///
-/// * `key` - Key for the environment variable.
 ///
 /// # Returns
 ///
