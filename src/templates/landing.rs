@@ -13,8 +13,8 @@ pub fn get_content() -> String {
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>{{ video_title }}</title>
-    <meta property="og:type" content="VideoStreaming">
+    <title>{{ media_title }}</title>
+    <meta property="og:type" content="MediaStreaming">
     <meta name="keywords" content="Rust, streaming, actix, JavaScript, HTML, CSS">
     <meta name="author" content="Vignesh Rao">
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -141,7 +141,7 @@ pub fn get_content() -> String {
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
     <br><br>
-    <h1>{{ video_title }}</h1>
+    <h1>{{ media_title }}</h1>
     {% if render_image %}
         <img id="image-source" src="">
     {% else %}
@@ -187,12 +187,12 @@ pub fn get_content() -> String {
         let origin = window.location.origin; // Get the current origin using JavaScript
         let path = "{{ path }}";
         {% if render_image %}
-            // Construct the source URL for video by combining origin and path
+            // Construct the source URL for the image by combining origin and path
             let imageSource = origin + path;
 
-            // Set the video source URL for the video-source element
-            let videoElement = document.getElementById("image-source");
-            videoElement.setAttribute("src", imageSource);
+            // Set the image source URL for the image-source element
+            let imageElement = document.getElementById("image-source");
+            imageElement.setAttribute("src", imageSource);
         {% else %}
             let track = "{{ track }}";
 

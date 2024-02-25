@@ -15,7 +15,7 @@ pub fn init_logger(debug: bool, crate_name: &String) {
         ));
         std::env::set_var("RUST_BACKTRACE", "1");
     } else {
-        // Set Actix logging to warning mode since it becomes too noisy when streaming a giant video file.
+        // Set Actix logging to warning mode since it becomes too noisy when streaming large files
         std::env::set_var("RUST_LOG", format!(
             "actix_web=warn,actix_server=warn,{}=info", crate_name
         ));
@@ -51,15 +51,15 @@ fn mandatory_vars() -> (std::collections::HashMap<String, String>, std::path::Pa
                 );
             }
         };
-    let video_source_str = match std::env::var("video_source") {
+    let media_source_str = match std::env::var("media_source") {
         Ok(val) => val,
         Err(_) => {
             panic!(
-                "\nvideo_source\n\texpected a directory path, received null [value=missing]\n",
+                "\nmedia_source\n\texpected a directory path, received null [value=missing]\n",
             );
         }
     };
-    (authorization, std::path::PathBuf::from(video_source_str))
+    (authorization, std::path::PathBuf::from(media_source_str))
 }
 
 /// Extracts the env var by key and parses it as a `bool`
@@ -163,10 +163,10 @@ fn parse_path(key: &str) -> Option<std::path::PathBuf> {
 ///
 /// Instantiates the `Config` struct with the required parameters.
 fn load_env_vars() -> settings::Config {
-    let (authorization, video_source) = mandatory_vars();
+    let (authorization, media_source) = mandatory_vars();
     let debug = parse_bool("debug").unwrap_or(settings::default_debug());
-    let video_host = std::env::var("video_host").unwrap_or(settings::default_video_host());
-    let video_port = parse_i32("video_port").unwrap_or(settings::default_video_port());
+    let media_host = std::env::var("media_host").unwrap_or(settings::default_media_host());
+    let media_port = parse_i32("media_port").unwrap_or(settings::default_media_port());
     let session_duration = parse_i32("session_duration").unwrap_or(settings::default_session_duration());
     let file_formats = parse_vec("file_formats").unwrap_or(settings::default_file_formats());
     let workers = parse_i32("workers").unwrap_or(settings::default_workers());
@@ -177,10 +177,10 @@ fn load_env_vars() -> settings::Config {
     let cert_file = parse_path("cert_file").unwrap_or(settings::default_ssl());
     settings::Config {
         authorization,
-        video_source,
+        media_source,
         debug,
-        video_host,
-        video_port,
+        media_host,
+        media_port,
         session_duration,
         file_formats,
         workers,
@@ -200,10 +200,10 @@ fn load_env_vars() -> settings::Config {
 fn validate_vars() -> settings::Config {
     let config = load_env_vars();
     let mut errors = "".to_owned();
-    if !config.video_source.exists() || !config.video_source.is_dir() {
+    if !config.media_source.exists() || !config.media_source.is_dir() {
         let err1 = format!(
-            "\nvideo_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
-            config.video_source.to_string_lossy()
+            "\nmedia_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
+            config.media_source.to_string_lossy()
         );
         errors.push_str(&err1);
     }

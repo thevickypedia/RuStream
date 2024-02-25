@@ -68,7 +68,7 @@ fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
 pub fn get_all_stream_content(config: &Config) -> ContentPayload {
     let mut payload = ContentPayload::default();
 
-    for entry in WalkDir::new(&config.video_source).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
         if entry.path().ends_with("__") {
             continue;
         }
@@ -80,7 +80,7 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
 
             if let Some(extension) = PathBuf::from(file_name).extension().and_then(|ext| ext.to_str()) {
                 if config.file_formats.iter().any(|format| extension == format) {
-                    let path = entry.path().strip_prefix(&config.video_source)
+                    let path = entry.path().strip_prefix(&config.media_source)
                         .unwrap_or_else(|_| Path::new(""));
                     let components: &Vec<_> = &path.components().collect();
                     if components.len() == 1 {

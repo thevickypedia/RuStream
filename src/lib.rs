@@ -52,7 +52,7 @@ pub async fn start() -> io::Result<()> {
     // Create a dedicated clone, since it will be used within closure
     let config_clone = config.clone();
     let jinja_clone = jinja_env.clone();
-    let host = format!("{}:{}", config.video_host, config.video_port);
+    let host = format!("{}:{}", config.media_host, config.media_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
         &cargo.pkg_name, &config.workers, &host);
     /*
@@ -72,9 +72,9 @@ pub async fn start() -> io::Result<()> {
             .service(routes::auth::logout)
             .service(routes::auth::home)
             .service(routes::auth::error)
-            .service(routes::video::track)
-            .service(routes::video::stream)
-            .service(routes::video::streaming_endpoint)
+            .service(routes::media::track)
+            .service(routes::media::stream)
+            .service(routes::media::streaming_endpoint)
     };
     let server = HttpServer::new(application)
         .workers(config.workers as usize)

@@ -49,8 +49,8 @@ fn url_encode(path: &String) -> String {
 ///
 /// # Arguments
 ///
-/// * `true_path` - True path of the requested video file.
-/// * `relative_path` - The string representation of the relative video path.
+/// * `true_path` - True path of the requested file.
+/// * `relative_path` - The string representation of the relative filepath.
 ///
 /// # Returns
 ///
@@ -88,7 +88,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
     log::debug!("Track requested: {}", &info.file);
-    let filepath = Path::new(&config.video_source).join(&info.file);
+    let filepath = Path::new(&config.media_source).join(&info.file);
     log::debug!("Track file lookup: {}", &filepath.to_string_lossy());
     match std::fs::read_to_string(&filepath) {
         Ok(content) => HttpResponse::Ok()
@@ -119,48 +119,48 @@ fn render_content(landing: Template, serializable: HashMap<&str, &String>) -> Ht
     }
 }
 
-/// Handles requests for the '/stream/{video_path:.*}' endpoint, serving video files and directories.
+/// Handles requests for the '/stream/{media_path:.*}' endpoint, serving media files and directories.
 ///
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
 /// * `environment` - Configuration container for the loaded templates.
 /// * `request` - A reference to the Actix web `HttpRequest` object.
-/// * `video_path` - The path parameter representing the video file or directory.
+/// * `media_path` - The path parameter representing the media file or directory.
 ///
 /// # Returns
 ///
-/// Returns an `HttpResponse` containing the video content or directory listing, or an error response.
-#[get("/stream/{video_path:.*}")]
+/// Returns an `HttpResponse` containing the media content or directory listing, or an error response.
+#[get("/stream/{media_path:.*}")]
 pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     environment: web::Data<Arc<Mutex<Environment<'static>>>>,
-                    request: HttpRequest, video_path: web::Path<String>) -> HttpResponse {
+                    request: HttpRequest, media_path: web::Path<String>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
     squire::logger::log_connection(&request);
     log::debug!("{}", auth_response.detail);
-    let filepath = video_path.to_string();
-    // True path of the video file
-    let __target = config.video_source.join(&filepath);
+    let filepath = media_path.to_string();
+    // True path of the media file
+    let __target = config.media_source.join(&filepath);
     if !__target.exists() {
         return HttpResponse::NotFound().json(routes::auth::DetailError {
             detail: format!("'{}' was not found", filepath)
         });
     }
-    // True path of the video file as a String
+    // True path of the media file as a String
     let __target_str = __target.to_string_lossy().to_string();
     let __filename = __target.file_name().unwrap().to_string_lossy().to_string();
     let template = environment.lock().unwrap();
     if __target.is_file() {
         let landing = template.get_template("landing").unwrap();
         let rust_iter = squire::content::get_iter(&__target, &config.file_formats);
-        let render_path = format!("/video?file={}", url_encode(&filepath));
+        let render_path = format!("/media?file={}", url_encode(&filepath));
         let prev = rust_iter.previous.unwrap_or_default();
         let next = rust_iter.next.unwrap_or_default();
         let mut context_builder = vec![
-            ("video_title", &__filename),
+            ("media_title", &__filename),
             ("path", &render_path),
             ("previous", &prev),
             ("next", &next)
@@ -200,18 +200,19 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
             .body(listing.render(context!(
+                custom_title => child_dir,
                 files => listing_page.files, directories => listing_page.directories)
             ).unwrap());
     }
     log::error!("Something went really wrong");
-    log::error!("Video Path: {}", filepath);
+    log::error!("Media Path: {}", filepath);
     log::error!("Target: {}", __target_str);
     HttpResponse::ExpectationFailed().json(routes::auth::DetailError {
         detail: format!("'{}' was neither a file nor a folder", filepath)
     })
 }
 
-/// Handles requests for the '/video' endpoint, serving video content for streaming.
+/// Handles requests for the `/media` endpoint, serving media content for streaming.
 ///
 /// # Arguments
 ///
@@ -221,8 +222,8 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Returns
 ///
-/// Returns an `HttpResponse` containing the video content or an error response.
-#[get("/video")]
+/// Returns an `HttpResponse` containing the media content or an error response.
+#[get("/media")]
 pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>,
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config);
@@ -231,9 +232,9 @@ pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>
     }
     squire::logger::log_connection(&request);
     let host = request.connection_info().host().to_owned();
-    let video_path = config.video_source.join(&info.file);
-    if video_path.exists() {
-        let file = actix_files::NamedFile::open_async(video_path).await.unwrap();
+    let media_path = config.media_source.join(&info.file);
+    if media_path.exists() {
+        let file = actix_files::NamedFile::open_async(media_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
         let mut tracker = constant::HOST_SERVE.lock().unwrap();
         if tracker.get(&host).unwrap() != &info.file {
@@ -242,7 +243,7 @@ pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>
         }
         return file.into_response(&request);
     }
-    let error = format!("File {:?} not found", video_path);
+    let error = format!("File {:?} not found", media_path);
     log::error!("{}", error);
     HttpResponse::NotFound().body(error)
 }

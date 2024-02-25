@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 /// Index page template that is served as HTML response for the root endpoint.
 mod index;
-/// Landing page template that is served as HTML response while streaming videos.
+/// Landing page template that is served as HTML response while streaming media.
 mod landing;
 /// Listing page template that is served as HTML response after successful authentication.
 mod listing;

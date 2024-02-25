@@ -12,7 +12,7 @@ pub mod ascii_art;
 pub mod middleware;
 /// Module for the function that converts the subtitles from `srt` to `vtt` file format.
 pub mod subtitles;
-/// Module for the functions that scan the video source and render the filenames as struct.
+/// Module for the functions that scans the source and renders the filenames as a struct.
 pub mod content;
 /// Module that handles the authentication and
 pub mod authenticator;

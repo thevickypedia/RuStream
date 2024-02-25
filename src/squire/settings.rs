@@ -6,18 +6,18 @@ use std::net::ToSocketAddrs;
 pub struct Config {
     /// Dictionary of key-value pairs for authorization (username and password).
     pub authorization: HashMap<String, String>,
-    /// Source path for video files.
-    pub video_source: path::PathBuf,
+    /// Source path for media files.
+    pub media_source: path::PathBuf,
 
     /// Debug flag to enable debug level logging.
     pub debug: bool,
-    /// Host IP address for video hosting.
-    pub video_host: String,
+    /// Host IP address for media streaming.
+    pub media_host: String,
     /// Port number for hosting the application.
-    pub video_port: i32,
+    pub media_port: i32,
     /// Duration of a session in seconds.
     pub session_duration: i32,
-    /// List of supported video file formats.
+    /// List of supported file formats.
     pub file_formats: Vec<String>,
 
     /// Number of worker threads to spin up the server.
@@ -43,8 +43,8 @@ pub fn default_debug() -> bool { false }
 /// Returns the default value for ssl files
 pub fn default_ssl() -> path::PathBuf { path::PathBuf::new() }
 
-/// Returns the default video host based on the local machine's IP address.
-pub fn default_video_host() -> String {
+/// Returns the default media host based on the local machine's IP address.
+pub fn default_media_host() -> String {
     let hostname = "localhost";
     match (hostname, 0).to_socket_addrs() {
         Ok(mut addrs) => {
@@ -59,8 +59,8 @@ pub fn default_video_host() -> String {
     "localhost".to_string()
 }
 
-/// Returns the default video port (8000).
-pub fn default_video_port() -> i32 { 8000 }
+/// Returns the default media port (8000).
+pub fn default_media_port() -> i32 { 8000 }
 
 /// Returns the default session duration (3600 seconds).
 pub fn default_session_duration() -> i32 { 3600 }

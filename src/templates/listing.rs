@@ -13,8 +13,8 @@ pub fn get_content() -> String {
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Rustic video streaming</title>
-    <meta property="og:type" content="VideoStreaming">
+    <title>RuStream - Self-hosted Streaming Engine</title>
+    <meta property="og:type" content="MediaStreaming">
     <meta name="keywords" content="Rust, streaming, actix, JavaScript, HTML, CSS">
     <meta name="author" content="Vignesh Rao">
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -112,7 +112,11 @@ pub fn get_content() -> String {
 <body translate="no">
     <div class="toggler fa fa-moon-o"></div>
     <br><br>
-    <h1>Video Streaming via Actix</h1>
+    {% if custom_title %}
+        <h1>{{ custom_title }}</h1>
+    {% else %}
+        <h1>RuStream - Self-hosted Streaming Engine</h1>
+    {% endif %}
     <hr>
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>

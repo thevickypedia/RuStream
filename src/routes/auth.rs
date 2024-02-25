@@ -106,7 +106,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
         if tracker.get(&host).is_some() {
             tracker.remove(&host);
         } else {
-            log::warn!("Session information for {} was not stored or no video was played", host);
+            log::warn!("Session information for {} was not stored or no file was rendered", host);
         }
         rendered = logout_template.render(minijinja::context!(detail => "You have been logged out successfully.")).unwrap();
 
