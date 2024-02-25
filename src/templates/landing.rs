@@ -172,12 +172,12 @@ pub fn get_content() -> String {
         {% endif %}
         <br>
         {% if previous %}
-            <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous_title }}">
+            <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous }}">
                 <i class="fa fa-backward"></i> Previous
             </button>
         {% endif %}
         {% if next %}
-            <button class="iter" style="float: right" onclick="window.location='{{ next }}'" title="{{ next_title }}">
+            <button class="iter" style="float: right" onclick="window.location='{{ next }}'" title="{{ next }}">
                 Next <i class="fa fa-forward"></i>
             </button>
         {% endif %}

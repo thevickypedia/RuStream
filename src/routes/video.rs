@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
-use minijinja::{context, Environment};
+use minijinja::{context, Environment, Template};
 use serde::Deserialize;
 use url::form_urlencoded;
 
@@ -136,54 +137,35 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
         let landing = template.get_template("landing").unwrap();
         let rust_iter = squire::content::get_iter(&__target, &config.file_formats);
         let render_path = format!("/video?file={}", url_encode(&filepath));
-        let image_extensions: Vec<&str> = vec![
-            "jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp", "svg", "ico", "raw", "psd", "ai", "eps", "pdf",
-        ];
-        if image_extensions.contains(&render_path.split('.').last()
-            .unwrap_or_default()
+        let prev = rust_iter.previous.unwrap_or_default();
+        let next = rust_iter.next.unwrap_or_default();
+        let mut context_builder = vec![
+            ("video_title", &__filename),
+            ("path", &render_path),
+            ("previous", &prev),
+            ("next", &next)
+        ].into_iter().collect::<HashMap<_, _>>();
+        if vec!["jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp",
+                "svg", "ico", "raw", "psd", "ai", "eps", "pdf"]
+            .contains(&render_path.split('.').last()
+            .unwrap()  // file extension WILL be present at this point
             .to_lowercase().as_str()) {
-            match landing.render(context!(
-                video_title => &__filename, path => render_path,
-                render_image => true,
-                previous => &rust_iter.previous,
-                next => &rust_iter.next,
-                previous_title => &rust_iter.previous,
-                next_title => &rust_iter.next,
-            )) {
+            context_builder.insert("render_image", &render_path);
+            return match landing.render(context_builder) {
                 Ok(response_body) => {
-                    log::debug!("Rendering {} as image", &__filename);
-                    return HttpResponse::build(StatusCode::OK)
-                        .content_type("text/html; charset=utf-8").body(response_body);
+                    HttpResponse::build(StatusCode::OK)
+                        .content_type("text/html; charset=utf-8").body(response_body)
                 }
-                Err(error) => {
-                    log::error!("Failed to render {} as image", &__filename);
-                    log::error!("{}", error);
-                    // todo: raise an appropriate message and display in the UI
+                Err(err) => {
+                    log::error!("{}", err);
+                    HttpResponse::FailedDependency().json("Failed to render content.")
                 }
-            };
+            }
         }
-        // todo: move all jinja rendering to a function and use match instead of blind unwrap
-        //  raise an appropriate HTTPResponse and display in the UI
-        // Rust doesn't allow re-assignment, so might as well create a mutable variable
-        // Load the default response body and re-construct with subtitles if present
-        let mut response_body = landing.render(context!(
-            video_title => &__filename, path => render_path,
-            previous => &rust_iter.previous,
-            next => &rust_iter.next,
-            previous_title => &rust_iter.previous,
-            next_title => &rust_iter.next,
-        )).unwrap();
         let subtitle = subtitles(__target, &filepath);
+        let mut sfx_file = String::new();
         if subtitle.vtt.exists() {
-            let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
-            response_body = landing.render(context!(
-                video_title => &__filename, path => render_path,
-                previous => &rust_iter.previous,
-                next => &rust_iter.next,
-                previous_title => &rust_iter.previous,
-                next_title => &rust_iter.next,
-                track => sfx_file
-            )).unwrap();
+            sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
         } else if subtitle.srt.exists() {
             log::info!("Converting {:?} to {:?} for subtitles",
                 subtitle.srt.file_name().unwrap(),
@@ -191,21 +173,24 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
             match squire::subtitles::srt_to_vtt(&subtitle.srt) {
                 Ok(_) => {
                     log::debug!("Successfully converted srt to vtt file");
-                    let sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
-                    response_body = landing.render(context!(
-                        video_title => &__filename, path => render_path,
-                        previous => &rust_iter.previous,
-                        next => &rust_iter.next,
-                        previous_title => &rust_iter.previous,
-                        next_title => &rust_iter.next,
-                        track => sfx_file
-                    )).unwrap();
+                    sfx_file = format!("/track?file={}", url_encode(&subtitle.vtt_file));
                 }
                 Err(err) => log::error!("Failed to convert srt to vtt: {}", err),
             }
         }
-        return HttpResponse::build(StatusCode::OK)
-            .content_type("text/html; charset=utf-8").body(response_body);
+        if !sfx_file.is_empty() {
+            context_builder.insert("track", &sfx_file);
+        }
+        return match landing.render(context_builder) {
+            Ok(response_body) => {
+                HttpResponse::build(StatusCode::OK)
+                    .content_type("text/html; charset=utf-8").body(response_body)
+            }
+            Err(err) => {
+                log::error!("{}", err);
+                HttpResponse::FailedDependency().json("Failed to render content.")
+            }
+        }
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
         let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
