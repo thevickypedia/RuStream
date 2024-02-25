@@ -78,7 +78,7 @@ pub fn get_content() -> String {
             transition: 0.5s;
         }
     </style>
-    <!-- Video, title and body CSS -->
+    <!-- Container, title and body CSS -->
     <style>
         body {
             font-family: 'PT Serif', serif;
@@ -87,14 +87,14 @@ pub fn get_content() -> String {
             text-align: center;
         }
     </style>
-    <!-- Size of video container and the player -->
+    <!-- Size of the container and the player -->
     <style>
         body {
             margin: 0; /* Remove default margin */
             padding: 0; /* Remove default padding */
             box-sizing: border-box; /* Include padding and border in element's total width and height */
         }
-        #video-container {
+        #content-container {
             position: relative;
             width: 70%;
             max-width: 100%; /* Set a maximum width to prevent overflow */
@@ -103,7 +103,6 @@ pub fn get_content() -> String {
         }
         #image-source {
             height: 75vh;
-            width: auto;
             max-width: 100%;
             margin: 0 auto; /* Center the container horizontally */
             display: flex;
@@ -143,10 +142,10 @@ pub fn get_content() -> String {
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
     <br><br>
     <h1>{{ video_title }}</h1>
-    <div id="video-container">
-        {% if render_image %}
-            <img id="image-source" src="">
-        {% else %}
+    {% if render_image %}
+        <img id="image-source" src="">
+    {% else %}
+        <div id="content-container">
             <video id="video-player"
                    class="video-js"
                    preload="auto"
@@ -169,8 +168,9 @@ pub fn get_content() -> String {
                     <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
                 </p>
             </video>
-        {% endif %}
-        <br>
+        </div>
+    {% endif %}
+    <div id="content-container">
         {% if previous %}
             <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous }}">
                 <i class="fa fa-backward"></i> Previous
