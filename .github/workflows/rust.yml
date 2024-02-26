@@ -41,17 +41,20 @@ jobs:
         id: set-release-flag
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          latest_version=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions[0].num')
+          # latest_version=$(curl -s https://crates.io/api/v1/crates/${{ env.pkg_name }} | jq -r '.versions[0].num')
+          # versions=$(curl -s https://crates.io/api/v1/crates/RuStream | jq -r '.versions | map(.num)')
+          read -a versions <<< "$(curl -s https://crates.io/api/v1/crates/RuStream | jq -r '.versions | map(.num) | @csv' | tr -d '"' | tr ',' '\n')"
+          latest_version="${versions[0]}"
           echo "Current Package Version: ${current_version}"
-          echo "Latest Package Version: ${latest_version}"
-          if [ "$latest_version" != "$current_version" ]; then
-            echo "Version has changed. Setting release flag to true."
-            echo "release=true" >> $GITHUB_ENV
-            echo "release_flag=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Version has not changed. Setting release flag to false."
+          echo "Latest Package Version: $latest_version"
+          if [[ $versions == *"$current_version"* ]]; then
+            echo "$current_version exists in crates.io, setting release flag to false"
             echo "release=false" >> $GITHUB_ENV
             echo "release_flag=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$current_version does not exist in crates.io, setting release flag to true"
+            echo "release=true" >> $GITHUB_ENV
+            echo "release_flag=true" >> "$GITHUB_OUTPUT"
           fi
           echo "pkg_version=$current_version" >> $GITHUB_ENV
         shell: bash

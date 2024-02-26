@@ -2,11 +2,11 @@ use std::env;
 use std::process::exit;
 use crate::constant::Cargo;
 
-/// Parses and returns the command-line arguments for RuStream.
+/// Parses and returns the command-line arguments.
 ///
 /// # Returns
 ///
-/// A String notion of the `env_file` argument.
+/// A String notion of the argument, `env_file` if present.
 pub fn arguments(cargo: &Cargo) -> String {
     let args: Vec<String> = env::args().collect();
 
