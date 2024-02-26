@@ -109,17 +109,25 @@ pub fn get_content() -> String {
             justify-content: center;
             align-items: center; /* Center the container vertically */
         }
-        @media (max-width: 768px) {
-            #image-source {
-                height: auto;
-                width: 80%;
-            }
-        }
         #video-player {
             position: relative;
             width: 100%;
             height: 100%;
             display: block;
+        }
+        @media (max-width: 768px) {
+            #image-source {
+                height: auto;
+                width: 90%;
+            }
+            #content-container {
+                height: auto;
+                width: 90%;
+            }
+            #video-player {
+                height: auto;
+                width: 90%;
+            }
         }
     </style>
     <noscript>

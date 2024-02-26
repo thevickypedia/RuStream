@@ -46,7 +46,14 @@ jobs:
           latest_version=$(echo $versions | jq -r '.[0]')
           echo "Current Package Version: ${current_version}"
           echo "Latest Package Version: $latest_version"
-          if [[ $versions == *"$current_version"* ]]; then
+          version_exists=false
+          for version in $(echo "$versions" | jq -r '.[]'); do
+            if [ "$version" == "$current_version" ]; then
+              version_exists=true
+              break
+            fi
+          done
+          if [ "$version_exists" = true ]; then
             echo "Version $current_version exists in crates.io, setting release flag to 'false'"
             echo "release=false" >> $GITHUB_ENV
             echo "release_flag=false" >> "$GITHUB_OUTPUT"
