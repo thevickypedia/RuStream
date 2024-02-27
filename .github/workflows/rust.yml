@@ -82,10 +82,13 @@ jobs:
             echo "Creating TEST release"
             epoch="$(date +%s)"
             current_version=${{ env.pkg_version }}
-            part=2
-            IFS='.' read -r -a version_parts <<< "$current_version"
-            ((version_parts[$part]++))
-            new_version="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+            echo "Current version: $current_version"
+            version_as_int=$((10#${current_version//./}))
+            ((version_as_int++))
+            major=$((version_as_int / 100))
+            minor=$((version_as_int % 100 / 10))
+            patch=$((version_as_int % 10))
+            new_version="$major.$minor.$patch"
             echo "Bumped version to: $new_version"
             release_tag="v${new_version}-prerelease-${epoch}"
             prerelease=true
