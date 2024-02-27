@@ -86,11 +86,12 @@ jobs:
             part=2
             IFS='.' read -r -a version_parts <<< "$current_version"
             echo "Version Parts Before Bump: ${version_parts[@]}"
-            version_parts=("${version_parts[@]//[^0-9]/}")
-            echo "Version Parts as Integers: ${version_parts[@]}"
-            ((version_parts[$part]++))
-            echo "Version Parts After Bump: ${version_parts[@]}"
-            new_version="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+            declare -i version_parts_int
+            version_parts_int=("${version_parts[@]}")
+            echo "Version Parts as Integers: $version_parts_int"
+            ((version_parts_int[$part]++))
+            echo "Version Parts After Bump: ${version_parts_int[@]}"
+            new_version="${version_parts_int[0]}.${version_parts_int[1]}.${version_parts_int[2]}"
             echo "Bumped version to: $new_version"
             release_tag="v${new_version}-prerelease-${epoch}"
             prerelease=true
