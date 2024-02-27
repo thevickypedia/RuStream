@@ -67,8 +67,6 @@ jobs:
       - name: Create New Release
         id: create-release
         run: |
-          set -e
-          set -x
           if [ "${{ env.release }}" == "true" ]; then
             echo "Creating PROD release"
             release_tag="v${{ env.pkg_version }}"
@@ -86,6 +84,7 @@ jobs:
             current_version=${{ env.pkg_version }}
             echo "Current version: $current_version"
             version_as_int=$((10#${current_version//./}))
+            echo "Version as int: $version_as_int"
             ((version_as_int++))
             major=$((version_as_int / 100))
             minor=$((version_as_int % 100 / 10))
