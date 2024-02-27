@@ -1,6 +1,7 @@
-use std::env;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::env;
+use std::sync::{Arc, Mutex};
+use fernet::Fernet;
 
 /// Struct to store the cargo information gathered at compile time using the `env!` macro.
 #[derive(Debug)]
@@ -43,6 +44,45 @@ pub fn build_info() -> Cargo {
     cargo
 }
 
-lazy_static::lazy_static! {
-    pub static ref HOST_SERVE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+/// Struct to store the session information.
+///
+/// ## Fields
+///
+/// * `tracker` - Used to log connection and streaming information without redundancy.
+/// * `mapping` - Used to store username and session token's payload as key value pairs.
+///
+/// ## See Also:
+///
+/// These fields are updated and used only for authenticated sessions.
+pub struct Session {
+    pub tracker: Mutex<HashMap<String, String>>,
+    pub mapping: Mutex<HashMap<String, String>>,
+}
+
+
+/// Instantiates the `Session` struct with empty `HashMap` for both `tracker` and `mapping` fields.
+///
+/// ## See Also
+///
+/// Creates new `Mutex` in an unlocked state for each of the fields.
+///
+/// # Returns
+///
+/// Returns the constructed `Arc` for the `Session` struct.
+pub fn session_info() -> Arc<Session> {
+    Arc::new(Session {
+        tracker: Mutex::new(HashMap::new()),
+        mapping: Mutex::new(HashMap::new()),
+    })
+}
+
+/// Create a [Fernet](https://docs.rs/fernet/latest/fernet/) object to encrypt and decrypt session token.
+///
+/// Generates a random key, that can be safely passed to `Fernet::new()`
+///
+/// # Returns
+///
+/// Returns the constructed `Arc` for the `Fernet` instance, with the generated key.
+pub fn fernet_object() -> Arc<Fernet> {
+    Arc::new(Fernet::new(&Fernet::generate_key()).unwrap())
 }

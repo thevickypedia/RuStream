@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::{Cookie, SameSite};
@@ -26,18 +26,21 @@ pub struct DetailError {
 ///
 /// # Arguments
 ///
-/// * `config` - Configuration data for the application.
 /// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `config` - Configuration data for the application.
+/// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
+/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 ///
 /// # Returns
 ///
 /// * `200` - HttpResponse with a `session_token` and redirect URL to the `/home` entrypoint.
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[post("/login")]
-pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
+pub async fn login(request: HttpRequest,
+                   config: web::Data<Arc<squire::settings::Config>>,
                    fernet: web::Data<Arc<Fernet>>,
-                   request: HttpRequest) -> HttpResponse {
-    let verified = squire::authenticator::verify_login(&request, &config);
+                   session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+    let verified = squire::authenticator::verify_login(&request, &config, &session);
     if let Err(err) = verified {
         let err_message = err.to_string();
         log::warn!("Error response::{}", err_message);
@@ -47,7 +50,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
     }
 
     let mapped = verified.unwrap();
-    squire::logger::log_connection(&request);
+    squire::logger::log_connection(&request, &session);
 
     let payload = serde_json::to_string(&mapped).unwrap();
     let encrypted_payload = fernet.encrypt(payload.as_bytes());
@@ -79,26 +82,28 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `config` - Configuration data for the application.
-/// * `environment` - Configuration container for the loaded templates.
 /// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `config` - Configuration data for the application.
+/// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
+/// * `template` - Configuration container for the loaded templates.
+/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 ///
 /// # Returns
 ///
 /// Returns an `HTTPResponse` with the cookie for `session_token` reset if available.
 #[get("/logout")]
-pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
+pub async fn logout(request: HttpRequest,
+                    config: web::Data<Arc<squire::settings::Config>>,
                     fernet: web::Data<Arc<Fernet>>,
-                    environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
-                    request: HttpRequest) -> HttpResponse {
+                    template: web::Data<Arc<minijinja::Environment<'static>>>,
+                    session: web::Data<Arc<constant::Session>>) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
-    let template = environment.lock().unwrap();
     let logout_template = template.get_template("logout").unwrap();
     let mut response = HttpResponse::build(StatusCode::OK);
     response.content_type("text/html; charset=utf-8");
 
     let rendered;
-    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     log::debug!("Session Validation Response: {}", auth_response.detail);
 
     if auth_response.username != "NA" {
@@ -106,7 +111,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
     }
 
     if auth_response.ok {
-        let mut tracker = constant::HOST_SERVE.lock().unwrap();
+        let mut tracker = session.tracker.lock().unwrap();
         if tracker.get(&host).is_some() {
             tracker.remove(&host);
         } else {
@@ -133,28 +138,30 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `config` - Configuration data for the application.
-/// * `environment` - Configuration container for the loaded templates.
 /// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `config` - Configuration data for the application.
+/// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
+/// * `template` - Configuration container for the loaded templates.
+/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 ///
 /// # Returns
 ///
 /// * `200` - Returns an `HTTPResponse` with the home/listing page if session token is valid.
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[get("/home")]
-pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
+pub async fn home(request: HttpRequest,
+                  config: web::Data<Arc<squire::settings::Config>>,
                   fernet: web::Data<Arc<Fernet>>,
-                  environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
-                  request: HttpRequest) -> HttpResponse {
-    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
+                  template: web::Data<Arc<minijinja::Environment<'static>>>,
+                  session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return failed_auth(auth_response, &config);
     }
-    squire::logger::log_connection(&request);
+    squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
 
     let listing_page = squire::content::get_all_stream_content(&config);
-    let template = environment.lock().unwrap();
     let listing = template.get_template("listing").unwrap();
 
     HttpResponse::build(StatusCode::OK)
@@ -170,16 +177,15 @@ pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
 ///
 /// # Arguments
 ///
-/// * `environment` - Configuration container for the loaded templates.
+/// * `template` - Configuration container for the loaded templates.
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 ///
 /// # Returns
 ///
 /// HttpResponse with either a session expiry or unauthorized message.
 #[get("/error")]
-pub async fn error(environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
+pub async fn error(template: web::Data<Arc<minijinja::Environment<'static>>>,
                    request: HttpRequest) -> HttpResponse {
-    let template = environment.lock().unwrap();
     if let Some(detail) = request.cookie("detail") {
         log::info!("Error response for /error: {}", detail.value());
         let session = template.get_template("session").unwrap();
@@ -200,6 +206,7 @@ pub async fn error(environment: web::Data<Arc<Mutex<minijinja::Environment<'stat
 /// # Arguments
 ///
 /// * `auth_response` - The authentication response containing details of the failure.
+/// * `config` - Configuration data for the application.
 ///
 /// # Returns
 ///

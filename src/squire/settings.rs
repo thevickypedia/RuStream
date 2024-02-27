@@ -39,7 +39,6 @@ pub struct Config {
 /// Returns the default value for debug flag
 pub fn default_debug() -> bool { false }
 
-
 /// Returns the default value for ssl files
 pub fn default_ssl() -> path::PathBuf { path::PathBuf::new() }
 
@@ -65,10 +64,10 @@ pub fn default_media_port() -> i32 { 8000 }
 /// Returns the default session duration (3600 seconds).
 pub fn default_session_duration() -> i32 { 3600 }
 
-/// Returns the default supported file formats (.mp4 and .mov).
-///
-/// Set as public, since this function is re-used in `startup.rs`
-pub fn default_file_formats() -> Vec<String> { vec!["mp4".to_string(), "mov".to_string()] }
+/// Returns the file formats supported by default.
+pub fn default_file_formats() -> Vec<String> {
+    vec!["mp4".to_string(), "mov".to_string(), "jpg".to_string(), "jpeg".to_string()]
+}
 
 /// Returns the default number of worker threads (half of logical cores).
 pub fn default_workers() -> i32 {

@@ -5,13 +5,11 @@
 extern crate actix_web;
 
 use std::io;
-use std::sync::Arc;
 
 use actix_web::{App, HttpServer, middleware, web};
-use fernet::Fernet;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-/// Module to load all the static values and required structs during startup.
+/// Module for the structs and functions called during startup.
 mod constant;
 /// Module for all the API entry points.
 mod routes;
@@ -50,14 +48,14 @@ pub async fn start() -> io::Result<()> {
             "Secure session is turned on! This means that the server can ONLY be hosted via HTTPS or localhost"
         );
     }
-    let jinja_env = templates::environment();
     // Create a dedicated clone, since it will be used within closure
     let config_clone = config.clone();
-    let jinja_clone = jinja_env.clone();
     let host = format!("{}:{}", config.media_host, config.media_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
         &cargo.pkg_name, &config.workers, &host);
-    let fernet = Arc::new(Fernet::new(&squire::fernet_key()).unwrap());
+    let jinja = templates::environment();
+    let fernet = constant::fernet_object();
+    let session = constant::session_info();
     /*
         || syntax is creating a closure that serves as the argument to the HttpServer::new() method.
         The closure is defining the configuration for the Actix web server.
@@ -66,8 +64,9 @@ pub async fn start() -> io::Result<()> {
     let application = move || {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
-            .app_data(web::Data::new(jinja_clone.clone()))
+            .app_data(web::Data::new(jinja.clone()))
             .app_data(web::Data::new(fernet.clone()))
+            .app_data(web::Data::new(session.clone()))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests

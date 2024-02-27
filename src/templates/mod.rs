@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 /// Index page template that is served as HTML response for the root endpoint.
 mod index;
@@ -17,9 +17,9 @@ mod unauthorized;
 ///
 /// # Returns
 ///
-/// Returns the `Environment` object that holds the central configuration state for templates.
+/// Returns the constructed `Arc` for the `Environment` object, that holds the central configuration state for templates.
 /// It is also the container for all loaded templates.
-pub fn environment() -> Arc<Mutex<minijinja::Environment<'static>>> {
+pub fn environment() -> Arc<minijinja::Environment<'static>> {
     let mut env = minijinja::Environment::new();
     env.add_template_owned("index", index::get_content()).unwrap();
     env.add_template_owned("landing", landing::get_content()).unwrap();
@@ -27,6 +27,5 @@ pub fn environment() -> Arc<Mutex<minijinja::Environment<'static>>> {
     env.add_template_owned("logout", logout::get_content()).unwrap();
     env.add_template_owned("session", session::get_content()).unwrap();
     env.add_template_owned("unauthorized", unauthorized::get_content()).unwrap();
-    let mutex = Mutex::new(env.to_owned());
-    Arc::new(mutex)
+    Arc::new(env)
 }

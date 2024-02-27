@@ -7,10 +7,7 @@ use chrono::Utc;
 use fernet::Fernet;
 
 use crate::squire;
-
-lazy_static::lazy_static! {
-    static ref SESSION_MAPPING: std::sync::Mutex<HashMap<String, String>> = std::sync::Mutex::new(HashMap::new());
-}
+use crate::constant;
 
 /// Represents user credentials extracted from an authorization header.
 ///
@@ -75,6 +72,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credential
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `config` - Configuration data for the application.
+/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 ///
 /// # Returns
 ///
@@ -83,6 +81,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credential
 pub fn verify_login(
     request: &HttpRequest,
     config: &web::Data<Arc<squire::settings::Config>>,
+    session: &web::Data<Arc<constant::Session>>
 ) -> Result<HashMap<&'static str, String>, String> {
     let authorization = request.headers().get("authorization");
     let err_response;
@@ -100,7 +99,7 @@ pub fn verify_login(
                     let expected_signature = squire::secure::calculate_hash(message);
                     if expected_signature == credentials.signature {
                         let key = squire::secure::keygen();
-                        SESSION_MAPPING.lock().unwrap().insert(credentials.username.to_string(), key.to_string());
+                        session.mapping.lock().unwrap().insert(credentials.username.to_string(), key.to_string());
                         let mut mapped = HashMap::new();
                         mapped.insert("username", credentials.username.to_string());
                         mapped.insert("key", key.to_string());
@@ -132,12 +131,19 @@ pub fn verify_login(
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `config` - Configuration data for the application.
+/// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
+/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 ///
 /// # Returns
 ///
 /// Returns an instance of the `AuthToken` struct indicating the result of the token verification.
-pub fn verify_token(request: &HttpRequest, config: &squire::settings::Config, fernet: &Fernet) -> AuthToken {
-    if SESSION_MAPPING.lock().unwrap().is_empty() {
+pub fn verify_token(
+    request: &HttpRequest,
+    config: &squire::settings::Config,
+    fernet: &Fernet,
+    session: &constant::Session
+) -> AuthToken {
+    if session.mapping.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");
         return AuthToken {
             ok: false,
@@ -151,7 +157,7 @@ pub fn verify_token(request: &HttpRequest, config: &squire::settings::Config, fe
             let username = payload.get("username").unwrap().to_string();
             let cookie_key = payload.get("key").unwrap().to_string();
             let timestamp = payload.get("timestamp").unwrap().parse::<i64>().unwrap();
-            let stored_key = SESSION_MAPPING.lock().unwrap().get(&username).unwrap().to_string();
+            let stored_key = session.mapping.lock().unwrap().get(&username).unwrap().to_string();
             let current_time = Utc::now().timestamp();
             // Max time and expiry for session token is set in the Cookie, but this is a fallback mechanism
             if stored_key != *cookie_key {
