@@ -86,6 +86,8 @@ jobs:
             part=2
             IFS='.' read -r -a version_parts <<< "$current_version"
             echo "Version Parts Before Bump: ${version_parts[@]}"
+            version_parts=("${version_parts[@]//[^0-9]/}")
+            echo "Version Parts as Integers: ${version_parts[@]}"
             ((version_parts[$part]++))
             echo "Version Parts After Bump: ${version_parts[@]}"
             new_version="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
