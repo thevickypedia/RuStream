@@ -2,11 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use actix_web::http::header::HeaderValue;
-use actix_web::HttpRequest;
-use actix_web::web::Data;
+use actix_web::{HttpRequest, web};
 use chrono::Utc;
+use fernet::Fernet;
 
-use crate::constant;
 use crate::squire;
 
 lazy_static::lazy_static! {
@@ -83,7 +82,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credential
 /// otherwise returns an error message.
 pub fn verify_login(
     request: &HttpRequest,
-    config: &Data<Arc<squire::settings::Config>>,
+    config: &web::Data<Arc<squire::settings::Config>>,
 ) -> Result<HashMap<&'static str, String>, String> {
     let authorization = request.headers().get("authorization");
     let err_response;
@@ -137,7 +136,7 @@ pub fn verify_login(
 /// # Returns
 ///
 /// Returns an instance of the `AuthToken` struct indicating the result of the token verification.
-pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::Config>>) -> AuthToken {
+pub fn verify_token(request: &HttpRequest, config: &squire::settings::Config, fernet: &Fernet) -> AuthToken {
     if SESSION_MAPPING.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");
         return AuthToken {
@@ -147,7 +146,7 @@ pub fn verify_token(request: &HttpRequest, config: &Data<Arc<squire::settings::C
         };
     }
     if let Some(cookie) = request.cookie("session_token") {
-        if let Ok(decrypted) = constant::FERNET.decrypt(cookie.value()) {
+        if let Ok(decrypted) = fernet.decrypt(cookie.value()) {
             let payload: HashMap<String, String> = serde_json::from_str(&String::from_utf8_lossy(&decrypted)).unwrap();
             let username = payload.get("username").unwrap().to_string();
             let cookie_key = payload.get("key").unwrap().to_string();

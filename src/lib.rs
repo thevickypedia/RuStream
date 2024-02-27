@@ -5,8 +5,10 @@
 extern crate actix_web;
 
 use std::io;
+use std::sync::Arc;
 
 use actix_web::{App, HttpServer, middleware, web};
+use fernet::Fernet;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 /// Module to load all the static values and required structs during startup.
@@ -55,6 +57,7 @@ pub async fn start() -> io::Result<()> {
     let host = format!("{}:{}", config.media_host, config.media_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
         &cargo.pkg_name, &config.workers, &host);
+    let fernet = Arc::new(Fernet::new(&squire::fernet_key()).unwrap());
     /*
         || syntax is creating a closure that serves as the argument to the HttpServer::new() method.
         The closure is defining the configuration for the Actix web server.
@@ -64,6 +67,7 @@ pub async fn start() -> io::Result<()> {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
             .app_data(web::Data::new(jinja_clone.clone()))
+            .app_data(web::Data::new(fernet.clone()))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests

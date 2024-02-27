@@ -2,9 +2,6 @@ use std::env;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use fernet::Fernet;
-use lazy_static::lazy_static;
-
 /// Struct to store the cargo information gathered at compile time using the `env!` macro.
 #[derive(Debug)]
 pub struct Cargo {
@@ -44,21 +41,6 @@ pub fn build_info() -> Cargo {
         pkg_version_pre: env!("CARGO_PKG_VERSION_PRE").to_string(),
     };
     cargo
-}
-
-lazy_static! {
-    pub static ref FERNET: Fernet = Fernet::new(&fernet_key()).unwrap();
-}
-
-/// Create a [Fernet](https://docs.rs/fernet/latest/fernet/) object to encrypt and decrypt session token.
-///
-/// Generates a random key, that can be safely passed to `Fernet::new()`
-///
-/// # Returns
-///
-/// Random key as a `String`
-fn fernet_key() -> String {
-    Fernet::generate_key()
 }
 
 lazy_static::lazy_static! {

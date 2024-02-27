@@ -4,6 +4,7 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::cookie::time::{Duration, OffsetDateTime};
 use actix_web::http::StatusCode;
+use fernet::Fernet;
 use minijinja;
 use serde::Serialize;
 
@@ -33,7 +34,9 @@ pub struct DetailError {
 /// * `200` - HttpResponse with a `session_token` and redirect URL to the `/home` entrypoint.
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[post("/login")]
-pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: HttpRequest) -> HttpResponse {
+pub async fn login(config: web::Data<Arc<squire::settings::Config>>,
+                   fernet: web::Data<Arc<Fernet>>,
+                   request: HttpRequest) -> HttpResponse {
     let verified = squire::authenticator::verify_login(&request, &config);
     if let Err(err) = verified {
         let err_message = err.to_string();
@@ -47,7 +50,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
     squire::logger::log_connection(&request);
 
     let payload = serde_json::to_string(&mapped).unwrap();
-    let encrypted_payload = constant::FERNET.encrypt(payload.as_bytes());
+    let encrypted_payload = fernet.encrypt(payload.as_bytes());
 
     let cookie_duration = Duration::seconds(config.session_duration as i64);
     let expiration = OffsetDateTime::now_utc() + cookie_duration;
@@ -85,6 +88,7 @@ pub async fn login(config: web::Data<Arc<squire::settings::Config>>, request: Ht
 /// Returns an `HTTPResponse` with the cookie for `session_token` reset if available.
 #[get("/logout")]
 pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
+                    fernet: web::Data<Arc<Fernet>>,
                     environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                     request: HttpRequest) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
@@ -94,7 +98,7 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
     response.content_type("text/html; charset=utf-8");
 
     let rendered;
-    let auth_response = squire::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
     log::debug!("Session Validation Response: {}", auth_response.detail);
 
     if auth_response.username != "NA" {
@@ -139,9 +143,10 @@ pub async fn logout(config: web::Data<Arc<squire::settings::Config>>,
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[get("/home")]
 pub async fn home(config: web::Data<Arc<squire::settings::Config>>,
+                  fernet: web::Data<Arc<Fernet>>,
                   environment: web::Data<Arc<Mutex<minijinja::Environment<'static>>>>,
                   request: HttpRequest) -> HttpResponse {
-    let auth_response = squire::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
     if !auth_response.ok {
         return failed_auth(auth_response, &config);
     }

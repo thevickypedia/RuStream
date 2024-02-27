@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
+use fernet::Fernet;
 use minijinja::{context, Environment, Template};
 use serde::Deserialize;
 use url::form_urlencoded;
@@ -80,8 +81,9 @@ fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
 /// Returns an `HttpResponse` containing the track file content or an error response.
 #[get("/track")]
 pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
+                   fernet: web::Data<Arc<Fernet>>,
                    request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
-    let auth_response = squire::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
@@ -105,7 +107,7 @@ pub async fn track(config: web::Data<Arc<squire::settings::Config>>,
 /// # Arguments
 ///
 /// * `landing` - `Template` retrieved from the configuration container.
-/// * `serializable` - `HashMap` that can be serialized into a single String block which will be rendered.
+/// * `serializable` - `HashMap` that can be serialized into a single block of String to be rendered.
 fn render_content(landing: Template, serializable: HashMap<&str, &String>) -> HttpResponse {
     return match landing.render(serializable) {
         Ok(response_body) => {
@@ -134,8 +136,9 @@ fn render_content(landing: Template, serializable: HashMap<&str, &String>) -> Ht
 #[get("/stream/{media_path:.*}")]
 pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
                     environment: web::Data<Arc<Mutex<Environment<'static>>>>,
+                    fernet: web::Data<Arc<Fernet>>,
                     request: HttpRequest, media_path: web::Path<String>) -> HttpResponse {
-    let auth_response = squire::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
@@ -225,8 +228,9 @@ pub async fn stream(config: web::Data<Arc<squire::settings::Config>>,
 /// Returns an `HttpResponse` containing the media content or an error response.
 #[get("/media")]
 pub async fn streaming_endpoint(config: web::Data<Arc<squire::settings::Config>>,
+                                fernet: web::Data<Arc<Fernet>>,
                                 request: HttpRequest, info: web::Query<Payload>) -> HttpResponse {
-    let auth_response = squire::authenticator::verify_token(&request, &config);
+    let auth_response = squire::authenticator::verify_token(&request, &config, &fernet);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }

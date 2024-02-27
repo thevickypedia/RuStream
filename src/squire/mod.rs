@@ -1,3 +1,5 @@
+use fernet::Fernet;
+
 /// Module for the web data configuration that holds the secrets required by the application.
 pub mod settings;
 /// Module that initializes the logger and loads the configuration into a dedicated Struct.
@@ -18,3 +20,12 @@ pub mod content;
 pub mod authenticator;
 /// Module that handles parsing command line arguments.
 pub mod parser;
+
+/// Create a [Fernet](https://docs.rs/fernet/latest/fernet/) object to encrypt and decrypt session token.
+///
+/// Generates a random key, that can be safely passed to `Fernet::new()`
+///
+/// # Returns
+///
+/// Random key as a `String`
+pub fn fernet_key() -> String { Fernet::generate_key() }
