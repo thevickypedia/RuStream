@@ -19,7 +19,7 @@ pub fn get_content() -> String {
     <meta name="author" content="Vignesh Rao">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+    <script src="https://thevickypedia.github.io/open-source/crypto/crypto.js"></script>
     <!-- Disables 404 for favicon.ico which is a logo on top of the webpage tab -->
     <link rel="shortcut icon" href="#">
     <!-- Font Awesome icons -->
