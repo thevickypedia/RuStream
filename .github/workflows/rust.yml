@@ -67,6 +67,8 @@ jobs:
       - name: Create New Release
         id: create-release
         run: |
+          set -e
+          set -x
           if [ "${{ env.release }}" == "true" ]; then
             echo "Creating PROD release"
             release_tag="v${{ env.pkg_version }}"
