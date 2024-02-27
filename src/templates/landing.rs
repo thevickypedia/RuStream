@@ -102,8 +102,8 @@ pub fn get_content() -> String {
             margin: 0 auto; /* Center the container horizontally */
         }
         #image-source {
-            height: 75vh;
             max-width: 100%;
+            height: 75vh;
             margin: 0 auto; /* Center the container horizontally */
             display: flex;
             justify-content: center;
@@ -111,8 +111,8 @@ pub fn get_content() -> String {
         }
         #video-player {
             position: relative;
-            width: 100%;
             height: 100%;
+            width: 100%;
             display: block;
         }
         @media (max-width: 768px) {
@@ -120,13 +120,14 @@ pub fn get_content() -> String {
                 height: auto;
                 width: 90%;
             }
+            /* video-js plugin defaults to 120% on mobile phones, so use the same */
             #content-container {
                 height: auto;
-                width: 90%;
+                width: 120%;
             }
             #video-player {
                 height: auto;
-                width: 90%;
+                width: 120%;
             }
         }
     </style>
