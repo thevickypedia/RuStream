@@ -272,6 +272,26 @@ pub fn get_content() -> String {
                 }
             }
         }
+        {% if previous %}
+            // Add event listener for the left arrow key
+            document.addEventListener('keydown', navigateLeft);
+            function navigateLeft(event) {
+                if (event.key === 'ArrowLeft') {
+                    // Navigate to the previous image
+                    window.location='{{ previous }}';
+                }
+            }
+        {% endif %}
+        {% if next %}
+            // Add event listener for the right arrow key
+            document.addEventListener('keydown', navigateRight);
+            function navigateRight(event) {
+                if (event.key === 'ArrowRight') {
+                    // Navigate to the next image
+                    window.location='{{ next }}';
+                }
+            }
+        {% endif %}
     </script>
 </body>
 </html>
