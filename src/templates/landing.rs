@@ -247,29 +247,34 @@ pub fn get_content() -> String {
     </script>
     <script>
         function fullScreen() {
-            var image = document.getElementById("image-source");
-            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-                // Enter fullscreen mode
-                if (image.requestFullscreen) {
-                    image.requestFullscreen();
-                } else if (image.mozRequestFullScreen) { /* Firefox */
-                    image.mozRequestFullScreen();
-                } else if (image.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-                    image.webkitRequestFullscreen();
-                } else if (image.msRequestFullscreen) { /* IE/Edge */
-                    image.msRequestFullscreen();
+            var doc = window.document;
+            // var docEl = doc.documentElement;  // Entire container as fullScreen
+            var docEl = document.getElementById("image-source");  // ONLY image as fullScreen
+            var requestFullScreen =
+                docEl.requestFullscreen ||
+                docEl.mozRequestFullScreen ||
+                docEl.webkitRequestFullScreen ||
+                docEl.msRequestFullscreen;
+            var cancelFullScreen =
+                doc.exitFullscreen ||
+                doc.mozCancelFullScreen ||
+                doc.webkitExitFullscreen ||
+                doc.msExitFullscreen;
+            if (
+                !doc.fullscreenElement &&
+                !doc.mozFullScreenElement &&
+                !doc.webkitFullscreenElement &&
+                !doc.msFullscreenElement
+            ) {
+                if (requestFullScreen === undefined) {
+                    alert("Failed to render {{ media_title }} in fullScreen");
                 }
+                requestFullScreen.call(docEl);
             } else {
-                // Exit fullscreen mode
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.mozCancelFullScreen) { /* Firefox */
-                    document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { /* IE/Edge */
-                    document.msExitFullscreen();
+                if (cancelFullScreen === undefined) {
+                    alert("Failed to cacnel fullScreen for {{ media_title }}");
                 }
+                cancelFullScreen.call(doc);
             }
         }
         {% if previous %}
