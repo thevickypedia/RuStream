@@ -101,6 +101,11 @@ pub fn get_content() -> String {
             height: 75vh; /* Set height to 75% of the viewport height */
             margin: 0 auto; /* Center the container horizontally */
         }
+        #nav-container {
+            position: relative;
+            width: 70%;
+            margin: 0 auto; /* Center the container horizontally */
+        }
         #image-source {
             max-width: 100%;
             height: 75vh;
@@ -108,6 +113,8 @@ pub fn get_content() -> String {
             display: flex;
             justify-content: center;
             align-items: center; /* Center the container vertically */
+            cursor: pointer; /* Add a pointer cursor to indicate it's clickable */
+            overflow: hidden; /* Avoid vertical overflow */
         }
         #video-player {
             position: relative;
@@ -158,7 +165,7 @@ pub fn get_content() -> String {
     <br><br>
     <h1>{{ media_title }}</h1>
     {% if render_image %}
-        <img id="image-source" src="">
+        <img id="image-source" src="" onclick="fullScreen()">
     {% else %}
         <div id="content-container">
             <video id="video-player"
@@ -185,7 +192,7 @@ pub fn get_content() -> String {
             </video>
         </div>
     {% endif %}
-    <div id="content-container">
+    <div id="nav-container">
         {% if previous %}
             <button class="iter" style="float: left" onclick="window.location='{{ previous }}'" title="{{ previous }}">
                 <i class="fa fa-backward"></i> Previous
@@ -236,6 +243,34 @@ pub fn get_content() -> String {
         }
         function goBack() {
             window.history.back();
+        }
+    </script>
+    <script>
+        function fullScreen() {
+            var image = document.getElementById("image-source");
+            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                // Enter fullscreen mode
+                if (image.requestFullscreen) {
+                    image.requestFullscreen();
+                } else if (image.mozRequestFullScreen) { /* Firefox */
+                    image.mozRequestFullScreen();
+                } else if (image.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                    image.webkitRequestFullscreen();
+                } else if (image.msRequestFullscreen) { /* IE/Edge */
+                    image.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen mode
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { /* Firefox */
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE/Edge */
+                    document.msExitFullscreen();
+                }
+            }
         }
     </script>
 </body>

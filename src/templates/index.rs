@@ -129,9 +129,11 @@ pub fn get_content() -> String {
 </body>
 <!-- control the behavior of the browser's navigation without triggering a full page reload -->
 <script>
-    history.pushState(null, document.title, location.href);
-    window.addEventListener('popstate', function (event) {
+    document.addEventListener('DOMContentLoaded', function() {
         history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function (event) {
+            history.pushState(null, document.title, location.href);
+        });
     });
 </script>
 <!-- handle authentication from login page -->

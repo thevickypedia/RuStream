@@ -73,6 +73,15 @@ pub fn get_content() -> String {
 </button>
 <h4>Click <a href="https://vigneshrao.com/contact">HERE</a> to reach out.</h4>
 </body>
+<!-- control the behavior of the browser's navigation without triggering a full page reload -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        history.pushState(null, document.title, location.href);
+        window.addEventListener('popstate', function (event) {
+            history.pushState(null, document.title, location.href);
+        });
+    });
+</script>
 </html>
 "###.to_string()
 }
