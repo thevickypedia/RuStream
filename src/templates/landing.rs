@@ -259,6 +259,8 @@ pub fn get_content() -> String {
                 } else if (image.msRequestFullscreen) { /* IE/Edge */
                     image.msRequestFullscreen();
                 }
+                // Save fullscreen state to localStorage
+                localStorage.setItem('full_screen', 'true');
             } else {
                 // Exit fullscreen mode
                 if (document.exitFullscreen) {
@@ -270,6 +272,8 @@ pub fn get_content() -> String {
                 } else if (document.msExitFullscreen) { /* IE/Edge */
                     document.msExitFullscreen();
                 }
+                // Save fullscreen state to localStorage
+                localStorage.setItem('full_screen', 'false');
             }
         }
         {% if previous %}
@@ -292,6 +296,14 @@ pub fn get_content() -> String {
                 }
             }
         {% endif %}
+        // Check localStorage on page load
+        window.addEventListener('load', function () {
+            var fullscreenState = localStorage.getItem('full_screen');
+            console.log(fullscreenState);
+            if (fullscreenState === 'true') {
+                fullScreen();
+            }
+        });
     </script>
 </body>
 </html>
