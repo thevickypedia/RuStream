@@ -90,6 +90,25 @@ pub fn get_content() -> String {
         }
 
     </style>
+    <style>
+        .password-container {
+            position: relative;
+        }
+        .password-container input[type="password"],
+        .password-container input[type="text"]{
+            width: 100%;
+            padding: 12px 36px 12px 12px;
+            box-sizing: border-box;
+        }
+        .fa-eye {
+            position: absolute;
+            top: 40%;
+            right: 4%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: lightgray;
+        }
+    </style>
     <noscript>
         <style>
             body {
@@ -121,7 +140,10 @@ pub fn get_content() -> String {
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+            <div class="password-container">
+                <input type="password" id="password" name="password" required>
+                <i class="fa fa-eye" id="eye"></i>
+            </div>
             <button type="submit" onclick="submitToAPI(event)">Sign In</button>
         </form>
     </div>
@@ -206,6 +228,17 @@ pub fn get_content() -> String {
         });
     }
 
+</script>
+<script>
+    const passwordInput = document.querySelector("#password")
+    const eye = document.querySelector("#eye")
+    eye.addEventListener("click", function() {
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+        } else {
+            passwordInput.type = "password";
+        }
+    });
 </script>
 </html>
 "###.to_string()
