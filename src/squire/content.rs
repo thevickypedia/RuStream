@@ -56,6 +56,35 @@ fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
 }
 
 
+/// Generate font awesome icon's value for a given file extension.
+///
+/// Creates custom icons for `pdf` and `image` files, defaults to `video` icon.
+///
+/// # Arguments
+///
+/// * `extn` - File extension.
+///
+/// # Returns
+///
+/// A string with the `fa` value based on match statement.
+fn get_font_icon(extn: &str) -> String {
+    let font;
+    match extn {
+        "pdf" => {
+            font = "fa-regular fa-file-pdf";
+        }
+        _ => {
+            if ["jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp", "svg", "ico",
+                "raw", "psd", "ai", "eps", "webp"].contains(&extn) {
+                font = "fa-regular fa-file-image";
+            } else {
+                font = "fa-regular fa-file-video";
+            }
+        }
+    }
+    font.to_string()
+}
+
 /// Retrieves content information for all streams.
 ///
 /// # Arguments
@@ -87,6 +116,7 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
                         let mut entry_map = HashMap::new();
                         entry_map.insert("path".to_string(), format!("stream/{}", &file_name));
                         entry_map.insert("name".to_string(), file_name.to_string());
+                        entry_map.insert("font".to_string(), get_font_icon(extension));
                         payload.files.push(entry_map);
                     } else {
                         /*
@@ -138,7 +168,8 @@ pub fn get_dir_stream_content(parent: &str, child: &str, file_formats: &[String]
         if file_formats.contains(file_extn) {
             let map = HashMap::from([
                 ("name".to_string(), file_name),
-                ("path".to_string(), file_path.to_string_lossy().to_string())
+                ("path".to_string(), file_path.to_string_lossy().to_string()),
+                ("font".to_string(), get_font_icon(file_extn))
             ]);
             files.push(map);
         }

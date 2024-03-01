@@ -23,7 +23,9 @@ pub fn get_content() -> String {
     <!-- Disables 404 for favicon.ico which is a logo on top of the webpage tab -->
     <link rel="shortcut icon" href="#">
     <!-- Font Awesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/regular.min.css">
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -100,7 +102,7 @@ pub fn get_content() -> String {
             padding: 12px 36px 12px 12px;
             box-sizing: border-box;
         }
-        .fa-eye {
+        .fa-eye, .fa-eye-slash {
             position: absolute;
             top: 40%;
             right: 4%;
@@ -132,7 +134,7 @@ pub fn get_content() -> String {
 <body>
 <div class="container">
     <div class="header">
-        <i class="fa fa-user"></i>
+        <i class="fa-solid fa-user"></i>
     </div>
     <div class="content">
         <!-- <form action="{ url_for('signin') }" method="post"> -->
@@ -142,7 +144,7 @@ pub fn get_content() -> String {
             <label for="password">Password:</label>
             <div class="password-container">
                 <input type="password" id="password" name="password" required>
-                <i class="fa fa-eye" id="eye"></i>
+                <i class="fa-regular fa-eye" id="eye"></i>
             </div>
             <button type="submit" onclick="submitToAPI(event)">Sign In</button>
         </form>
@@ -235,8 +237,10 @@ pub fn get_content() -> String {
     eye.addEventListener("click", function() {
         if (passwordInput.type === "password") {
             passwordInput.type = "text";
+            eye.className = "fa-regular fa-eye-slash"
         } else {
             passwordInput.type = "password";
+            eye.className = "fa-regular fa-eye"
         }
     });
 </script>

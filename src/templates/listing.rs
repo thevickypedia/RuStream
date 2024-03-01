@@ -21,7 +21,8 @@ pub fn get_content() -> String {
     <!-- Disables 404 for favicon.ico which is a logo on top of the webpage tab -->
     <link rel="shortcut icon" href="#">
     <!-- Font Awesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.css">
     <!-- CSS and JS for night mode -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
     <script type="text/javascript" src="https://thevickypedia.github.io/open-source/nightmode/night.js" defer></script>
@@ -62,7 +63,7 @@ pub fn get_content() -> String {
     </style>
     <!-- Title list CSS -->
     <style>
-        a:hover, a:active {font-size: 120%; opacity: 0.7;}
+        a:hover, a:active { font-size: 120%; opacity: 0.7; }
         a:link { color: blue; }
         a:visited { color: blue; }
         ol {
@@ -70,11 +71,10 @@ pub fn get_content() -> String {
             counter-reset: list-counter;
         }
         li {
-            counter-increment: list-counter;
-            margin: 0.25rem;
+            margin: 1rem;
+            list-style-type: none; /* Hide default marker */
         }
         li::before {
-            content: counter(list-counter);
             background: #4169E1;
             width: 2rem;
             height: 2rem;
@@ -122,23 +122,27 @@ pub fn get_content() -> String {
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
     {% if dir_name or files or directories %}
+        <!-- Display directory name if within subdir -->
         {% if dir_name %}
-            <h3>{{dir_name}}</h3>
-        {% else %}
-            <h3>Files</h3>
+            <h3>{{ dir_name }}</h3>
         {% endif %}
-        <ol>
-        {% for file in files %}
-            <li><a href="{{file.path}}">{{file.name}}</a></li>
-        {% endfor %}
-        </ol>
-        {% if directories %}
-            <h3>Directories</h3>
-            <ol>
-            {% for directory in directories %}
-                <li><a href="{{directory.path}}">{{directory.name}}</a></li>
+        <!-- Display number of files and list the files -->
+        {% if files %}
+            <h3>Files {{ files|length }}</h3>
+            {% for file in files %}
+                <li><i class="{{ file.font }}"></i>&nbsp;&nbsp;<a href="{{ file.path }}">{{ file.name }}</a></li>
             {% endfor %}
-            </ol>
+        {% endif %}
+        <!-- Display number of directories and list the directories -->
+        {% if directories %}
+            <h3>Directories {{ directories|length }}</h3>
+            {% for directory in directories %}
+                {% if '/' in directory.name %}
+                    <li><i class="fa-solid fa-folder-tree"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
+                {% else %}
+                    <li><i class="fa fa-folder"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
+                {% endif %}
+            {% endfor %}
         {% endif %}
     {% else %}
         <h3 style="text-align: center">No content was rendered by the server</h3>
