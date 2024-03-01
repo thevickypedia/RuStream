@@ -1,7 +1,7 @@
 use std;
+
 use crate::constant::Cargo;
 use crate::squire;
-
 use crate::squire::settings;
 
 /// Initializes the logger based on the provided debug flag and cargo information.

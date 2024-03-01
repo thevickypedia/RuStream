@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use actix_web::http::header::HeaderValue;
 use actix_web::{HttpRequest, web};
+use actix_web::http::header::HeaderValue;
 use chrono::Utc;
 use fernet::Fernet;
 
-use crate::squire;
 use crate::constant;
+use crate::squire;
 
 /// Represents user credentials extracted from an authorization header.
 ///
@@ -81,7 +81,7 @@ fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credential
 pub fn verify_login(
     request: &HttpRequest,
     config: &web::Data<Arc<squire::settings::Config>>,
-    session: &web::Data<Arc<constant::Session>>
+    session: &web::Data<Arc<constant::Session>>,
 ) -> Result<HashMap<&'static str, String>, String> {
     let authorization = request.headers().get("authorization");
     let err_response;
@@ -141,7 +141,7 @@ pub fn verify_token(
     request: &HttpRequest,
     config: &squire::settings::Config,
     fernet: &Fernet,
-    session: &constant::Session
+    session: &constant::Session,
 ) -> AuthToken {
     if session.mapping.lock().unwrap().is_empty() {
         log::warn!("No stored sessions, no point in validating further");

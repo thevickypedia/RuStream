@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
+
 use fernet::Fernet;
 
 pub static IMAGE_FORMATS: [&str; 7] = ["jpeg", "jpg", "png", "gif", "bmp", "svg", "webp"];

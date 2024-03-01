@@ -121,7 +121,7 @@ fn render_content(landing: minijinja::Template, serializable: HashMap<&str, &Str
             log::error!("{}", err);
             HttpResponse::FailedDependency().json("Failed to render content.")
         }
-    }
+    };
 }
 
 /// Handles requests for the '/stream/{media_path:.*}' endpoint, serving media files and directories.
@@ -171,7 +171,7 @@ pub async fn stream(request: HttpRequest, media_path: web::Path<String>,
             ("media_title", &__filename),
             ("path", &render_path),
             ("previous", &prev),
-            ("next", &next)
+            ("next", &next),
         ].into_iter().collect::<HashMap<_, _>>();
         if constant::IMAGE_FORMATS
             .contains(&render_path.split('.')
