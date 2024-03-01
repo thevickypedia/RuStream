@@ -6,7 +6,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
-use crate::squire::settings::Config;
+use crate::squire::settings;
+use crate::constant;
 
 /// Represents the payload structure for content, including files and directories.
 ///
@@ -36,15 +37,15 @@ pub fn default_structure() -> Vec<HashMap<String, String>> {
 ///
 /// # Arguments
 ///
+/// * `regex` - Pre-compiled regex object.
 /// * `filename` - A string representing the filename.
 ///
 /// # Returns
 ///
 /// A vector of `Result<i32, String>` where each element is either an integer representing a numeric part
 /// or a string representing a non-numeric part converted to lowercase.
-fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
-    let re = Regex::new(r"(\D+|\d+)").unwrap();
-    re.find_iter(filename)
+fn natural_sort_key(regex: &Regex, filename: &str) -> Vec<Result<i32, String>> {
+    regex.find_iter(filename)
         .map(|part| {
             if let Ok(num) = part.as_str().parse::<i32>() {
                 Ok(num)
@@ -58,7 +59,7 @@ fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
 
 /// Generate font awesome icon's value for a given file extension.
 ///
-/// Creates custom icons for `pdf` and `image` files, defaults to `video` icon.
+/// Creates custom icons for `image` files, defaults to `video` icon.
 ///
 /// # Arguments
 ///
@@ -66,21 +67,13 @@ fn natural_sort_key(filename: &str) -> Vec<Result<i32, String>> {
 ///
 /// # Returns
 ///
-/// A string with the `fa` value based on match statement.
+/// A string with the `fa` value based on the file extension.
 fn get_font_icon(extn: &str) -> String {
     let font;
-    match extn {
-        "pdf" => {
-            font = "fa-regular fa-file-pdf";
-        }
-        _ => {
-            if ["jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp", "svg", "ico",
-                "raw", "psd", "ai", "eps", "webp"].contains(&extn) {
-                font = "fa-regular fa-file-image";
-            } else {
-                font = "fa-regular fa-file-video";
-            }
-        }
+    if constant::IMAGE_FORMATS.contains(&extn) {
+        font = "fa-regular fa-file-image";
+    } else {
+        font = "fa-regular fa-file-video";
     }
     font.to_string()
 }
@@ -94,7 +87,7 @@ fn get_font_icon(extn: &str) -> String {
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of all streams.
-pub fn get_all_stream_content(config: &Config) -> ContentPayload {
+pub fn get_all_stream_content(config: &settings::Config) -> ContentPayload {
     let mut payload = ContentPayload::default();
 
     for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
@@ -138,8 +131,9 @@ pub fn get_all_stream_content(config: &Config) -> ContentPayload {
         }
     }
 
-    payload.files.sort_by(|a, b| natural_sort_key(&a["name"]).cmp(&natural_sort_key(&b["name"])));
-    payload.directories.sort_by(|a, b| natural_sort_key(&a["name"]).cmp(&natural_sort_key(&b["name"])));
+    let re = Regex::new(r"(\D+|\d+)").unwrap();
+    payload.files.sort_by(|a, b| natural_sort_key(&re, &a["name"]).cmp(&natural_sort_key(&re, &b["name"])));
+    payload.directories.sort_by(|a, b| natural_sort_key(&re, &a["name"]).cmp(&natural_sort_key(&re, &b["name"])));
 
     payload
 }
@@ -174,7 +168,8 @@ pub fn get_dir_stream_content(parent: &str, child: &str, file_formats: &[String]
             files.push(map);
         }
     }
-    files.sort_by_key(|a| natural_sort_key(a.get("name").unwrap()));
+    let re = Regex::new(r"(\D+|\d+)").unwrap();
+    files.sort_by_key(|a| natural_sort_key(&re, a.get("name").unwrap()));
     ContentPayload { files, ..Default::default() }
 }
 
@@ -212,7 +207,8 @@ pub fn get_iter(filepath: &Path, file_formats: &[String]) -> Iter {
             }
         })
         .collect();
-    dir_content.sort_by_key(|a| natural_sort_key(a));
+    let re = Regex::new(r"(\D+|\d+)").unwrap();
+    dir_content.sort_by_key(|a| natural_sort_key(&re, a));
 
     let idx = dir_content.iter().position(|file| file == filepath.file_name().unwrap().to_str().unwrap()).unwrap();
 

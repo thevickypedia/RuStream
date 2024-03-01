@@ -173,9 +173,9 @@ pub async fn stream(request: HttpRequest, media_path: web::Path<String>,
             ("previous", &prev),
             ("next", &next)
         ].into_iter().collect::<HashMap<_, _>>();
-        if vec!["jpeg", "jpg", "png", "gif", "tiff", "tif", "bmp",
-                "svg", "ico", "raw", "psd", "ai", "eps", "pdf", "webp"]
-            .contains(&render_path.split('.').last()
+        if constant::IMAGE_FORMATS
+            .contains(&render_path.split('.')
+                .last()
                 .unwrap()  // file extension WILL be present at this point
                 .to_lowercase().as_str()) {
             context_builder.insert("render_image", &render_path);
