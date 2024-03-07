@@ -93,14 +93,17 @@ jobs:
             release_tag="v${new_version}-prerelease-${epoch}"
             prerelease=true
           fi
+
+          echo "Release Tag: $release_tag"
           commit_msg="$(git log -1 --pretty=%B | sed ':a;N;$!ba;s/\n/\\n/g')"
           release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
           response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
             -d "$release_data" \
             "https://api.github.com/repos/${{ github.repository }}/releases")
 
+          echo "Response: $response"
           release_id=$(echo $response | jq -r .id)
-          if [ -z "$release_id" ]; then
+          if [ "$release_id" = "null" ] || [ -z "$release_id" ]; then
             echo "Error: release_id is null. Exiting with code 1."
             exit 1
           fi
