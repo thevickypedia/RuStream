@@ -20,8 +20,9 @@ pub fn get_content() -> String {
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://thevickypedia.github.io/open-source/crypto/crypto.js"></script>
-    <!-- Disables 404 for favicon.ico which is a logo on top of the webpage tab -->
-    <link rel="shortcut icon" href="#">
+    <!-- Favicon.ico and Apple Touch Icon -->
+    <link rel="icon" href="https://thevickypedia.github.io/open-source/images/logo/actix.ico">
+    <link rel="apple-touch-icon" href="https://thevickypedia.github.io/open-source/images/logo/actix.png">
     <!-- Font Awesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">

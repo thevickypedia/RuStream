@@ -17,6 +17,9 @@ pub fn get_content() -> String {
     <meta name="keywords" content="Python, streaming, fastapi, JavaScript, HTML, CSS">
     <meta name="author" content="Vignesh Rao">
     <meta content="width=device-width, initial-scale=1" name="viewport">
+    <!-- Favicon.ico and Apple Touch Icon -->
+    <link rel="icon" href="https://thevickypedia.github.io/open-source/images/logo/actix.ico">
+    <link rel="apple-touch-icon" href="https://thevickypedia.github.io/open-source/images/logo/actix.png">
     <style>
         img {
             display: block;
@@ -64,8 +67,8 @@ pub fn get_content() -> String {
 <h2 style="margin-top:5%">LOGOUT</h2>
 <h3>{{ detail }}</h3>
 <p>
-    <img src="https://raw.githubusercontent.com/thevickypedia/open-source/main/images/logout.gif"
-        onerror="this.src='https://vigneshrao.com/open-source/images/logout.gif'"
+    <img src="https://thevickypedia.github.io/open-source/images/gif/blended_fusion.gif"
+        onerror="this.src='https://vigneshrao.com/open-source/images/gif/blended_fusion.gif'"
         width="200" height="200" alt="Image" class="center">
 </p>
 {% if show_login %}
