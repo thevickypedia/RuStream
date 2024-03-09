@@ -40,7 +40,7 @@ pub fn get_content() -> String {
         .upload {
             position: absolute;
             top: 3.8%;
-            right: 320px;
+            right: 315px;
             border: none;
             padding: 10px 14px;
             font-size: 16px;
