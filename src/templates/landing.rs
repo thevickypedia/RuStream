@@ -40,7 +40,7 @@ pub fn get_content() -> String {
         .upload {
             position: absolute;
             top: 3.8%;
-            right: 315px;
+            right: 313px;
             border: none;
             padding: 10px 14px;
             font-size: 16px;
@@ -49,7 +49,7 @@ pub fn get_content() -> String {
         .home {
             position: absolute;
             top: 3.8%;
-            right: 218px;
+            right: 217px;
             border: none;
             padding: 10px 14px;
             font-size: 16px;
@@ -58,7 +58,7 @@ pub fn get_content() -> String {
         .back {
             position: absolute;
             top: 3.8%;
-            right: 130px;
+            right: 132px;
             border: none;
             padding: 10px 14px;
             font-size: 16px;

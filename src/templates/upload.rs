@@ -27,9 +27,9 @@ pub fn get_content() -> String {
         /* optional google fonts */
         @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
         body {
-            background-color: #7494EC;
+            background-color: #6c7dac;
             padding: 30px;
-            margin: 0px;
+            margin: 0;
         }
         * {
             font-family: 'Ubuntu', sans-serif;
@@ -42,17 +42,17 @@ pub fn get_content() -> String {
             margin: auto;
             background-color: white;
             border-radius: 16px;
-            box-shadow: rgba(255, 255, 255, 0.1) 0px 1px 1px 0px inset, rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
+            box-shadow: rgba(255, 255, 255, 0.1) 0 1px 1px 0 inset, rgba(50, 50, 93, 0.25) 0 50px 100px -20px, rgba(0, 0, 0, 0.3) 0 30px 60px -30px;
         }
         .header-section {
-            padding: 25px 0px;
+            padding: 25px 0;
         }
         .header-section h1 {
             font-weight: 500;
             font-size: 1.7rem;
             text-transform: uppercase;
             color: #707EA0;
-            margin: 0px;
+            margin: 0;
             margin-bottom: 8px;
         }
         .header-section p {
@@ -81,10 +81,10 @@ pub fn get_content() -> String {
             font-weight: 700;
             color: #c0cae1;
             position: absolute;
-            top: 0px;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
             margin: auto;
             width: 200px;
             height: 55px;
@@ -126,7 +126,7 @@ pub fn get_content() -> String {
             border-radius: 8px;
             margin-top: 20px;
             cursor: pointer;
-            box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+            box-shadow: rgba(50, 50, 93, 0.25) 0 13px 27px -5px, rgba(0, 0, 0, 0.3) 0 8px 16px -8px;
         }
         .drop-section input {
             display: none;
@@ -134,7 +134,7 @@ pub fn get_content() -> String {
         .list-section {
             display: none;
             text-align: left;
-            margin: 0px 35px;
+            margin: 0 35px;
             padding-bottom: 20px;
         }
         .list-section .list-title {
@@ -143,14 +143,14 @@ pub fn get_content() -> String {
         }
         .list-section li {
             display: flex;
-            margin: 15px 0px;
+            margin: 15px 0;
             padding-top: 4px;
             padding-bottom: 2px;
             border-radius: 8px;
             transition-duration: 0.2s;
         }
         .list-section li:hover {
-            box-shadow: #E3EAF9 0px 0px 4px 0px, #E3EAF9 0px 12px 16px 0px;
+            box-shadow: #E3EAF9 0 0 4px 0, #E3EAF9 0 12px 16px 0;
         }
         .list-section li .col {
             flex: .1;
@@ -221,6 +221,44 @@ pub fn get_content() -> String {
             display: none;
         }
     </style>
+    <style>
+        .upload {
+            position: absolute;
+            top: 3.8%;
+            right: 313px;
+            border: none;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .home {
+            position: absolute;
+            top: 3.8%;
+            right: 217px;
+            border: none;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .back {
+            position: absolute;
+            top: 3.8%;
+            right: 132px;
+            border: none;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .logout {
+            position: absolute;
+            top: 3.8%;
+            right: 30px;
+            border: none;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <noscript>
     <style>
@@ -242,6 +280,10 @@ pub fn get_content() -> String {
     </div>
 </noscript>
 <body>
+    <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
+    <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
+    <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
+    <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
     <div class="container">
         <div class="header-section">
             <h1>Upload Files</h1>
@@ -284,7 +326,7 @@ pub fn get_content() -> String {
         }
 
         // Check the file type
-        function typeValidation(type){
+        function typeValidation(type) {
             var splitType = type.split('/')[0]
             if (type == 'application/pdf' || splitType == 'image' || splitType == 'video') {
                 return true
@@ -326,7 +368,7 @@ pub fn get_content() -> String {
             }
         }
         // upload file function
-        function uploadFile(file){
+        function uploadFile(file) {
             listSection.style.display = 'block'
             var li = document.createElement('li')
             li.classList.add('in-prog')
@@ -342,7 +384,7 @@ pub fn get_content() -> String {
                     <div class="file-progress">
                         <span></span>
                     </div>
-                    <div class="file-size">${(file.size/(1024*1024)).toFixed(2)} MB</div>
+                    <div class="file-size">${(file.size / (1024 * 1024)).toFixed(2)} MB</div>
                 </div>
                 <div class="col">
                     <svg xmlns="http://www.w3.org/2000/svg" class="cross" height="20" width="20"><path d="m5.979 14.917-.854-.896 4-4.021-4-4.062.854-.896 4.042 4.062 4-4.062.854.896-4 4.062 4 4.021-.854.896-4-4.063Z"/></svg>
@@ -354,17 +396,26 @@ pub fn get_content() -> String {
             var data = new FormData()
             data.append('file', file)
             http.onload = () => {
-                li.classList.add('complete')
-                li.classList.remove('in-prog')
+                if (http.status === 200) {
+                    // Successful response from the server
+                    li.classList.add('complete');
+                    li.classList.remove('in-prog');
+                } else {
+                    // Handle error responses
+                    alert('Error uploading file. Status:' + http.status);
+                    return false;
+                }
             }
+            http.onerror = (error) => {
+                // Handle network errors
+                alert('Network error during file upload.');
+                return false;
+            };
             http.upload.onprogress = (e) => {
-                var percent_complete = (e.loaded / e.total)*100
+                var percent_complete = (e.loaded / e.total) * 100
                 li.querySelectorAll('span')[0].innerHTML = Math.round(percent_complete) + '%'
                 li.querySelectorAll('span')[1].style.width = percent_complete + '%'
             }
-            console.log("sending data...");
-            console.log(window.location.origin + '/upload');
-            console.log(data);
             http.open('POST', window.location.origin + '/upload', true);
             http.send(data)
             li.querySelector('.cross').onclick = () => http.abort()
@@ -375,6 +426,20 @@ pub fn get_content() -> String {
         function iconSelector(type) {
             var splitType = (type.split('/')[0] == 'application') ? type.split('/')[1] : type.split('/')[0];
             return splitType + '.png'
+        }
+    </script>
+    <script>
+        function goHome() {
+            window.location.href = window.location.origin + "/home";
+        }
+        function logOut() {
+            window.location.href = window.location.origin + "/logout";
+        }
+        function upload() {
+            window.location.href = window.location.origin + "/upload";
+        }
+        function goBack() {
+            window.history.back();
         }
     </script>
 </body>

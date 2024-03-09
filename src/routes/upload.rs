@@ -26,19 +26,15 @@ pub async fn save_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
+    let mut source_path = config.media_source.clone();
     for file in form.files {
         let filename = file.file_name.unwrap();
-        let path = format!("uploads/{}", filename);
-        log::info!("Saving to {path}");
+        source_path.push(&filename);
+        let path = source_path.to_string_lossy().to_string();
+        log::info!("Saving '{filename}'");
         file.file.persist(path).unwrap();
     }
-    let html = r#"<html>
-        <head><title>Upload Test</title></head>
-        <body>
-            <h3>Files have been uploaded successfully!!</h3>
-        </body>
-    </html>"#;
-    HttpResponse::Ok().body(html)
+    HttpResponse::Ok().body("Success")
 }
 
 #[get("/upload")]

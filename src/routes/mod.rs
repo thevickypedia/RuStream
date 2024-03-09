@@ -5,4 +5,4 @@ pub mod media;
 /// Module for `/home`, `/login`, `/logout` and `/error` entrypoints.
 pub mod auth;
 /// Module to handle upload entrypoint.
-pub mod uploads;
+pub mod upload;

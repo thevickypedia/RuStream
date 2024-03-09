@@ -78,8 +78,8 @@ pub async fn start() -> io::Result<()> {
             .service(routes::media::track)
             .service(routes::media::stream)
             .service(routes::media::streaming_endpoint)
-            .service(routes::uploads::upload_files)
-            .service(routes::uploads::save_files)
+            .service(routes::upload::upload_files)
+            .service(routes::upload::save_files)
     };
     let server = HttpServer::new(application)
         .workers(config.workers as usize)
