@@ -72,12 +72,11 @@ fn natural_sort_key(regex: &Regex, filename: &str) -> Vec<Result<i32, String>> {
 ///
 /// A string with the `fa` value based on the file extension.
 fn get_font_icon(extn: &str) -> String {
-    let font;
-    if constant::IMAGE_FORMATS.contains(&extn) {
-        font = "fa-regular fa-file-image";
+    let font = if constant::IMAGE_FORMATS.contains(&extn) {
+        "fa-regular fa-file-image"
     } else {
-        font = "fa-regular fa-file-video";
-    }
+        "fa-regular fa-file-video"
+    };
     font.to_string()
 }
 

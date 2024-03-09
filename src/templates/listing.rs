@@ -34,6 +34,15 @@ pub fn get_content() -> String {
             margin-left: 1%;  /* 1% away from left corner */
             padding: 0.5%  /* 0.5% away from any surrounding elements */
         }
+        .upload {
+            position: absolute;
+            top: 3.8%;
+            right: 320px;
+            border: none;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
         .home {
             position: absolute;
             top: 3.8%;
@@ -122,6 +131,7 @@ pub fn get_content() -> String {
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
+    <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
     {% if dir_name or files or directories %}
         <!-- Display directory name if within subdir -->
         {% if dir_name %}
@@ -150,11 +160,14 @@ pub fn get_content() -> String {
     {% endif %}
     <hr>
     <script>
+        function goHome() {
+            window.location.href = window.location.origin + "/home";
+        }
         function logOut() {
             window.location.href = window.location.origin + "/logout";
         }
-        function goHome() {
-            window.location.href = window.location.origin + "/home";
+        function upload() {
+            window.location.href = window.location.origin + "/upload";
         }
         function goBack() {
             window.history.back();
