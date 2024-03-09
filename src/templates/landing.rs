@@ -37,6 +37,15 @@ pub fn get_content() -> String {
             font-size: 16px;
             cursor: pointer;
         }
+        .upload {
+            position: absolute;
+            top: 3.8%;
+            right: 320px;
+            border: none;
+            padding: 10px 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
         .home {
             position: absolute;
             top: 3.8%;
@@ -161,6 +170,7 @@ pub fn get_content() -> String {
     </noscript>
 </head>
 <body>
+    <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>

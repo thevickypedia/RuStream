@@ -12,6 +12,7 @@ mod logout;
 mod session;
 /// Unauthorized page template that is served as HTML response after failed authentication.
 mod unauthorized;
+mod upload;
 
 /// Loads all the HTML templates' content into a Jinja Environment
 ///
@@ -27,5 +28,6 @@ pub fn environment() -> Arc<minijinja::Environment<'static>> {
     env.add_template_owned("logout", logout::get_content()).unwrap();
     env.add_template_owned("session", session::get_content()).unwrap();
     env.add_template_owned("unauthorized", unauthorized::get_content()).unwrap();
+    env.add_template_owned("upload", upload::get_content()).unwrap();
     Arc::new(env)
 }
