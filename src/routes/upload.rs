@@ -1,8 +1,6 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 use std::sync::Arc;
-use std::time::Instant;
 
 use actix_multipart::Multipart;
 use actix_web::{http, HttpRequest, HttpResponse, web};
@@ -28,7 +26,8 @@ use crate::{constant, routes, squire};
 /// # Returns
 ///
 /// * `200` - Plain HTTPResponse indicating that the file was uploaded.
-/// * `401` - HTTPResponse with JSON payload indicating the problem uploading file.
+/// * `422` - HTTPResponse with JSON object indicating that the payload was incomplete.
+/// * `400` - HTTPResponse with JSON object indicating that the payload was invalid.
 #[post("/upload")]
 pub async fn save_files(request: HttpRequest,
                         mut payload: Multipart,
@@ -39,40 +38,38 @@ pub async fn save_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let source_path = Path::new("uploads");
+    let upload_path = config.media_source.join(&auth_response.username);
     while let Some(item) = payload.next().await {
         match item {
             Ok(mut field) => {
                 let filename = field.content_disposition().get_filename().unwrap();
-                let mut destination = File::create(source_path.join(filename)).unwrap();
-                let start = Instant::now();
-                log::info!("Downloading '{}'", &filename);
+                let mut destination = File::create(&upload_path.join(filename)).unwrap();
+                log::info!("Downloading '{}' - uploaded by {}", &filename, &auth_response.username);
                 while let Some(fragment) = field.next().await {
                     match fragment {
                         Ok(chunk) => {
                             destination.write_all(&chunk).unwrap();
                         }
                         Err(err) => {
-                            let error = format!("Error processing field: {}", err);
-                            log::error!("{}", &error);
-                            return HttpResponse::InternalServerError().json(error);
+                            // User might have aborted file upload
+                            let error = format!("Error processing chunk: {}", err);
+                            log::warn!("{}", &error);
+                            return HttpResponse::UnprocessableEntity().json(error);
                         }
                     }
                 }
-                // todo: Remove this or set to debug
-                log::info!("Download completed in {}s", start.elapsed().as_secs())
             }
             Err(err) => {
                 let error = format!("Error processing field: {}", err);
                 log::error!("{}", &error);
-                return HttpResponse::InternalServerError().json(error);
+                return HttpResponse::BadRequest().json(error);
             }
         }
     }
     HttpResponse::Ok().finish()
 }
 
-/// Handles requests for the '/upload' endpoint, serving the file upload template.
+/// Handles requests for the `/upload` endpoint, serving the file upload template.
 ///
 /// # Arguments
 ///
@@ -95,20 +92,15 @@ pub async fn upload_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    // todo: Create user specific directories and upload there instead
-    let upload_path = Path::new("uploads");
+    let upload_path = config.media_source.join(&auth_response.username);
     if !upload_path.exists() {
-        match std::fs::create_dir("uploads") {
-            Ok(_) => {
-                log::info!("Created uploads directory successfully");
-            }
-            Err(err) => {
-                log::error!("{}", err);
-            }
+        match std::fs::create_dir(&upload_path) {
+            Ok(_) => log::info!("'{}' has been created", &upload_path.to_str().unwrap()),
+            Err(err) => log::error!("{}", err)
         }
     }
     let landing = template.get_template("upload").unwrap();
     HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(landing.render(minijinja::context!()).unwrap())  // no arguments to render
+        .body(landing.render(minijinja::context!(USER => auth_response.username)).unwrap())
 }

@@ -289,6 +289,8 @@ pub fn get_content() -> String {
         <div class="header-section">
             <h1>Upload Files</h1>
             <p>Only PDF, Images & Videos are allowed.</p>
+            <br>
+            <p>Uploaded files will be stored in '{{ USER }}' directory</p>
         </div>
         <div class="drop-section">
             <div class="col">
@@ -420,7 +422,15 @@ pub fn get_content() -> String {
             http.open('POST', window.location.origin + '/upload', true);
             http.send(data)
             li.querySelector('.cross').onclick = () => http.abort()
-            http.onabort = () => li.remove()
+            http.onabort = () => {
+                let crossElement = li.querySelector('.cross');
+                // Insert a red cross sign
+                crossElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="cross-solid" height="20" width="20"><path d="m5.979 14.917-.854-.896 4-4.021-4-4.062.854-.896 4.042 4.062 4-4.062.854.896-4 4.062 4 4.021-.854.896-4-4.063Z" stroke="red" stroke-width="2"></path></svg>';
+                let context = li.querySelector('.file-name');
+                let spanElement = context.querySelector('span');
+                // Change uploaded percentage into a text
+                spanElement.innerHTML = 'ABORTED!!';
+            }
         }
 
         // find icon for file
