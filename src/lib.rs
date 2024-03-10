@@ -4,6 +4,7 @@
 #[macro_use]
 extern crate actix_web;
 
+use core::time::Duration;
 use std::io;
 
 use actix_web::{App, HttpServer, middleware, web};
@@ -61,6 +62,7 @@ pub async fn start() -> io::Result<()> {
         The closure is defining the configuration for the Actix web server.
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
+    let max_payload_size = 10 * 1024 * 1024 * 1024; // 10 GB
     let application = move || {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
@@ -80,10 +82,14 @@ pub async fn start() -> io::Result<()> {
             .service(routes::media::streaming_endpoint)
             .service(routes::upload::upload_files)
             .service(routes::upload::save_files)
+            .app_data(web::PayloadConfig::default().limit(max_payload_size))
     };
+    let duration = Duration::new(600, 0);
     let server = HttpServer::new(application)
         .workers(config.workers as usize)
-        .max_connections(config.max_connections as usize);
+        .max_connections(config.max_connections as usize)
+        .client_request_timeout(duration)
+        .client_disconnect_timeout(duration);
     // Reference: https://actix.rs/docs/http2/
     if config.cert_file.exists() && config.key_file.exists() {
         log::info!("Binding SSL certificate to serve over HTTPS");
