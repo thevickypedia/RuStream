@@ -253,6 +253,9 @@ pub fn get_content() -> String {
         function goHome() {
             window.location.href = window.location.origin + "/home";
         }
+        function upload() {
+            window.location.href = window.location.origin + "/upload";
+        }
         function goBack() {
             window.history.back();
         }

@@ -284,10 +284,11 @@ pub fn get_content() -> String {
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
+    <br><br><br>
     <div class="container">
         <div class="header-section">
             <h1>Upload Files</h1>
-            <p>PDF, Images & Videos are allowed.</p>
+            <p>Only PDF, Images & Videos are allowed.</p>
         </div>
         <div class="drop-section">
             <div class="col">
