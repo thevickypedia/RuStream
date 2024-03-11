@@ -39,9 +39,11 @@ pub async fn save_files(request: HttpRequest,
         return routes::auth::failed_auth(auth_response, &config);
     }
     let mut upload_path = config.media_source.clone();  // cannot be borrowed as mutable
+    let mut secure_str = "";
     if let Some(dedicated) = request.headers().get("dedicated_directory") {
         if dedicated.to_str().unwrap_or("false") == "true" {
-            upload_path.extend([format!("{}_rustream", &auth_response.username)])
+            secure_str = "to secure index ";
+            upload_path.extend([format!("{}_{}", &auth_response.username, constant::SECURE_INDEX)])
         }
     }
     while let Some(item) = payload.next().await {
@@ -49,7 +51,7 @@ pub async fn save_files(request: HttpRequest,
             Ok(mut field) => {
                 let filename = field.content_disposition().get_filename().unwrap();
                 let mut destination = File::create(&upload_path.join(filename)).unwrap();
-                log::info!("Downloading '{}' - uploaded by {}", &filename, &auth_response.username);
+                log::info!("Downloading '{}' {}- uploaded by '{}'", &filename, secure_str, &auth_response.username);
                 while let Some(fragment) = field.next().await {
                     match fragment {
                         Ok(chunk) => {
@@ -97,7 +99,7 @@ pub async fn upload_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let upload_path = config.media_source.join(format!("{}_rustream", &auth_response.username));
+    let upload_path = config.media_source.join(format!("{}_{}", &auth_response.username, constant::SECURE_INDEX));
     if !upload_path.exists() {
         match std::fs::create_dir(&upload_path) {
             Ok(_) => log::info!("'{}' has been created", &upload_path.to_str().unwrap()),

@@ -102,12 +102,12 @@ fn get_folder_font(structure: &PathBuf,
     entry_map.insert("path".to_string(), format!("stream/{}", &directory));
     let depth = &structure.iter().count();
     if let Some(first_component) = &structure.iter().next() {
-        let secured = format!("{}_rustream", &auth_response.username);
+        let secured = format!("{}_{}", &auth_response.username, constant::SECURE_INDEX);
         if secured == first_component.to_string_lossy() {
             entry_map.insert("name".to_string(), auth_response.username.to_owned());
             entry_map.insert("font".to_string(), "fa-solid fa-lock".to_string());
             return entry_map;
-        } else if first_component.to_string_lossy().ends_with("_rustream") {
+        } else if first_component.to_string_lossy().ends_with(constant::SECURE_INDEX) {
             // Return an empty hashmap if the
             return HashMap::new();
         }
@@ -197,12 +197,7 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
 /// A `ContentPayload` struct representing the content of the specified directory.
 pub fn get_dir_stream_content(parent: &str,
                               child: &str,
-                              file_formats: &[String],
-                              auth_response: &authenticator::AuthToken) -> ContentPayload {
-    // Return empty payload for unauthorized access
-    if child.ends_with("_rustream") && child != format!("{}_rustream", auth_response.username) {
-        return ContentPayload { ..Default::default() }
-    }
+                              file_formats: &[String]) -> ContentPayload {
     let mut files = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
         let file_name = entry.file_name().into_string().unwrap();

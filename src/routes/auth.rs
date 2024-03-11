@@ -170,9 +170,9 @@ pub async fn home(request: HttpRequest,
             listing.render(minijinja::context!(
                 files => listing_page.files,
                 directories => listing_page.directories,
-                secured_directories => listing_page.secured_directories
-            )
-            ).unwrap()
+                secured_directories => listing_page.secured_directories,
+                USER => auth_response.username
+            )).unwrap()
         )
 }
 

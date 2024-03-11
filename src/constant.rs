@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use fernet::Fernet;
 
 pub static IMAGE_FORMATS: [&str; 7] = ["jpeg", "jpg", "png", "gif", "bmp", "svg", "webp"];
+pub static SECURE_INDEX: &str = "SECURE_INDEX";
 
 /// Struct to store the cargo information gathered at compile time using the `env!` macro.
 #[derive(Debug)]

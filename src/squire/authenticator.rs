@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, web};
@@ -189,4 +190,39 @@ pub fn verify_token(
             username: "NA".to_string(),
         }
     }
+}
+
+/// Verifies the secure index of the directory/file that's being accessed.
+///
+/// # Arguments
+/// * `path` - A reference to the `PathBuf` object that's being accessed.
+/// * `username` - Username of the session.
+///
+/// ## See Also
+/// **Content delivery endpoints**
+/// * `stream` - Servers the content's landing page.
+/// * `track` - Servers the content's subtitles track.
+/// * `media` - Servers the content as a streaming response.
+/// * `home` - Servers the content's listing page.
+///
+/// **Endpoints that require secure index validation**
+/// * `stream` - Handles validation for both the landing page and subdirectories.
+/// * `media` - Handles validation for streaming the requested content.
+/// * `track` - Handles validation for subtitles track file.
+///
+/// # Returns
+///
+/// Returns a boolean value to indicate if the access can be granted.
+pub fn verify_secure_index(path: &PathBuf, username: &String) -> bool {
+    for dir in path.iter() {
+        let child = dir.to_string_lossy().to_string();
+        if child.ends_with(constant::SECURE_INDEX) && child != format!("{}_{}", username, constant::SECURE_INDEX) {
+            let user_dir = child
+                .strip_suffix(constant::SECURE_INDEX).unwrap()
+                .strip_suffix("_").unwrap();
+            log::warn!("'{}' tried to access {:?} that belongs to '{}'", username, path, user_dir);
+            return false;
+        }
+    }
+    true
 }

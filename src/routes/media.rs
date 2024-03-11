@@ -9,8 +9,7 @@ use minijinja;
 use serde::Deserialize;
 use url::form_urlencoded;
 
-use crate::{constant, squire};
-use crate::routes;
+use crate::{constant, squire, routes};
 
 /// Represents the payload structure for deserializing data from the request query parameters.
 #[derive(Deserialize)]
@@ -91,6 +90,11 @@ pub async fn track(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
+    if !squire::authenticator::verify_secure_index(&PathBuf::from(&info.file), &auth_response.username) {
+        return HttpResponse::Unauthorized().json(routes::auth::DetailError {
+            detail: format!("This content is not accessible as it does not belong to the user profile '{}'", auth_response.username)
+        })
+    }
     squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     log::debug!("Track requested: {}", &info.file);
@@ -154,11 +158,9 @@ pub async fn stream(request: HttpRequest,
     squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     let filepath = media_path.to_string();
-    let __file_monger = PathBuf::from(&filepath);
-    let __child = &__file_monger.iter().next().unwrap().to_string_lossy().to_string();
-    if __child.ends_with("_rustream") && __child != &format!("{}_rustream", auth_response.username) {
+    if !squire::authenticator::verify_secure_index(&PathBuf::from(&filepath), &auth_response.username) {
         return HttpResponse::Unauthorized().json(routes::auth::DetailError {
-            detail: format!("'{}' is not allowed", auth_response.username)
+            detail: format!("This content is not accessible as it does not belong to the user profile '{}'", auth_response.username)
         })
     }
     // True path of the media file
@@ -182,6 +184,7 @@ pub async fn stream(request: HttpRequest,
             ("path", &render_path),
             ("previous", &prev),
             ("next", &next),
+            ("USER", &auth_response.username)
         ].into_iter().collect::<HashMap<_, _>>();
         if constant::IMAGE_FORMATS
             .contains(&render_path.split('.')
@@ -213,14 +216,16 @@ pub async fn stream(request: HttpRequest,
         return render_content(landing, context_builder);
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
-        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats, &auth_response);
+        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
             .body(listing.render(minijinja::context!(
                 custom_title => child_dir,
-                files => listing_page.files, directories => listing_page.directories)
-            ).unwrap());
+                files => listing_page.files,
+                directories => listing_page.directories,
+                USER => auth_response.username
+            )).unwrap());
     }
     log::error!("Something went really wrong");
     log::error!("Media Path: {}", filepath);
@@ -251,9 +256,14 @@ pub async fn streaming_endpoint(request: HttpRequest, info: web::Query<Payload>,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
+    let media_path = config.media_source.join(&info.file);
+    if !squire::authenticator::verify_secure_index(&media_path, &auth_response.username) {
+        return HttpResponse::Unauthorized().json(routes::auth::DetailError {
+            detail: format!("This content is not accessible as it does not belong to the user profile '{}'", auth_response.username)
+        })
+    }
     squire::logger::log_connection(&request, &session);
     let host = request.connection_info().host().to_owned();
-    let media_path = config.media_source.join(&info.file);
     if media_path.exists() {
         let file = actix_files::NamedFile::open_async(media_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file

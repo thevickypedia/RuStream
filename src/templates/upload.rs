@@ -288,12 +288,13 @@ pub fn get_content() -> String {
     <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-    <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
+    <!-- todo: convert this to a user icon and expose logout button as a pop up menu -->
+    <button class="logout" onclick="logOut()" title="Logged in as {{ USER }}"><i class="fa fa-sign-out"></i> Logout</button>
     <br><br><br>
     <div class="container">
         <div class="header-section">
             <h1>Upload Files</h1>
-            <p>Only PDF, Images & Videos are allowed.</p>
+            <p>PDF, Images, Videos and Subtitles are allowed</p>
             <br>
             <input type="checkbox" id="dedicated" name="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ USER }}'">
             <label for="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ USER }}'"><i class="fa-solid fa-lock"></i></i>&nbsp;&nbsp;Upload files to '{{ USER }}' directory</label>
