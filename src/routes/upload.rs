@@ -109,5 +109,8 @@ pub async fn upload_files(request: HttpRequest,
     let landing = template.get_template("upload").unwrap();
     HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(landing.render(minijinja::context!(USER => auth_response.username)).unwrap())
+        .body(landing.render(minijinja::context!(
+            user => auth_response.username,
+            secure_index => constant::SECURE_INDEX
+        )).unwrap())
 }

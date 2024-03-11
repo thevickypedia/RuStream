@@ -28,8 +28,11 @@ pub fn get_content() -> String {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/regular.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+        * {
+            font-family: 'Ubuntu', 'PT Serif', sans-serif;
+        }
         body {
-            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
             background-color: #151515;
@@ -67,7 +70,6 @@ pub fn get_content() -> String {
             margin-top: 10px;
             color: #000000;
             font-size: large;
-            font-family: 'Courier New', sans-serif;
             font-weight: normal;
         }
 

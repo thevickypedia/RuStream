@@ -95,7 +95,7 @@ fn get_file_font(extn: &str) -> String {
 /// # Returns
 ///
 /// A string with the `fa` value based on the folder depth.
-fn get_folder_font(structure: &PathBuf,
+fn get_folder_font(structure: &Path,
                    auth_response: &authenticator::AuthToken) -> HashMap<String, String> {
     let directory = structure.to_string_lossy().to_string();
     let mut entry_map = HashMap::new();
@@ -118,7 +118,7 @@ fn get_folder_font(structure: &PathBuf,
     } else {
         entry_map.insert("font".to_string(), "fa fa-folder".to_string());
     }
-    return entry_map
+    entry_map
 }
 
 /// Retrieves content information for all streams.
@@ -163,7 +163,7 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
                         let skimmed = path.components().rev().skip(1)
                             .collect::<Vec<_>>().iter().rev()
                             .collect::<PathBuf>();
-                        let entry_map = get_folder_font(&skimmed, &auth_response);
+                        let entry_map = get_folder_font(&skimmed, auth_response);
                         if payload.directories.contains(&entry_map) || entry_map.is_empty() { continue; }
                         if payload.secured_directories.contains(&entry_map) || entry_map.is_empty() { continue; }
                         if entry_map.get("font").unwrap_or(&"".to_string()) == "fa-solid fa-lock" {

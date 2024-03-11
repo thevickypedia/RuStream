@@ -30,6 +30,11 @@ pub fn get_content() -> String {
     <link rel="stylesheet" type="text/css" href="https://thevickypedia.github.io/open-source/nightmode/night.css">
     <!-- Button CSS -->
     <style>
+        /* Google fonts with a backup alternative */
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+        * {
+            font-family: 'Ubuntu', 'PT Serif', sans-serif;
+        }
         body {
             margin-left: 1%;  /* 1% away from left corner */
             padding: 0.5%  /* 0.5% away from any surrounding elements */
@@ -61,15 +66,40 @@ pub fn get_content() -> String {
             font-size: 16px;
             cursor: pointer;
         }
-        .logout {
+    </style>
+    <style>
+        .dropbtn {
             position: absolute;
             top: 3.8%;
             right: 30px;
-            border: none;
-            padding: 10px 14px;
+            padding: 10px 24px;
             font-size: 16px;
+            border: none;
             cursor: pointer;
         }
+        .dropdown {
+            position: absolute;
+            top: 3.8%;
+            right: 30px;
+            padding: 10px 24px;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;  /* Distance from the user icon button */
+            right: 30px;
+            width: 160px;
+            min-width: auto;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);  /* Basically, black with 20% opacity */
+            z-index: 1;
+        }
+        .dropdown-content a {
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown:hover .dropdown-content {display: block;}
     </style>
     <!-- Title list CSS -->
     <style>
@@ -95,9 +125,6 @@ pub fn get_content() -> String {
             text-align: center;
             margin-right: 0.5rem;
         }
-        body {
-            font-family: 'PT Serif', serif;
-        }
     </style>
 </head>
 <noscript>
@@ -121,18 +148,23 @@ pub fn get_content() -> String {
 </noscript>
 <body translate="no">
     <div class="toggler fa fa-moon-o"></div>
-    <br><br>
+    <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
+    <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
+    <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
+    <div class="dropdown">
+        <button class="dropbtn"><i class="fa fa-user"></i></button>
+        <div class="dropdown-content">
+            <a onclick="goSecure()" style="cursor: pointer;"><i class="fa-solid fa-user-lock"></i> {{ user }}</a>
+            <a onclick="logOut()" style="cursor: pointer"><i class="fa fa-sign-out"></i> logout</a>
+        </div>
+    </div>
+    <br><br><br><br>
     {% if custom_title %}
         <h1>{{ custom_title }}</h1>
     {% else %}
         <h1>RuStream - Self-hosted Streaming Engine</h1>
     {% endif %}
     <hr>
-    <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
-    <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
-    <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-    <!-- todo: convert this to a user icon and expose logout button as a pop up menu -->
-    <button class="logout" onclick="logOut()" title="Logged in as {{ USER }}"><i class="fa fa-sign-out"></i> Logout</button>
     {% if dir_name or files or directories or secured_directories %}
         <!-- Display directory name if within subdir -->
         {% if dir_name %}
@@ -165,6 +197,9 @@ pub fn get_content() -> String {
     <script>
         function goHome() {
             window.location.href = window.location.origin + "/home";
+        }
+        function goSecure() {
+            window.location.href = window.location.origin + '/stream/{{ user }}_{{ secure_index }}';
         }
         function logOut() {
             window.location.href = window.location.origin + "/logout";

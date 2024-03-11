@@ -179,12 +179,14 @@ pub async fn stream(request: HttpRequest,
         let render_path = format!("/media?file={}", url_encode(&filepath));
         let prev = rust_iter.previous.unwrap_or_default();
         let next = rust_iter.next.unwrap_or_default();
+        let secure_index = constant::SECURE_INDEX.to_string();
         let mut context_builder = vec![
             ("media_title", &__filename),
             ("path", &render_path),
             ("previous", &prev),
             ("next", &next),
-            ("USER", &auth_response.username)
+            ("user", &auth_response.username),
+            ("secure_index", &secure_index)
         ].into_iter().collect::<HashMap<_, _>>();
         if constant::IMAGE_FORMATS
             .contains(&render_path.split('.')
@@ -218,13 +220,23 @@ pub async fn stream(request: HttpRequest,
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
         let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
         let listing = template.get_template("listing").unwrap();
+        let custom_title = if child_dir.ends_with(constant::SECURE_INDEX) {
+            format!(
+                "<i class='fa-solid fa-lock'></i>&nbsp;&nbsp;{}",
+                child_dir.strip_suffix(&format!("_{}", constant::SECURE_INDEX)).unwrap()
+            )
+        } else {
+            child_dir.clone()
+        };
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
             .body(listing.render(minijinja::context!(
-                custom_title => child_dir,
+                custom_title => custom_title,
                 files => listing_page.files,
+                user => auth_response.username,
+                secure_index => constant::SECURE_INDEX,
                 directories => listing_page.directories,
-                USER => auth_response.username
+                secured_directories => listing_page.secured_directories
             )).unwrap());
     }
     log::error!("Something went really wrong");

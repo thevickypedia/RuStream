@@ -21,6 +21,11 @@ pub fn get_content() -> String {
     <link rel="icon" href="https://thevickypedia.github.io/open-source/images/logo/actix.ico">
     <link rel="apple-touch-icon" href="https://thevickypedia.github.io/open-source/images/logo/actix.png">
     <style>
+        /* Google fonts with a backup alternative */
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+        * {
+            font-family: 'Ubuntu', 'PT Serif', sans-serif;
+        }
         img {
             display: block;
             margin-left: auto;
@@ -30,7 +35,6 @@ pub fn get_content() -> String {
         :is(h1, h2, h3, h4, h5, h6) {
             text-align: center;
             color: #F0F0F0;
-            font-family: 'Courier New', sans-serif;
         }
 
         button {

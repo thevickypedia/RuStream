@@ -31,6 +31,11 @@ pub fn get_content() -> String {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.css">
     <!-- Button CSS -->
     <style>
+        /* Google fonts with a backup alternative */
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+        * {
+            font-family: 'Ubuntu', 'PT Serif', sans-serif;
+        }
         .iter {
             border: none;
             padding: 10px 14px;
@@ -64,19 +69,10 @@ pub fn get_content() -> String {
             font-size: 16px;
             cursor: pointer;
         }
-        .logout {
-            position: absolute;
-            top: 3.8%;
-            right: 30px;
-            border: none;
-            padding: 10px 14px;
-            font-size: 16px;
-            cursor: pointer;
-        }
         body {
             background-color: #151515;
         }
-        title, h1, h2, h3, h4, h5, h6, p {
+        title, h1, h2, h3, h4, h5, h6, p, a {
             color: #f0f0f0;
         }
         button {
@@ -91,9 +87,6 @@ pub fn get_content() -> String {
     </style>
     <!-- Container, title and body CSS -->
     <style>
-        body {
-            font-family: 'PT Serif', serif;
-        }
         h1 {
             text-align: center;
         }
@@ -149,6 +142,40 @@ pub fn get_content() -> String {
             }
         }
     </style>
+    <style>
+        .dropbtn {
+            position: absolute;
+            top: 3.8%;
+            right: 30px;
+            padding: 10px 24px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        .dropdown {
+            position: absolute;
+            top: 3.8%;
+            right: 30px;
+            padding: 10px 24px;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;  /* Distance from the user icon button */
+            right: 30px;
+            width: 160px;
+            min-width: auto;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);  /* Basically, black with 20% opacity */
+            z-index: 1;
+        }
+        .dropdown-content a {
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown:hover .dropdown-content {display: block;}
+    </style>
     <noscript>
         <style>
             body {
@@ -173,9 +200,14 @@ pub fn get_content() -> String {
     <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-    <!-- todo: convert this to a user icon and expose logout button as a pop up menu -->
-    <button class="logout" onclick="logOut()" title="Logged in as {{ USER }}"><i class="fa fa-sign-out"></i> Logout</button>
-    <br><br>
+    <div class="dropdown">
+        <button class="dropbtn"><i class="fa fa-user"></i></button>
+        <div class="dropdown-content">
+            <a onclick="goSecure()" style="cursor: pointer;"><i class="fa-solid fa-user-lock"></i> {{ user }}</a>
+            <a onclick="logOut()" style="cursor: pointer"><i class="fa fa-sign-out"></i> logout</a>
+        </div>
+    </div>
+    <br><br><br>
     <h1>{{ media_title }}</h1>
     {% if render_image %}
         <img id="image-source" src="" onclick="fullScreen()">
@@ -248,11 +280,14 @@ pub fn get_content() -> String {
         {% endif %}
     </script>
     <script>
-        function logOut() {
-            window.location.href = window.location.origin + "/logout";
-        }
         function goHome() {
             window.location.href = window.location.origin + "/home";
+        }
+        function goSecure() {
+            window.location.href = window.location.origin + '/stream/{{ user }}_{{ secure_index }}';
+        }
+        function logOut() {
+            window.location.href = window.location.origin + "/logout";
         }
         function upload() {
             window.location.href = window.location.origin + "/upload";

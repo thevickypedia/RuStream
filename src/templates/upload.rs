@@ -24,15 +24,15 @@ pub fn get_content() -> String {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.css">
     <style>
-        /* optional google fonts */
+        /* Google fonts with a backup alternative */
         @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+        * {
+            font-family: 'Ubuntu', 'PT Serif', sans-serif;
+        }
         body {
             background-color: #6c7dac;
             padding: 30px;
             margin: 0;
-        }
-        * {
-            font-family: 'Ubuntu', sans-serif;
         }
         .container {
             text-align: center;
@@ -223,6 +223,7 @@ pub fn get_content() -> String {
         }
     </style>
     <style>
+        a,
         button {
             color: white;
             background-color: #6c7dac;
@@ -254,15 +255,40 @@ pub fn get_content() -> String {
             font-size: 16px;
             cursor: pointer;
         }
-        .logout {
+    </style>
+    <style>
+        .dropbtn {
             position: absolute;
             top: 3.8%;
             right: 30px;
-            border: none;
-            padding: 10px 14px;
+            padding: 10px 24px;
             font-size: 16px;
+            border: none;
             cursor: pointer;
         }
+        .dropdown {
+            position: absolute;
+            top: 3.8%;
+            right: 30px;
+            padding: 10px 24px;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;  /* Distance from the user icon button */
+            right: 30px;
+            width: 160px;
+            min-width: auto;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);  /* Basically, black with 20% opacity */
+            z-index: 1;
+        }
+        .dropdown-content a {
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown:hover .dropdown-content {display: block;}
     </style>
 </head>
 <noscript>
@@ -288,16 +314,21 @@ pub fn get_content() -> String {
     <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-    <!-- todo: convert this to a user icon and expose logout button as a pop up menu -->
-    <button class="logout" onclick="logOut()" title="Logged in as {{ USER }}"><i class="fa fa-sign-out"></i> Logout</button>
+    <div class="dropdown">
+        <button class="dropbtn"><i class="fa fa-user"></i></button>
+        <div class="dropdown-content">
+            <a onclick="goSecure()" style="cursor: pointer;"><i class="fa-solid fa-user-lock"></i> {{ user }}</a>
+            <a onclick="logOut()" style="cursor: pointer"><i class="fa fa-sign-out"></i> logout</a>
+        </div>
+    </div>
     <br><br><br>
     <div class="container">
         <div class="header-section">
             <h1>Upload Files</h1>
             <p>PDF, Images, Videos and Subtitles are allowed</p>
             <br>
-            <input type="checkbox" id="dedicated" name="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ USER }}'">
-            <label for="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ USER }}'"><i class="fa-solid fa-lock"></i></i>&nbsp;&nbsp;Upload files to '{{ USER }}' directory</label>
+            <input type="checkbox" id="dedicated" name="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ user }}'">
+            <label for="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ user }}'"><i class="fa-solid fa-lock"></i></i>&nbsp;&nbsp;Upload files to '{{ user }}' directory</label>
         </div>
         <div class="drop-section">
             <div class="col">
@@ -456,6 +487,9 @@ pub fn get_content() -> String {
     <script>
         function goHome() {
             window.location.href = window.location.origin + "/home";
+        }
+        function goSecure() {
+            window.location.href = window.location.origin + '/stream/{{ user }}_{{ secure_index }}';
         }
         function logOut() {
             window.location.href = window.location.origin + "/logout";

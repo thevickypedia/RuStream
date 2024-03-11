@@ -219,7 +219,7 @@ pub fn verify_secure_index(path: &PathBuf, username: &String) -> bool {
         if child.ends_with(constant::SECURE_INDEX) && child != format!("{}_{}", username, constant::SECURE_INDEX) {
             let user_dir = child
                 .strip_suffix(constant::SECURE_INDEX).unwrap()
-                .strip_suffix("_").unwrap();
+                .strip_suffix('_').unwrap();
             log::warn!("'{}' tried to access {:?} that belongs to '{}'", username, path, user_dir);
             return false;
         }
