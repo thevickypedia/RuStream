@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 use crate::constant;
+use crate::squire::authenticator;
 use crate::squire::settings;
 
 /// Represents the payload structure for content, including files and directories.
@@ -15,12 +16,15 @@ use crate::squire::settings;
 /// when necessary.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ContentPayload {
-    /// List of files with their names and paths.
+    /// List of files with their names, paths and font icons.
     #[serde(default = "default_structure")]
     pub files: Vec<HashMap<String, String>>,
-    /// List of directories with their names and paths.
+    /// List of directories with their names, paths and font icons.
     #[serde(default = "default_structure")]
     pub directories: Vec<HashMap<String, String>>,
+    /// List of user specific directories with their names, paths and font icons.
+    #[serde(default = "default_structure")]
+    pub secured_directories: Vec<HashMap<String, String>>,
 }
 
 /// Returns the default structure for content, represented as an empty vector of HashMaps.
@@ -71,13 +75,50 @@ fn natural_sort_key(regex: &Regex, filename: &str) -> Vec<Result<i32, String>> {
 /// # Returns
 ///
 /// A string with the `fa` value based on the file extension.
-fn get_font_icon(extn: &str) -> String {
+fn get_file_font(extn: &str) -> String {
     let font = if constant::IMAGE_FORMATS.contains(&extn) {
         "fa-regular fa-file-image"
     } else {
         "fa-regular fa-file-video"
     };
     font.to_string()
+}
+
+/// Generate font awesome icon's value for a given folder depth.
+///
+/// Creates custom icons for `folder-tree`, defaults to `folder` icon.
+///
+/// # Arguments
+///
+/// * `tree` - Depth of directories.
+///
+/// # Returns
+///
+/// A string with the `fa` value based on the folder depth.
+fn get_folder_font(structure: &PathBuf,
+                   auth_response: &authenticator::AuthToken) -> HashMap<String, String> {
+    let directory = structure.to_string_lossy().to_string();
+    let mut entry_map = HashMap::new();
+    entry_map.insert("path".to_string(), format!("stream/{}", &directory));
+    let depth = &structure.iter().count();
+    if let Some(first_component) = &structure.iter().next() {
+        let secured = format!("{}_rustream", &auth_response.username);
+        if secured == first_component.to_string_lossy() {
+            entry_map.insert("name".to_string(), auth_response.username.to_owned());
+            entry_map.insert("font".to_string(), "fa-solid fa-lock".to_string());
+            return entry_map;
+        } else if first_component.to_string_lossy().ends_with("_rustream") {
+            // Return an empty hashmap if the
+            return HashMap::new();
+        }
+    }
+    entry_map.insert("name".to_string(), directory);
+    if *depth > 1 {
+        entry_map.insert("font".to_string(), "fa-solid fa-folder-tree".to_string());
+    } else {
+        entry_map.insert("font".to_string(), "fa fa-folder".to_string());
+    }
+    return entry_map
 }
 
 /// Retrieves content information for all streams.
@@ -89,7 +130,7 @@ fn get_font_icon(extn: &str) -> String {
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of all streams.
-pub fn get_all_stream_content(config: &settings::Config) -> ContentPayload {
+pub fn get_all_stream_content(config: &settings::Config, auth_response: &authenticator::AuthToken) -> ContentPayload {
     let mut payload = ContentPayload::default();
 
     for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
@@ -111,7 +152,7 @@ pub fn get_all_stream_content(config: &settings::Config) -> ContentPayload {
                         let mut entry_map = HashMap::new();
                         entry_map.insert("path".to_string(), format!("stream/{}", &file_name));
                         entry_map.insert("name".to_string(), file_name.to_string());
-                        entry_map.insert("font".to_string(), get_font_icon(extension));
+                        entry_map.insert("font".to_string(), get_file_font(extension));
                         payload.files.push(entry_map);
                     } else {
                         /*
@@ -119,14 +160,17 @@ pub fn get_all_stream_content(config: &settings::Config) -> ContentPayload {
                         .rev(): reverses the order of the iterator
                         .skip(1): skips the first (originally last) component of the reversed path
                          */
-                        let skimmed: String = path.components().rev().skip(1)
+                        let skimmed = path.components().rev().skip(1)
                             .collect::<Vec<_>>().iter().rev()
-                            .collect::<PathBuf>().to_string_lossy().to_string();
-                        let mut entry_map = HashMap::new();
-                        entry_map.insert("path".to_string(), format!("stream/{}", &skimmed));
-                        entry_map.insert("name".to_string(), skimmed);
-                        if payload.directories.contains(&entry_map) { continue; }
-                        payload.directories.push(entry_map);
+                            .collect::<PathBuf>();
+                        let entry_map = get_folder_font(&skimmed, &auth_response);
+                        if payload.directories.contains(&entry_map) || entry_map.is_empty() { continue; }
+                        if payload.secured_directories.contains(&entry_map) || entry_map.is_empty() { continue; }
+                        if entry_map.get("font").unwrap_or(&"".to_string()) == "fa-solid fa-lock" {
+                            payload.secured_directories.push(entry_map);
+                        } else {
+                            payload.directories.push(entry_map);
+                        }
                     }
                 }
             }
@@ -151,7 +195,14 @@ pub fn get_all_stream_content(config: &settings::Config) -> ContentPayload {
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(parent: &str, child: &str, file_formats: &[String]) -> ContentPayload {
+pub fn get_dir_stream_content(parent: &str,
+                              child: &str,
+                              file_formats: &[String],
+                              auth_response: &authenticator::AuthToken) -> ContentPayload {
+    // Return empty payload for unauthorized access
+    if child.ends_with("_rustream") && child != format!("{}_rustream", auth_response.username) {
+        return ContentPayload { ..Default::default() }
+    }
     let mut files = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
         let file_name = entry.file_name().into_string().unwrap();
@@ -164,7 +215,7 @@ pub fn get_dir_stream_content(parent: &str, child: &str, file_formats: &[String]
             let map = HashMap::from([
                 ("name".to_string(), file_name),
                 ("path".to_string(), file_path.to_string_lossy().to_string()),
-                ("font".to_string(), get_font_icon(file_extn))
+                ("font".to_string(), get_file_font(file_extn))
             ]);
             files.push(map);
         }

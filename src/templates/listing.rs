@@ -132,7 +132,7 @@ pub fn get_content() -> String {
     <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
     <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
     <button class="logout" onclick="logOut()"><i class="fa fa-sign-out"></i> Logout</button>
-    {% if dir_name or files or directories %}
+    {% if dir_name or files or directories or secured_directories %}
         <!-- Display directory name if within subdir -->
         {% if dir_name %}
             <h3>{{ dir_name }}</h3>
@@ -148,11 +148,13 @@ pub fn get_content() -> String {
         {% if directories %}
             <h3>Directories {{ directories|length }}</h3>
             {% for directory in directories %}
-                {% if '/' in directory.name %}
-                    <li><i class="fa-solid fa-folder-tree"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
-                {% else %}
-                    <li><i class="fa fa-folder"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
-                {% endif %}
+                <li><i class="{{ directory.font }}"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
+            {% endfor %}
+        {% endif %}
+        {% if secured_directories %}
+            <h3>Secured Directory</h3>
+            {% for directory in secured_directories %}
+                <li><i class="{{ directory.font }}"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
             {% endfor %}
         {% endif %}
     {% else %}

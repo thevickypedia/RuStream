@@ -154,6 +154,13 @@ pub async fn stream(request: HttpRequest,
     squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     let filepath = media_path.to_string();
+    let __file_monger = PathBuf::from(&filepath);
+    let __child = &__file_monger.iter().next().unwrap().to_string_lossy().to_string();
+    if __child.ends_with("_rustream") && __child != &format!("{}_rustream", auth_response.username) {
+        return HttpResponse::Unauthorized().json(routes::auth::DetailError {
+            detail: format!("'{}' is not allowed", auth_response.username)
+        })
+    }
     // True path of the media file
     let __target = config.media_source.join(&filepath);
     if !__target.exists() {
@@ -206,7 +213,7 @@ pub async fn stream(request: HttpRequest,
         return render_content(landing, context_builder);
     } else if __target.is_dir() {
         let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
-        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
+        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats, &auth_response);
         let listing = template.get_template("listing").unwrap();
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")

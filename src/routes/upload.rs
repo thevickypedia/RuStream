@@ -41,7 +41,7 @@ pub async fn save_files(request: HttpRequest,
     let mut upload_path = config.media_source.clone();  // cannot be borrowed as mutable
     if let Some(dedicated) = request.headers().get("dedicated_directory") {
         if dedicated.to_str().unwrap_or("false") == "true" {
-            upload_path.extend([&auth_response.username])
+            upload_path.extend([format!("{}_rustream", &auth_response.username)])
         }
     }
     while let Some(item) = payload.next().await {
@@ -97,7 +97,7 @@ pub async fn upload_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let upload_path = config.media_source.join(&auth_response.username);
+    let upload_path = config.media_source.join(format!("{}_rustream", &auth_response.username));
     if !upload_path.exists() {
         match std::fs::create_dir(&upload_path) {
             Ok(_) => log::info!("'{}' has been created", &upload_path.to_str().unwrap()),

@@ -161,14 +161,17 @@ pub async fn home(request: HttpRequest,
     squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
 
-    let listing_page = squire::content::get_all_stream_content(&config);
+    let listing_page = squire::content::get_all_stream_content(&config, &auth_response);
     let listing = template.get_template("listing").unwrap();
 
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(
             listing.render(minijinja::context!(
-                files => listing_page.files, directories => listing_page.directories)
+                files => listing_page.files,
+                directories => listing_page.directories,
+                secured_directories => listing_page.secured_directories
+            )
             ).unwrap()
         )
 }
