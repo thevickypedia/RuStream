@@ -20,8 +20,8 @@ pub fn get_cors(websites: Vec<String>) -> Cors {
     origins.extend(cloned);
     let mut cors = Cors::default()
         .allowed_methods(vec!["GET", "POST"])
-        .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
-        .allowed_header(header::CONTENT_TYPE)
+        .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT, header::CONTENT_TYPE])
+        .allowed_header("dedicated_directory")
         .max_age(3600);  // Maximum time (in seconds) for which this CORS request may be cached
     for origin in origins {
         cors = cors.allowed_origin(&origin);

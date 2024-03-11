@@ -38,7 +38,12 @@ pub async fn save_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let upload_path = config.media_source.join(&auth_response.username);
+    let mut upload_path = config.media_source.clone();  // cannot be borrowed as mutable
+    if let Some(dedicated) = request.headers().get("dedicated_directory") {
+        if dedicated.to_str().unwrap_or("false") == "true" {
+            upload_path.extend([&auth_response.username])
+        }
+    }
     while let Some(item) = payload.next().await {
         match item {
             Ok(mut field) => {

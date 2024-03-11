@@ -55,7 +55,8 @@ pub fn get_content() -> String {
             margin: 0;
             margin-bottom: 8px;
         }
-        .header-section p {
+        .header-section p,
+        .header-section label {
             margin: 5px;
             font-size: 0.95rem;
             color: #707EA0;
@@ -222,6 +223,10 @@ pub fn get_content() -> String {
         }
     </style>
     <style>
+        button {
+            color: white;
+            background-color: #6c7dac;
+        }
         .upload {
             position: absolute;
             top: 3.8%;
@@ -290,12 +295,13 @@ pub fn get_content() -> String {
             <h1>Upload Files</h1>
             <p>Only PDF, Images & Videos are allowed.</p>
             <br>
-            <p>Uploaded files will be stored in '{{ USER }}' directory</p>
+            <input type="checkbox" id="dedicated" name="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ USER }}'">
+            <label for="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ USER }}'"><i class="fa-solid fa-lock"></i></i>&nbsp;&nbsp;Upload files to '{{ USER }}' directory</label>
         </div>
         <div class="drop-section">
             <div class="col">
                 <div class="cloud-icon">
-                    <img src="https://thevickypedia.github.io/open-source/images/cloud.png" alt="cloud">
+                    <img src="https://thevickypedia.github.io/open-source/images/icons/cloud.png" alt="cloud">
                 </div>
                 <span>Drag & Drop your files here</span>
                 <span>OR</span>
@@ -330,8 +336,8 @@ pub fn get_content() -> String {
 
         // Check the file type
         function typeValidation(type) {
-            var splitType = type.split('/')[0]
-            if (type == 'application/pdf' || splitType == 'image' || splitType == 'video') {
+            let splitType = type.split('/')[0]
+            if (type === 'application/pdf' || type === 'text/vtt' || splitType === 'image' || splitType === 'video') {
                 return true
             }
         }
@@ -373,11 +379,11 @@ pub fn get_content() -> String {
         // upload file function
         function uploadFile(file) {
             listSection.style.display = 'block'
-            var li = document.createElement('li')
+            let li = document.createElement('li')
             li.classList.add('in-prog')
             li.innerHTML = `
                 <div class="col">
-                    <img src="https://thevickypedia.github.io/open-source/images/${iconSelector(file.type)}" alt="">
+                    <img src="https://thevickypedia.github.io/open-source/images/icons/${iconSelector(file.type)}" alt="">
                 </div>
                 <div class="col">
                     <div class="file-name">
@@ -395,10 +401,12 @@ pub fn get_content() -> String {
                 </div>
             `
             listContainer.prepend(li)
-            var http = new XMLHttpRequest()
-            var data = new FormData()
+            let http = new XMLHttpRequest()
+            let checkbox = document.getElementById('dedicated');
+            let data = new FormData()
             data.append('file', file)
             http.onload = () => {
+                checkbox.disabled = false;
                 if (http.status === 200) {
                     // Successful response from the server
                     li.classList.add('complete');
@@ -411,18 +419,23 @@ pub fn get_content() -> String {
             }
             http.onerror = (error) => {
                 // Handle network errors
+                console.log(error);
                 alert('Network error during file upload.');
+                checkbox.disabled = false;
                 return false;
             };
             http.upload.onprogress = (e) => {
-                var percent_complete = (e.loaded / e.total) * 100
+                checkbox.disabled = true;
+                let percent_complete = (e.loaded / e.total) * 100
                 li.querySelectorAll('span')[0].innerHTML = Math.round(percent_complete) + '%'
                 li.querySelectorAll('span')[1].style.width = percent_complete + '%'
             }
-            http.open('POST', window.location.origin + '/upload', true);
+            http.open('POST', window.location.origin + '/upload', true);  // asynchronous session
+            http.setRequestHeader('dedicated_directory', checkbox.checked);
             http.send(data)
             li.querySelector('.cross').onclick = () => http.abort()
             http.onabort = () => {
+                checkbox.disabled = false;
                 let crossElement = li.querySelector('.cross');
                 // Insert a red cross sign
                 crossElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="cross-solid" height="20" width="20"><path d="m5.979 14.917-.854-.896 4-4.021-4-4.062.854-.896 4.042 4.062 4-4.062.854.896-4 4.062 4 4.021-.854.896-4-4.063Z" stroke="red" stroke-width="2"></path></svg>';
@@ -435,7 +448,7 @@ pub fn get_content() -> String {
 
         // find icon for file
         function iconSelector(type) {
-            var splitType = (type.split('/')[0] == 'application') ? type.split('/')[1] : type.split('/')[0];
+            let splitType = (type.split('/')[0] === 'application') ? type.split('/')[1] : type.split('/')[0];
             return splitType + '.png'
         }
     </script>

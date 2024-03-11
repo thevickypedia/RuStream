@@ -74,18 +74,19 @@ fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `info` - Query string from the request.
-/// * `config` - Configuration data for the application.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `config` - Configuration data for the application.
 ///
 /// # Returns
 ///
 /// Returns an `HttpResponse` containing the track file content or an error response.
 #[get("/track")]
-pub async fn track(request: HttpRequest, info: web::Query<Payload>,
-                   config: web::Data<Arc<squire::settings::Config>>,
+pub async fn track(request: HttpRequest,
+                   info: web::Query<Payload>,
                    fernet: web::Data<Arc<Fernet>>,
-                   session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+                   session: web::Data<Arc<constant::Session>>,
+                   config: web::Data<Arc<squire::settings::Config>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
@@ -111,7 +112,8 @@ pub async fn track(request: HttpRequest, info: web::Query<Payload>,
 ///
 /// * `landing` - `Template` retrieved from the configuration container.
 /// * `serializable` - `HashMap` that can be serialized into a single block of String to be rendered.
-fn render_content(landing: minijinja::Template, serializable: HashMap<&str, &String>) -> HttpResponse {
+fn render_content(landing: minijinja::Template,
+                  serializable: HashMap<&str, &String>) -> HttpResponse {
     return match landing.render(serializable) {
         Ok(response_body) => {
             HttpResponse::build(StatusCode::OK)
@@ -124,26 +126,27 @@ fn render_content(landing: minijinja::Template, serializable: HashMap<&str, &Str
     };
 }
 
-/// Handles requests for the '/stream/{media_path:.*}' endpoint, serving media files and directories.
+/// Handles requests for the `/stream/{media_path:.*}` endpoint, serving media files and directories.
 ///
 /// # Arguments
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `media_path` - The path parameter representing the media file or directory.
-/// * `config` - Configuration data for the application.
-/// * `template` - Configuration container for the loaded templates.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `config` - Configuration data for the application.
+/// * `template` - Configuration container for the loaded templates.
 ///
 /// # Returns
 ///
 /// Returns an `HttpResponse` containing the media content or directory listing, or an error response.
 #[get("/stream/{media_path:.*}")]
-pub async fn stream(request: HttpRequest, media_path: web::Path<String>,
-                    config: web::Data<Arc<squire::settings::Config>>,
-                    template: web::Data<Arc<minijinja::Environment<'static>>>,
+pub async fn stream(request: HttpRequest,
+                    media_path: web::Path<String>,
                     fernet: web::Data<Arc<Fernet>>,
-                    session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+                    session: web::Data<Arc<constant::Session>>,
+                    config: web::Data<Arc<squire::settings::Config>>,
+                    template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
