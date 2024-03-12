@@ -99,20 +99,11 @@ pub async fn upload_files(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let upload_path = config.media_source.join(format!("{}_{}", &auth_response.username, constant::SECURE_INDEX));
-    if !upload_path.exists() {
-        // todo: either remove this and use session's secure_dir (but that will work if only one is available) - convenient regardless of user BS
-        //  or totally remove the session specific secure_dir logic and create one for each user upon login - more precise but may lead to multiple
-        match std::fs::create_dir(&upload_path) {
-            Ok(_) => log::info!("'{}' has been created", &upload_path.to_str().unwrap()),
-            Err(err) => log::error!("{}", err)
-        }
-    }
     let landing = template.get_template("upload").unwrap();
     HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(landing.render(minijinja::context!(
             user => auth_response.username,
-            secure_index => session.secured_dir.lock().unwrap().get("href").unwrap_or(&"home".to_string())
+            secure_index => constant::SECURE_INDEX
         )).unwrap())
 }

@@ -17,6 +17,7 @@ mod routes;
 mod squire;
 /// Module to load all the templates for the UI.
 mod templates;
+mod echo;
 
 /// Contains entrypoint and initializer settings to trigger the asynchronous `HTTPServer`
 ///
@@ -39,7 +40,7 @@ pub async fn start() -> io::Result<()> {
     let cargo = constant::build_info();
     let config = squire::startup::get_config(&cargo);
 
-    squire::startup::init_logger(config.debug, &cargo.crate_name);
+    squire::startup::init_logger(config.debug, config.utc_logging, &cargo.crate_name);
     println!("{}[v{}] - {}", &cargo.pkg_name, &cargo.pkg_version, &cargo.description);
     squire::ascii_art::random();
 

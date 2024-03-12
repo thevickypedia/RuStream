@@ -1,7 +1,11 @@
 use std;
+use std::ffi::OsStr;
+use std::io::Write;
+use chrono::{DateTime, Local};
+use walkdir::WalkDir;
 
 use crate::constant::Cargo;
-use crate::squire;
+use crate::{constant, info, squire};
 use crate::squire::settings;
 
 /// Initializes the logger based on the provided debug flag and cargo information.
@@ -10,7 +14,7 @@ use crate::squire::settings;
 ///
 /// * `debug` - A flag indicating whether to enable debug mode for detailed logging.
 /// * `crate_name` - Name of the crate loaded during compile time.
-pub fn init_logger(debug: bool, crate_name: &String) {
+pub fn init_logger(debug: bool, utc: bool, crate_name: &String) {
     if debug {
         std::env::set_var("RUST_LOG", format!(
             "actix_web=debug,actix_server=info,{}=debug", crate_name
@@ -23,7 +27,23 @@ pub fn init_logger(debug: bool, crate_name: &String) {
         ));
         std::env::set_var("RUST_BACKTRACE", "0");
     }
-    env_logger::init();
+    if utc {
+        env_logger::init();
+    } else {
+        env_logger::Builder::from_default_env()
+            .format(|buf, record| {
+                let local_time: DateTime<Local> = Local::now();
+                writeln!(
+                    buf,
+                    "[{} {}] [{}] - {}",
+                    local_time.format("%Y-%m-%d %H:%M:%S"),
+                    record.level(),
+                    record.target(),
+                    record.args()
+                )
+            })
+            .init();
+    }
 }
 
 /// Extracts the mandatory env vars by key and parses it as `HashMap<String, String>` and `PathBuf`
@@ -167,6 +187,7 @@ fn parse_path(key: &str) -> Option<std::path::PathBuf> {
 fn load_env_vars() -> settings::Config {
     let (authorization, media_source) = mandatory_vars();
     let debug = parse_bool("debug").unwrap_or(settings::default_debug());
+    let utc_logging = parse_bool("utc_logging").unwrap_or(settings::default_utc_logging());
     let media_host = std::env::var("media_host").unwrap_or(settings::default_media_host());
     let media_port = parse_i32("media_port").unwrap_or(settings::default_media_port());
     let session_duration = parse_i32("session_duration").unwrap_or(settings::default_session_duration());
@@ -181,6 +202,7 @@ fn load_env_vars() -> settings::Config {
         authorization,
         media_source,
         debug,
+        utc_logging,
         media_host,
         media_port,
         session_duration,
@@ -191,6 +213,49 @@ fn load_env_vars() -> settings::Config {
         secure_session,
         key_file,
         cert_file,
+    }
+}
+
+fn validate_dir_structure(config: &settings::Config) {
+    let source = &config.media_source.to_string_lossy().to_string();
+    let mut errors = String::new();
+    for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
+        let entry_path = entry.path();
+        if entry_path.is_dir() && entry_path.to_str().unwrap().ends_with(constant::SECURE_INDEX) {
+            let secure_index = entry_path.strip_prefix(source).unwrap();
+            let depth = secure_index.iter().count();
+            if depth != 1usize {
+                let index_vec = secure_index.iter().collect::<Vec<_>>();
+                let secure_dir = index_vec.last().unwrap();
+                // secure_parent_path is the secure index's location
+                let secure_parent_path = &index_vec[0..index_vec.len() - 1]
+                    .join(OsStr::new(std::path::MAIN_SEPARATOR_STR));
+                errors.push_str(&format!(
+                    "\n{:?}\n\tSecure index directory [{:?}] should be at the root [{:?}] [depth={}, valid=1]\n\
+                    \t> Hint: Either move {:?} within {:?}, [OR] set the 'media_source' to {:?}\n",
+                    secure_index,
+                    secure_dir,
+                    config.media_source,
+                    depth,
+                    secure_dir,
+                    config.media_source,
+                    config.media_source.join(secure_parent_path)
+                ));
+            }
+        }
+    }
+    if errors.is_empty() {
+        for (username, _) in &config.authorization {
+            let secure_path = &config.media_source.join(format!("{}_{}", &username, constant::SECURE_INDEX));
+            if !secure_path.exists() {
+                match std::fs::create_dir(&secure_path) {
+                    Ok(_) => info!(&format!("'{}' has been created", &secure_path.to_str().unwrap()).as_str()),
+                    Err(err) => panic!("{}", err)
+                }
+            }
+        }
+    } else {
+        panic!("{}", errors)
     }
 }
 
@@ -228,6 +293,7 @@ fn validate_vars() -> settings::Config {
     if !errors.is_empty() {
         panic!("{}", errors);
     }
+    validate_dir_structure(&config);
     config
 }
 

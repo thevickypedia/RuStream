@@ -236,7 +236,7 @@ pub async fn stream(request: HttpRequest,
                 custom_title => custom_title,
                 files => listing_page.files,
                 user => auth_response.username,
-                secure_index => session.secured_dir.lock().unwrap().get("href").unwrap_or(&"home".to_string()),
+                secure_index => constant::SECURE_INDEX,
                 directories => listing_page.directories,
                 secured_directories => listing_page.secured_directories
             )).unwrap());

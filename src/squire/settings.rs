@@ -11,6 +11,8 @@ pub struct Config {
 
     /// Debug flag to enable debug level logging.
     pub debug: bool,
+    /// Boolean flag to enable UTC timezone in logging. Defaults to local timezone.
+    pub utc_logging: bool,
     /// Host IP address for media streaming.
     pub media_host: String,
     /// Port number for hosting the application.
@@ -38,6 +40,9 @@ pub struct Config {
 
 /// Returns the default value for debug flag
 pub fn default_debug() -> bool { false }
+
+/// Returns the default value for utc_logging
+pub fn default_utc_logging() -> bool { false }
 
 /// Returns the default value for ssl files
 pub fn default_ssl() -> path::PathBuf { path::PathBuf::new() }

@@ -164,32 +164,13 @@ pub async fn home(request: HttpRequest,
     let listing_page = squire::content::get_all_stream_content(&config, &auth_response);
     let listing = template.get_template("listing").unwrap();
 
-    // Can do a one-liner like below, but it will be ugly
-    //
-    // let secure_dir = listing_page.secured_directories
-    //      .first().unwrap_or(&HashMap::from([("".to_string(), "".to_string())]))
-    //      .get("path").unwrap_or(&"home".to_string())
-
-    let secure_dir = if listing_page.secured_directories.len() == 1 {
-        let dir = listing_page.secured_directories.first().unwrap().get("path").unwrap();
-        log::debug!("Secure Directory: {}", &dir);
-        dir
-    } else {
-        log::debug!("Secure Directory unknown/multiple");
-        "home"
-    };
-    let mut stored_secure_dir = session.secured_dir.lock().unwrap();
-    if !stored_secure_dir.is_empty() {
-        stored_secure_dir.remove("href");
-    }
-    stored_secure_dir.insert("href".to_string(), secure_dir.to_string());
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(
             listing.render(minijinja::context!(
                 files => listing_page.files,
                 user => auth_response.username,
-                secure_index => secure_dir,
+                secure_index => constant::SECURE_INDEX,
                 directories => listing_page.directories,
                 secured_directories => listing_page.secured_directories
             )).unwrap()

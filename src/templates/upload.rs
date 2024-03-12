@@ -489,7 +489,7 @@ pub fn get_content() -> String {
             window.location.href = "/home";
         }
         function goSecure() {
-            window.location.href = '/{{ secure_index }}';
+            window.location.href = '/stream/{{ user }}_{{ secure_index }}';
         }
         function logOut() {
             window.location.href = "/logout";
