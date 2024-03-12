@@ -42,7 +42,7 @@ pub struct Config {
 pub fn default_debug() -> bool { false }
 
 /// Returns the default value for utc_logging
-pub fn default_utc_logging() -> bool { false }
+pub fn default_utc_logging() -> bool { true }
 
 /// Returns the default value for ssl files
 pub fn default_ssl() -> path::PathBuf { path::PathBuf::new() }

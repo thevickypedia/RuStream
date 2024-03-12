@@ -1,11 +1,12 @@
 use std;
 use std::ffi::OsStr;
 use std::io::Write;
-use chrono::{DateTime, Local};
+
+use chrono::{DateTime, Local, Utc};
 use walkdir::WalkDir;
 
+use crate::{constant, squire};
 use crate::constant::Cargo;
-use crate::{constant, info, squire};
 use crate::squire::settings;
 
 /// Initializes the logger based on the provided debug flag and cargo information.
@@ -35,8 +36,8 @@ pub fn init_logger(debug: bool, utc: bool, crate_name: &String) {
                 let local_time: DateTime<Local> = Local::now();
                 writeln!(
                     buf,
-                    "[{} {}] [{}] - {}",
-                    local_time.format("%Y-%m-%d %H:%M:%S"),
+                    "[{} {} {}] - {}",
+                    local_time.format("%Y-%m-%dT%H:%M:%SZ"),
                     record.level(),
                     record.target(),
                     record.args()
@@ -216,7 +217,15 @@ fn load_env_vars() -> settings::Config {
     }
 }
 
-fn validate_dir_structure(config: &settings::Config) {
+fn get_time(utc: bool) -> String {
+    if utc {
+        Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    } else {
+        Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    }
+}
+
+fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
     let source = &config.media_source.to_string_lossy().to_string();
     let mut errors = String::new();
     for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
@@ -249,7 +258,9 @@ fn validate_dir_structure(config: &settings::Config) {
             let secure_path = &config.media_source.join(format!("{}_{}", &username, constant::SECURE_INDEX));
             if !secure_path.exists() {
                 match std::fs::create_dir(&secure_path) {
-                    Ok(_) => info!(&format!("'{}' has been created", &secure_path.to_str().unwrap()).as_str()),
+                    Ok(_) => println!("[{}\x1b[32m INFO\x1b[0m  {}] '{}' has been created",
+                                      get_time(config.utc_logging), cargo.crate_name,
+                                      &secure_path.to_str().unwrap()),
                     Err(err) => panic!("{}", err)
                 }
             }
@@ -264,7 +275,7 @@ fn validate_dir_structure(config: &settings::Config) {
 /// # Returns
 ///
 /// Returns the `Config` struct containing the required parameters.
-fn validate_vars() -> settings::Config {
+fn validate_vars(cargo: &Cargo) -> settings::Config {
     let config = load_env_vars();
     let mut errors = "".to_owned();
     if !config.media_source.exists() || !config.media_source.is_dir() {
@@ -293,7 +304,7 @@ fn validate_vars() -> settings::Config {
     if !errors.is_empty() {
         panic!("{}", errors);
     }
-    validate_dir_structure(&config);
+    validate_dir_structure(&config, &cargo);
     config
 }
 
@@ -313,5 +324,5 @@ pub fn get_config(cargo: &Cargo) -> std::sync::Arc<settings::Config> {
         .unwrap_or_default()
         .join(env_file);
     let _ = dotenv::from_path(env_file_path.as_path());
-    std::sync::Arc::new(validate_vars())
+    std::sync::Arc::new(validate_vars(cargo))
 }

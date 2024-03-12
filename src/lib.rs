@@ -17,7 +17,6 @@ mod routes;
 mod squire;
 /// Module to load all the templates for the UI.
 mod templates;
-mod echo;
 
 /// Contains entrypoint and initializer settings to trigger the asynchronous `HTTPServer`
 ///
