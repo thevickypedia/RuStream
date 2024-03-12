@@ -486,16 +486,16 @@ pub fn get_content() -> String {
     </script>
     <script>
         function goHome() {
-            window.location.href = window.location.origin + "/home";
+            window.location.href = "/home";
         }
         function goSecure() {
-            window.location.href = window.location.origin + '/{{ secure_index }}';
+            window.location.href = '/{{ secure_index }}';
         }
         function logOut() {
-            window.location.href = window.location.origin + "/logout";
+            window.location.href = "/logout";
         }
         function upload() {
-            window.location.href = window.location.origin + "/upload";
+            window.location.href = "/upload";
         }
         function goBack() {
             window.history.back();

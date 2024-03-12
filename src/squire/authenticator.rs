@@ -43,8 +43,8 @@ pub struct AuthToken {
 /// # Returns
 ///
 /// Returns a `Result` containing the extracted `Credentials` or an error message if extraction fails.
-fn extract_credentials(authorization: Option<&HeaderValue>) -> Result<Credentials, &'static str> {
-    let header = authorization.unwrap().to_str().unwrap().to_string();
+fn extract_credentials(authorization: &HeaderValue) -> Result<Credentials, &'static str> {
+    let header = authorization.to_str().unwrap().to_string();
     // base64 encoded in JavaScript using inbuilt btoa function
     let b64_decode_response = squire::secure::base64_decode(&header);
     return match b64_decode_response {
@@ -84,17 +84,16 @@ pub fn verify_login(
     config: &web::Data<Arc<squire::settings::Config>>,
     session: &web::Data<Arc<constant::Session>>,
 ) -> Result<HashMap<&'static str, String>, String> {
-    let authorization = request.headers().get("authorization");
     let err_response;
-    if authorization.is_some() {
+    if let Some(authorization) = request.headers().get("authorization") {
         let extracted_credentials = extract_credentials(authorization);
         match extracted_credentials {
             Ok(credentials) => {
-                let password = config.authorization.get(&credentials.username);
-                if password.is_some() {  // Check if the username is present in HashMap as key
+                // Check if the username is present in HashMap as key
+                if let Some(password) = config.authorization.get(&credentials.username) {
                     let message = format!("{}{}{}",
                                           squire::secure::hex_encode(&credentials.username),
-                                          squire::secure::hex_encode(password.unwrap()),
+                                          squire::secure::hex_encode(password),
                                           credentials.timestamp);
                     // Create a new signature with hex encoded username and password stored in config file as plain text
                     let expected_signature = squire::secure::calculate_hash(message);
