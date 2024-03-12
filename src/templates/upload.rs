@@ -327,7 +327,7 @@ pub fn get_content() -> String {
             <h1>Upload Files</h1>
             <p>PDF, Images, Videos and Subtitles are allowed</p>
             <br>
-            <input type="checkbox" id="dedicated" name="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ user }}'">
+            <input type="checkbox" id="dedicated" name="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ user }}'" checked>
             <label for="dedicated" title="Files will be stored in a secured location, which can only be accessed by '{{ user }}'"><i class="fa-solid fa-lock"></i></i>&nbsp;&nbsp;Upload files to '{{ user }}' directory</label>
         </div>
         <div class="drop-section">
@@ -500,6 +500,20 @@ pub fn get_content() -> String {
         function goBack() {
             window.history.back();
         }
+    </script>
+    <script>
+        document.getElementById("dedicated").addEventListener("change", function() {
+            if (!this.checked) {
+                let confirmation = confirm(
+                    "Uploading to public space will not only make your uploads accessible " +
+                    "to other users, but it will also overwrite any existing files " +
+                    "with the same name.\n\nAre you sure you want to proceed?"
+                );
+                if (!confirmation) {
+                    this.checked = true;
+                }
+            }
+        });
     </script>
 </body>
 </html>"#.to_string()

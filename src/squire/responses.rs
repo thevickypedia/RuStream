@@ -2,8 +2,16 @@ use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use minijinja::Template;
 
-// todo: write docstrings
-
+/// Frames a response for Not Found [404] into an error page.
+///
+/// # Arguments
+///
+/// * `error` - Jinja template for the error page.
+/// * `description` - Description to be rendered in the UI.
+///
+/// # Returns
+///
+/// Returns an HTTPResponse with 404 error code formatted as HTML.
 pub fn not_found(error: Template, description: &String) -> HttpResponse {
     HttpResponse::build(StatusCode::NOT_FOUND)
         .content_type("text/html; charset=utf-8")
@@ -15,8 +23,18 @@ pub fn not_found(error: Template, description: &String) -> HttpResponse {
         )).unwrap())
 }
 
+/// Frames a response for Forbidden [403] into an error page.
+///
+/// # Arguments
+///
+/// * `error` - Jinja template for the error page.
+/// * `username` - Username whose access is forbidden.
+///
+/// # Returns
+///
+/// Returns an HTTPResponse with 403 error code formatted as HTML.
 pub fn restricted(error: Template, username: &String) -> HttpResponse {
-    HttpResponse::build(StatusCode::UNAUTHORIZED)
+    HttpResponse::build(StatusCode::FORBIDDEN)
         .content_type("text/html; charset=utf-8")
         .body(error.render(minijinja::context!(
             title => "RESTRICTED SECTION",

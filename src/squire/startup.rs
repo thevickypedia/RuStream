@@ -217,14 +217,29 @@ fn load_env_vars() -> settings::Config {
     }
 }
 
+/// Get the current time in a specific format.
+///
+/// # Arguments
+///
+/// * `utc` - Boolean flag to return the time in UTC timezone.
+///
+/// # Returns
+///
+/// Returns the current datetime as a `String`.
 fn get_time(utc: bool) -> String {
     if utc {
-        Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+        Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
     } else {
-        Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+        Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
     }
 }
 
+/// Validates the directory structure to ensure that the secure index is present in media source's root.
+///
+/// # Arguments
+///
+/// * `config` - Configuration data for the application.
+/// * `cargo` - Package specific information loaded in a struct.
 fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
     let source = &config.media_source.to_string_lossy().to_string();
     let mut errors = String::new();
@@ -254,13 +269,22 @@ fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
         }
     }
     if errors.is_empty() {
-        for (username, _) in &config.authorization {
+        for username in config.authorization.keys() {
             let secure_path = &config.media_source.join(format!("{}_{}", &username, constant::SECURE_INDEX));
             if !secure_path.exists() {
-                match std::fs::create_dir(&secure_path) {
-                    Ok(_) => println!("[{}\x1b[32m INFO\x1b[0m  {}] '{}' has been created",
-                                      get_time(config.utc_logging), cargo.crate_name,
-                                      &secure_path.to_str().unwrap()),
+                match std::fs::create_dir(secure_path) {
+                    Ok(_) => {
+                        // keep formatting similar to logging
+                        if config.utc_logging {
+                            println!("[{}\x1b[32m INFO\x1b[0m  {}] '{}' has been created",
+                                     get_time(config.utc_logging), cargo.crate_name,
+                                     &secure_path.to_str().unwrap())
+                        } else {
+                            println!("[{} INFO  {}] '{}' has been created",
+                                     get_time(config.utc_logging), cargo.crate_name,
+                                     &secure_path.to_str().unwrap())
+                        }
+                    },
                     Err(err) => panic!("{}", err)
                 }
             }
@@ -271,6 +295,10 @@ fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
 }
 
 /// Validates all the required environment variables with the required settings.
+///
+/// # Arguments
+///
+/// * `cargo` - Package specific information loaded in a struct.
 ///
 /// # Returns
 ///
@@ -304,11 +332,15 @@ fn validate_vars(cargo: &Cargo) -> settings::Config {
     if !errors.is_empty() {
         panic!("{}", errors);
     }
-    validate_dir_structure(&config, &cargo);
+    validate_dir_structure(&config, cargo);
     config
 }
 
 /// Retrieves the environment variables and parses as the data-type specified in Config struct.
+///
+/// # Arguments
+///
+/// * `cargo` - Package specific information loaded in a struct.
 ///
 /// # Returns
 ///
