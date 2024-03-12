@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, web};
@@ -213,7 +213,7 @@ pub fn verify_token(
 /// # Returns
 ///
 /// Returns a boolean value to indicate if the access can be granted.
-pub fn verify_secure_index(path: &PathBuf, username: &String) -> bool {
+pub fn verify_secure_index(path: &Path, username: &String) -> bool {
     for dir in path.iter() {
         let child = dir.to_string_lossy().to_string();
         if child.ends_with(constant::SECURE_INDEX) && child != format!("{}_{}", username, constant::SECURE_INDEX) {

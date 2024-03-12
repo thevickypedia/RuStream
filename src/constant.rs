@@ -61,6 +61,7 @@ pub fn build_info() -> Cargo {
 pub struct Session {
     pub tracker: Mutex<HashMap<String, String>>,
     pub mapping: Mutex<HashMap<String, String>>,
+    pub secured_dir: Mutex<HashMap<String, String>>
 }
 
 
@@ -77,6 +78,7 @@ pub fn session_info() -> Arc<Session> {
     Arc::new(Session {
         tracker: Mutex::new(HashMap::new()),
         mapping: Mutex::new(HashMap::new()),
+        secured_dir: Mutex::new(HashMap::new())
     })
 }
 

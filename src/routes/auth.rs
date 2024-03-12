@@ -164,13 +164,32 @@ pub async fn home(request: HttpRequest,
     let listing_page = squire::content::get_all_stream_content(&config, &auth_response);
     let listing = template.get_template("listing").unwrap();
 
+    // Can do a one-liner like below, but it will be ugly
+    //
+    // let secure_dir = listing_page.secured_directories
+    //      .first().unwrap_or(&HashMap::from([("".to_string(), "".to_string())]))
+    //      .get("path").unwrap_or(&"home".to_string())
+
+    let secure_dir = if listing_page.secured_directories.len() == 1 {
+        let dir = listing_page.secured_directories.first().unwrap().get("path").unwrap();
+        log::debug!("Secure Directory: {}", &dir);
+        dir
+    } else {
+        log::debug!("Secure Directory unknown/multiple");
+        "home"
+    };
+    let mut stored_secure_dir = session.secured_dir.lock().unwrap();
+    if !stored_secure_dir.is_empty() {
+        stored_secure_dir.remove("href");
+    }
+    stored_secure_dir.insert("href".to_string(), secure_dir.to_string());
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(
             listing.render(minijinja::context!(
                 files => listing_page.files,
                 user => auth_response.username,
-                secure_index => constant::SECURE_INDEX,
+                secure_index => secure_dir,
                 directories => listing_page.directories,
                 secured_directories => listing_page.secured_directories
             )).unwrap()
@@ -193,16 +212,21 @@ pub async fn error(template: web::Data<Arc<minijinja::Environment<'static>>>,
     if let Some(detail) = request.cookie("detail") {
         log::info!("Error response for /error: {}", detail.value());
         let session = template.get_template("session").unwrap();
-        return HttpResponse::build(StatusCode::OK)
+        return HttpResponse::build(StatusCode::UNAUTHORIZED)
             .content_type("text/html; charset=utf-8")
             .body(session.render(minijinja::context!(reason => detail.value())).unwrap());
     }
 
     log::info!("Sending unauthorized response for /error");
-    let unauthorized = template.get_template("unauthorized").unwrap();
-    HttpResponse::build(StatusCode::OK)
+    let error = template.get_template("error").unwrap();
+    HttpResponse::build(StatusCode::UNAUTHORIZED)
         .content_type("text/html; charset=utf-8")
-        .body(unauthorized.render(minijinja::context!()).unwrap())  // no arguments to render
+        .body(error.render(minijinja::context!(
+            title => "LOGIN FAILED",
+            description => "USER ERROR - REPLACE USER",
+            help => r"Forgot Password?\n\nRelax and try to remember your password.",
+            button_text => "LOGIN", button_link => "/"
+        )).unwrap())
 }
 
 /// Constructs an `HttpResponse` for failed `session_token` verification.

@@ -18,3 +18,5 @@ pub mod content;
 pub mod authenticator;
 /// Module that handles parsing command line arguments.
 pub mod parser;
+/// Module that handles custom error responses to the user.
+pub mod responses;

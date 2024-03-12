@@ -10,8 +10,8 @@ mod listing;
 mod logout;
 /// Session page template that is served as HTML response when invalid/expired session tokens are received.
 mod session;
-/// Unauthorized page template that is served as HTML response after failed authentication.
-mod unauthorized;
+/// Error page template that is served as HTML response for any error message to be conveyed.
+mod error;
 mod upload;
 
 /// Loads all the HTML templates' content into a Jinja Environment
@@ -27,7 +27,7 @@ pub fn environment() -> Arc<minijinja::Environment<'static>> {
     env.add_template_owned("listing", listing::get_content()).unwrap();
     env.add_template_owned("logout", logout::get_content()).unwrap();
     env.add_template_owned("session", session::get_content()).unwrap();
-    env.add_template_owned("unauthorized", unauthorized::get_content()).unwrap();
+    env.add_template_owned("error", error::get_content()).unwrap();
     env.add_template_owned("upload", upload::get_content()).unwrap();
     Arc::new(env)
 }

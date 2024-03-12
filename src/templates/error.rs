@@ -67,16 +67,16 @@ pub fn get_content() -> String {
     </noscript>
 </head>
 <body>
-<h2 style="margin-top:5%">LOGIN FAILED</h2>
-<h3>USER ERROR - REPLACE USER</h3>
+<h2 style="margin-top:5%">{{ title }}</h2>
+<h3>{{ description }}</h3>
 <p>
     <img src="https://thevickypedia.github.io/open-source/images/gif/lockscape.gif"
         onerror="this.src='https://vigneshrao.com/open-source/images/gif/lockscape.gif'"
         width="200" height="170" alt="Image" class="center">
 </p>
-<button style="text-align:center" onClick="window.location.href = '/';">LOGIN</button>
+<button style="text-align:center" onClick="window.location.href = '{{ button_link }}';">{{ button_text }}</button>
 <br>
-<button style="text-align:center" onClick="alert('Forgot Password?\n\nRelax and try to remember your password.');">HELP
+<button style="text-align:center" onClick="alert('{{ help }}');">HELP
 </button>
 <h4>Click <a href="https://vigneshrao.com/contact">HERE</a> to reach out.</h4>
 </body>

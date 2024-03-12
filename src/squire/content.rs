@@ -101,14 +101,15 @@ fn get_folder_font(structure: &Path,
     let mut entry_map = HashMap::new();
     entry_map.insert("path".to_string(), format!("stream/{}", &directory));
     let depth = &structure.iter().count();
-    if let Some(first_component) = &structure.iter().next() {
+    for component in structure.iter() {
         let secured = format!("{}_{}", &auth_response.username, constant::SECURE_INDEX);
-        if secured == first_component.to_string_lossy() {
-            entry_map.insert("name".to_string(), auth_response.username.to_owned());
+        if secured == component.to_string_lossy() {
+            entry_map.insert("name".to_string(), directory);
             entry_map.insert("font".to_string(), "fa-solid fa-lock".to_string());
+            entry_map.insert("secured".to_string(), "true".to_string());
             return entry_map;
-        } else if first_component.to_string_lossy().ends_with(constant::SECURE_INDEX) {
-            // Return an empty hashmap if the
+        } else if component.to_string_lossy().ends_with(constant::SECURE_INDEX) {
+            // If the path has secure index value (includes folder trees / subdirectories)
             return HashMap::new();
         }
     }
@@ -164,11 +165,11 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
                             .collect::<Vec<_>>().iter().rev()
                             .collect::<PathBuf>();
                         let entry_map = get_folder_font(&skimmed, auth_response);
-                        if payload.directories.contains(&entry_map) || entry_map.is_empty() { continue; }
-                        if payload.secured_directories.contains(&entry_map) || entry_map.is_empty() { continue; }
-                        if entry_map.get("font").unwrap_or(&"".to_string()) == "fa-solid fa-lock" {
+                        if entry_map.get("secured").unwrap_or(&"".to_string()) == "true" {
+                            if payload.secured_directories.contains(&entry_map) || entry_map.is_empty() { continue; }
                             payload.secured_directories.push(entry_map);
                         } else {
+                            if payload.directories.contains(&entry_map) || entry_map.is_empty() { continue; }
                             payload.directories.push(entry_map);
                         }
                     }

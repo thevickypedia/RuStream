@@ -76,6 +76,7 @@ fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 /// * `config` - Configuration data for the application.
+/// * `template` - Configuration container for the loaded templates.
 ///
 /// # Returns
 ///
@@ -85,15 +86,17 @@ pub async fn track(request: HttpRequest,
                    info: web::Query<Payload>,
                    fernet: web::Data<Arc<Fernet>>,
                    session: web::Data<Arc<constant::Session>>,
-                   config: web::Data<Arc<squire::settings::Config>>) -> HttpResponse {
+                   config: web::Data<Arc<squire::settings::Config>>,
+                   template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&info.file), &auth_response.username) {
-        return HttpResponse::Unauthorized().json(routes::auth::DetailError {
-            detail: format!("This content is not accessible as it does not belong to the user profile '{}'", auth_response.username)
-        })
+        return squire::responses::restricted(
+            template.get_template("error").unwrap(),
+            &auth_response.username
+        )
     }
     squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
@@ -104,9 +107,8 @@ pub async fn track(request: HttpRequest,
         Ok(content) => HttpResponse::Ok()
             .content_type("text/plain")
             .body(content),
-        Err(_) => HttpResponse::NotFound().json(routes::auth::DetailError {
-            detail: format!("'{}' was not found", &info.file)
-        })
+        Err(_) => squire::responses::not_found(template.get_template("error").unwrap(),
+                                               &format!("'{}' was not found", &info.file))
     }
 }
 
@@ -159,16 +161,16 @@ pub async fn stream(request: HttpRequest,
     log::debug!("{}", auth_response.detail);
     let filepath = media_path.to_string();
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&filepath), &auth_response.username) {
-        return HttpResponse::Unauthorized().json(routes::auth::DetailError {
-            detail: format!("This content is not accessible as it does not belong to the user profile '{}'", auth_response.username)
-        })
+        return squire::responses::restricted(
+            template.get_template("error").unwrap(),
+            &auth_response.username
+        )
     }
     // True path of the media file
     let __target = config.media_source.join(&filepath);
     if !__target.exists() {
-        return HttpResponse::NotFound().json(routes::auth::DetailError {
-            detail: format!("'{}' was not found", filepath)
-        });
+        return squire::responses::not_found(template.get_template("error").unwrap(),
+                                            &format!("'{}' was not found", filepath));
     }
     // True path of the media file as a String
     let __target_str = __target.to_string_lossy().to_string();
@@ -234,7 +236,7 @@ pub async fn stream(request: HttpRequest,
                 custom_title => custom_title,
                 files => listing_page.files,
                 user => auth_response.username,
-                secure_index => constant::SECURE_INDEX,
+                secure_index => session.secured_dir.lock().unwrap().get("href").unwrap_or(&"home".to_string()),
                 directories => listing_page.directories,
                 secured_directories => listing_page.secured_directories
             )).unwrap());
@@ -253,26 +255,31 @@ pub async fn stream(request: HttpRequest,
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `info` - The query parameter containing the file information.
-/// * `config` - Configuration data for the application.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `config` - Configuration data for the application.
+/// * `template` - Configuration container for the loaded templates.
+///
 /// # Returns
 ///
 /// Returns an `HttpResponse` containing the media content or an error response.
 #[get("/media")]
-pub async fn streaming_endpoint(request: HttpRequest, info: web::Query<Payload>,
-                                config: web::Data<Arc<squire::settings::Config>>,
+pub async fn streaming_endpoint(request: HttpRequest,
+                                info: web::Query<Payload>,
                                 fernet: web::Data<Arc<Fernet>>,
-                                session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+                                session: web::Data<Arc<constant::Session>>,
+                                config: web::Data<Arc<squire::settings::Config>>,
+                                template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
     let media_path = config.media_source.join(&info.file);
     if !squire::authenticator::verify_secure_index(&media_path, &auth_response.username) {
-        return HttpResponse::Unauthorized().json(routes::auth::DetailError {
-            detail: format!("This content is not accessible as it does not belong to the user profile '{}'", auth_response.username)
-        })
+        return squire::responses::restricted(
+            template.get_template("error").unwrap(),
+            &auth_response.username
+        )
     }
     squire::logger::log_connection(&request, &session);
     let host = request.connection_info().host().to_owned();
@@ -288,5 +295,5 @@ pub async fn streaming_endpoint(request: HttpRequest, info: web::Query<Payload>,
     }
     let error = format!("File {:?} not found", media_path);
     log::error!("{}", error);
-    HttpResponse::NotFound().body(error)
+    squire::responses::not_found(template.get_template("error").unwrap(), &error)
 }
