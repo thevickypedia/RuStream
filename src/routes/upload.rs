@@ -40,8 +40,8 @@ pub async fn save_files(request: HttpRequest,
     }
     let mut upload_path = config.media_source.clone();  // cannot be borrowed as mutable
     let mut secure_str = "";
-    if let Some(dedicated) = request.headers().get("dedicated_directory") {
-        if dedicated.to_str().unwrap_or("false") == "true" {
+    if let Some(secure_flag) = request.headers().get("secure-flag") {
+        if secure_flag.to_str().unwrap_or("false") == "true" {
             secure_str = "to secure index ";
             upload_path.extend([format!("{}_{}", &auth_response.username, constant::SECURE_INDEX)])
         }

@@ -61,12 +61,14 @@ pub async fn start() -> io::Result<()> {
         The closure is defining the configuration for the Actix web server.
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
+    let max_payload_size = 10 * 1024 * 1024 * 1024; // 10 GB
     let application = move || {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
             .app_data(web::Data::new(jinja.clone()))
             .app_data(web::Data::new(fernet.clone()))
             .app_data(web::Data::new(session.clone()))
+            .app_data(web::PayloadConfig::default().limit(max_payload_size))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests

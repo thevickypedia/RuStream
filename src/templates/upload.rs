@@ -463,7 +463,7 @@ pub fn get_content() -> String {
                 li.querySelectorAll('span')[1].style.width = percent_complete + '%'
             }
             http.open('POST', window.location.origin + '/upload', true);  // asynchronous session
-            http.setRequestHeader('dedicated_directory', checkbox.checked);
+            http.setRequestHeader('secure-flag', checkbox.checked);
             http.send(data)
             li.querySelector('.cross').onclick = () => http.abort()
             http.onabort = () => {
