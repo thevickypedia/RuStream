@@ -95,25 +95,22 @@ fn get_file_font(extn: &str) -> String {
 /// # Returns
 ///
 /// A string with the `fa` value based on the folder depth.
-fn get_folder_font(structure: &Path,
-                   auth_response: &authenticator::AuthToken) -> HashMap<String, String> {
-    let components: &Vec<_> = &structure.components().collect::<Vec<_>>();
-    let parent = components.first().unwrap().as_os_str().to_string_lossy().to_string();
+fn get_folder_font(path: &Path,
+                   parent: String,
+                   username: &String) -> HashMap<String, String> {
     let mut entry_map = HashMap::new();
     entry_map.insert("path".to_string(), format!("stream/{}", &parent));
-    for component in structure.iter() {
-        if component.to_string_lossy() == format!("{}_{}", &auth_response.username, constant::SECURE_INDEX) {
-            entry_map.insert("name".to_string(), parent);
-            entry_map.insert("font".to_string(), "fa-solid fa-lock".to_string());
-            entry_map.insert("secured".to_string(), "true".to_string());
-            return entry_map;
-        } else if component.to_string_lossy().ends_with(constant::SECURE_INDEX) {
-            // If the path has secure index value (includes folder trees / subdirectories)
-            return HashMap::new();
-        }
+    if path.to_string_lossy() == format!("{}_{}", username, constant::SECURE_INDEX) {
+        entry_map.insert("name".to_string(), parent);
+        entry_map.insert("font".to_string(), "fa-solid fa-lock".to_string());
+        entry_map.insert("secured".to_string(), "true".to_string());
+        return entry_map;
+    } else if path.to_string_lossy().ends_with(constant::SECURE_INDEX) {
+        // If the path has secure index value (includes folder trees / subdirectories)
+        return HashMap::new();
     }
     entry_map.insert("name".to_string(), parent);
-    if components.len() > 1 {
+    if path.components().collect::<Vec<_>>().len() - 1 > 1 { // -1 for the file in path
         entry_map.insert("font".to_string(), "fa-solid fa-folder-tree".to_string());
     } else {
         entry_map.insert("font".to_string(), "fa fa-folder".to_string());
@@ -132,6 +129,7 @@ fn get_folder_font(structure: &Path,
 /// A `ContentPayload` struct representing the content of all streams.
 pub fn get_all_stream_content(config: &settings::Config, auth_response: &authenticator::AuthToken) -> ContentPayload {
     let mut payload = ContentPayload::default();
+    let mut redundant = Vec::new();
 
     for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
         if entry.path().ends_with("__") {
@@ -155,16 +153,15 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
                         entry_map.insert("font".to_string(), get_file_font(extension));
                         payload.files.push(entry_map);
                     } else {
-                        /*
-                        path.components(): returns an iterator over the components of the path
-                        .rev(): reverses the order of the iterator
-                        .skip(1): skips the first (originally last) component of the reversed path
-                         */
-                        let skimmed = path.components().rev().skip(1)
-                            .collect::<Vec<_>>().iter().rev()
-                            .collect::<PathBuf>();
-                        // todo: no need to loop through all the files, if a folder has at least one video/image file
-                        let entry_map = get_folder_font(&skimmed, auth_response);
+                        let parent = path.components().collect::<Vec<_>>()
+                            .first().unwrap().as_os_str()
+                            .to_string_lossy().to_string();
+                        if redundant.contains(&parent) {
+                            // skip if at least one file is present in any of the subdirectories
+                            continue
+                        }
+                        redundant.push(parent.clone());
+                        let entry_map = get_folder_font(path, parent, &auth_response.username);
                         if entry_map.get("secured").unwrap_or(&"".to_string()) == "true" {
                             if payload.secured_directories.contains(&entry_map) || entry_map.is_empty() { continue; }
                             payload.secured_directories.push(entry_map);
@@ -199,6 +196,7 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
 pub fn get_dir_stream_content(path_payload: &String,
                               parent: &str,
                               file_formats: &[String]) -> ContentPayload {
+    // todo: subdirectories are not checked for media files, perhaps this is a bad idea
     let mut files = Vec::new();
     let mut directories = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
@@ -210,30 +208,28 @@ pub fn get_dir_stream_content(path_payload: &String,
         let server_path = Path::new(parent).join(&entry_name);
         // Use only the final dir in the path, since rest of it will be loaded in the URL itself
         // Not doing this will result in redundant path, like /home/GOT/season1/season1/episode1.mp4 resulting in 404
-        let client_path = Path::new(path_payload.split(MAIN_SEPARATOR).last().unwrap()).join(&entry_name);
-        let client_path_str = client_path.to_string_lossy().to_string();
+        let client_path = Path::new(path_payload.split(MAIN_SEPARATOR)
+            .last().unwrap()).join(&entry_name)
+            .to_string_lossy().to_string();
         if server_path.is_file() {
             let file_extn = &server_path.extension().unwrap_or_default().to_string_lossy().to_string();
             if file_formats.contains(file_extn) {
                 let map = HashMap::from([
                     ("name".to_string(), entry_name),
-                    ("path".to_string(), client_path_str),
+                    ("path".to_string(), client_path),
                     ("font".to_string(), get_file_font(file_extn))
                 ]);
                 files.push(map);
             }
         } else if server_path.is_dir() {
-            let dir_font;
-            if server_path.to_string_lossy().contains(constant::SECURE_INDEX) {
-                dir_font = "fa-solid fa-lock".to_string()
-            } else if client_path.components().collect::<Vec<_>>().len() > 1 {
-                dir_font = "fa-solid fa-folder-tree".to_string()
-            } else { // todo: will never get here, so remove unnecessary overhead
-                dir_font = "fa-solid fa-folder-tree".to_string()
-            }
+            let dir_font = if server_path.to_string_lossy().contains(constant::SECURE_INDEX) {
+                "fa-solid fa-lock".to_string()
+            } else {
+                "fa-solid fa-folder-tree".to_string()
+            };
             let map = HashMap::from([
                 ("name".to_string(), entry_name),
-                ("path".to_string(), client_path_str),
+                ("path".to_string(), client_path),
                 ("font".to_string(), dir_font)
             ]);
             directories.push(map);
