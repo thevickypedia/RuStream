@@ -200,25 +200,38 @@ pub fn get_dir_stream_content(parent: &str,
                               child: &str,
                               file_formats: &[String]) -> ContentPayload {
     let mut files = Vec::new();
+    let mut directories = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
         let file_name = entry.file_name().into_string().unwrap();
         if file_name.starts_with('_') || file_name.starts_with('.') {
             continue;
         }
         let file_path = Path::new(child).join(&file_name);
-        let file_extn = &file_path.extension().unwrap_or_default().to_string_lossy().to_string();
-        if file_formats.contains(file_extn) {
+        if file_path.is_file() {
+            let file_extn = &file_path.extension().unwrap_or_default().to_string_lossy().to_string();
+            if file_formats.contains(file_extn) {
+                let map = HashMap::from([
+                    ("name".to_string(), file_name),
+                    ("path".to_string(), file_path.to_string_lossy().to_string()),
+                    ("font".to_string(), get_file_font(file_extn))
+                ]);
+                files.push(map);
+            }
+        } else {
+            let dir_name = file_path.iter().last().unwrap().to_string_lossy().to_string();
             let map = HashMap::from([
-                ("name".to_string(), file_name),
+                ("name".to_string(), dir_name),
                 ("path".to_string(), file_path.to_string_lossy().to_string()),
-                ("font".to_string(), get_file_font(file_extn))
+                ("font".to_string(), "fa-solid fa-lock".to_string())
             ]);
-            files.push(map);
+            directories.push(map);
         }
     }
+    // todo: this works, but also needs updating the base structure the same way to avoid ugliness=
     let re = Regex::new(r"(\D+|\d+)").unwrap();
     files.sort_by_key(|a| natural_sort_key(&re, a.get("name").unwrap()));
-    ContentPayload { files, ..Default::default() }
+    directories.sort_by_key(|a| natural_sort_key(&re, a.get("name").unwrap()));
+    ContentPayload { files, directories, ..Default::default() }
 }
 
 /// Represents an iterator structure with optional previous and next elements.
