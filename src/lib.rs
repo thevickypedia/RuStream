@@ -43,6 +43,14 @@ pub async fn start() -> io::Result<()> {
     println!("{}[v{}] - {}", &cargo.pkg_name, &cargo.pkg_version, &cargo.description);
     squire::ascii_art::random();
 
+    // Log a warning message for max payload size beyond 1 GB
+    if config.max_payload_size > 1024 * 1024 * 1024 {
+        // Since the default is just 100 MB, the only way to get here is to have an env var
+        log::warn!("Max payload size is set to '{}' which exceeds the optimal upload size.",
+            std::env::var("max_payload_size").unwrap());
+        log::warn!("Please consider network bandwidth and latency, before using RuStream to upload such high-volume data.");
+    }
+
     if config.secure_session {
         log::warn!(
             "Secure session is turned on! This means that the server can ONLY be hosted via HTTPS or localhost"
@@ -61,14 +69,13 @@ pub async fn start() -> io::Result<()> {
         The closure is defining the configuration for the Actix web server.
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
-    let max_payload_size = 10 * 1024 * 1024 * 1024; // 10 GB
     let application = move || {
         App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
             .app_data(web::Data::new(jinja.clone()))
             .app_data(web::Data::new(fernet.clone()))
             .app_data(web::Data::new(session.clone()))
-            .app_data(web::PayloadConfig::default().limit(max_payload_size))
+            .app_data(web::PayloadConfig::default().limit(config_clone.max_payload_size))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
             .service(routes::basics::health)  // Registers a service for handling requests
@@ -84,8 +91,8 @@ pub async fn start() -> io::Result<()> {
             .service(routes::upload::save_files)
     };
     let server = HttpServer::new(application)
-        .workers(config.workers as usize)
-        .max_connections(config.max_connections as usize);
+        .workers(config.workers)
+        .max_connections(config.max_connections);
     // Reference: https://actix.rs/docs/http2/
     if config.cert_file.exists() && config.key_file.exists() {
         log::info!("Binding SSL certificate to serve over HTTPS");

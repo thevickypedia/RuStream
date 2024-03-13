@@ -1,5 +1,4 @@
 use std;
-use std::ffi::OsStr;
 use std::io::Write;
 
 use chrono::{DateTime, Local, Utc};
@@ -110,7 +109,7 @@ fn parse_bool(key: &str) -> Option<bool> {
     }
 }
 
-/// Extracts the env var by key and parses it as a `i32`
+/// Extracts the env var by key and parses it as a `i64`
 ///
 /// # Arguments
 ///
@@ -118,17 +117,67 @@ fn parse_bool(key: &str) -> Option<bool> {
 ///
 /// # Returns
 ///
-/// Returns an `Option<i32>` if the value is available.
+/// Returns an `Option<i64>` if the value is available.
 ///
 /// # Panics
 ///
 /// If the value is present, but it is an invalid data-type.
-fn parse_i32(key: &str) -> Option<i32> {
+fn parse_i64(key: &str) -> Option<i64> {
     match std::env::var(key) {
         Ok(val) => match val.parse() {
             Ok(parsed) => Some(parsed),
             Err(_) => {
-                panic!("\n{}\n\texpected i32, received '{}' [value=invalid]\n", key, val);
+                panic!("\n{}\n\texpected i64, received '{}' [value=invalid]\n", key, val);
+            }
+        },
+        Err(_) => None,
+    }
+}
+
+/// Extracts the env var by key and parses it as a `u16`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns an `Option<u16>` if the value is available.
+///
+/// # Panics
+///
+/// If the value is present, but it is an invalid data-type.
+fn parse_u16(key: &str) -> Option<u16> {
+    match std::env::var(key) {
+        Ok(val) => match val.parse() {
+            Ok(parsed) => Some(parsed),
+            Err(_) => {
+                panic!("\n{}\n\texpected u16, received '{}' [value=invalid]\n", key, val);
+            }
+        },
+        Err(_) => None,
+    }
+}
+
+/// Extracts the env var by key and parses it as a `usize`
+///
+/// # Arguments
+///
+/// * `key` - Key for the environment variable.
+///
+/// # Returns
+///
+/// Returns an `Option<usize>` if the value is available.
+///
+/// # Panics
+///
+/// If the value is present, but it is an invalid data-type.
+fn parse_usize(key: &str) -> Option<usize> {
+    match std::env::var(key) {
+        Ok(val) => match val.parse() {
+            Ok(parsed) => Some(parsed),
+            Err(_) => {
+                panic!("\n{}\n\texpected usize, received '{}' [value=invalid]\n", key, val);
             }
         },
         Err(_) => None,
@@ -180,6 +229,76 @@ fn parse_path(key: &str) -> Option<std::path::PathBuf> {
     }
 }
 
+/// Parses the maximum payload size from human-readable memory format to bytes.
+///
+/// - `key` - Key for the environment variable.
+///
+/// ## See Also
+///
+/// - This function handles internal panic gracefully, in the most detailed way possible.
+/// - Panic outputs are suppressed with a custom hook.
+/// - Custom hook is set before wrapping the potentially panicking function inside `catch_unwind`.
+/// - Custom hook is reset later, so the future panics and go uncaught.
+/// - Error message from panic payload is also further processed, to get a detailed reason for panic.
+///
+/// # Returns
+///
+/// Returns an option of usize if the value is parsable and within the allowed size limit.
+fn parse_max_payload(key: &str) -> Option<usize> {
+    match std::env::var(key) {
+        Ok(value) => {
+
+            let custom_hook = std::panic::take_hook();
+            std::panic::set_hook(Box::new(|_panic_info| {}));
+            let result = std::panic::catch_unwind(|| parse_memory(&value));
+            std::panic::set_hook(custom_hook);
+
+            match result {
+                Ok(output) => {
+                    if let Some(value) = output {
+                        Some(value)
+                    } else {
+                        panic!("\n{}\n\texpected format: '100 MB', received '{}' [value=invalid]\n",
+                               key, value);
+                    }
+                }
+                Err(panic_payload) => {
+                    if let Some(&error) = panic_payload.downcast_ref::<&str>() {
+                        panic!("\n{}\n\t{} [value=invalid]\n", key, error);
+                    } else if let Some(error) = panic_payload.downcast_ref::<String>() {
+                        panic!("\n{}\n\t{} [value=invalid]\n", key, error);
+                    } else if let Some(error) = panic_payload.downcast_ref::<Box<dyn std::fmt::Debug + Send + 'static>>() {
+                        panic!("\n{}\n\t{:?} [value=invalid]\n", key, error);
+                    } else {
+                        panic!("\n{}\n\tinvalid memory format! unable to parse panic payload [value=invalid]\n", key);
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            None
+        }
+    }
+}
+
+fn parse_memory(memory: &str) -> Option<usize> {
+    let value = memory.trim();
+    let (size_str, unit) = value.split_at(value.len() - 2);
+    let size: usize = match size_str.strip_suffix(' ').unwrap_or_default().parse() {
+        Ok(num) => num,
+        Err(_) => return None,
+    };
+
+    match unit.to_lowercase().as_str() {
+        "zb" => Some(size * 1024 * 1024 * 1024 * 1024 * 1024),
+        "tb" => Some(size * 1024 * 1024 * 1024 * 1024),
+        "gb" => Some(size * 1024 * 1024 * 1024),
+        "mb" => Some(size * 1024 * 1024),
+        "kb" => Some(size * 1024),
+        _ => None,
+    }
+}
+
 /// Handler that's responsible to parse all the env vars.
 ///
 /// # Returns
@@ -190,15 +309,16 @@ fn load_env_vars() -> settings::Config {
     let debug = parse_bool("debug").unwrap_or(settings::default_debug());
     let utc_logging = parse_bool("utc_logging").unwrap_or(settings::default_utc_logging());
     let media_host = std::env::var("media_host").unwrap_or(settings::default_media_host());
-    let media_port = parse_i32("media_port").unwrap_or(settings::default_media_port());
-    let session_duration = parse_i32("session_duration").unwrap_or(settings::default_session_duration());
+    let media_port = parse_u16("media_port").unwrap_or(settings::default_media_port());
+    let session_duration = parse_i64("session_duration").unwrap_or(settings::default_session_duration());
     let file_formats = parse_vec("file_formats").unwrap_or(settings::default_file_formats());
-    let workers = parse_i32("workers").unwrap_or(settings::default_workers());
-    let max_connections = parse_i32("max_connections").unwrap_or(settings::default_max_connections());
+    let workers = parse_usize("workers").unwrap_or(settings::default_workers());
+    let max_connections = parse_usize("max_connections").unwrap_or(settings::default_max_connections());
     let websites = parse_vec("websites").unwrap_or(settings::default_websites());
     let secure_session = parse_bool("secure_session").unwrap_or(settings::default_secure_session());
     let key_file = parse_path("key_file").unwrap_or(settings::default_ssl());
     let cert_file = parse_path("cert_file").unwrap_or(settings::default_ssl());
+    let max_payload_size = parse_max_payload("max_payload_size").unwrap_or(settings::default_max_payload_size());
     settings::Config {
         authorization,
         media_source,
@@ -210,6 +330,7 @@ fn load_env_vars() -> settings::Config {
         file_formats,
         workers,
         max_connections,
+        max_payload_size,
         websites,
         secure_session,
         key_file,
@@ -253,7 +374,7 @@ fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
                 let secure_dir = index_vec.last().unwrap();
                 // secure_parent_path is the secure index's location
                 let secure_parent_path = &index_vec[0..index_vec.len() - 1]
-                    .join(OsStr::new(std::path::MAIN_SEPARATOR_STR));
+                    .join(std::ffi::OsStr::new(std::path::MAIN_SEPARATOR_STR));
                 errors.push_str(&format!(
                     "\n{:?}\n\tSecure index directory [{:?}] should be at the root [{:?}] [depth={}, valid=1]\n\
                     \t> Hint: Either move {:?} within {:?}, [OR] set the 'media_source' to {:?}\n",
@@ -284,7 +405,7 @@ fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
                                      get_time(config.utc_logging), cargo.crate_name,
                                      &secure_path.to_str().unwrap())
                         }
-                    },
+                    }
                     Err(err) => panic!("{}", err)
                 }
             }

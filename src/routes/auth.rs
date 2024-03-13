@@ -55,7 +55,7 @@ pub async fn login(request: HttpRequest,
     let payload = serde_json::to_string(&mapped).unwrap();
     let encrypted_payload = fernet.encrypt(payload.as_bytes());
 
-    let cookie_duration = Duration::seconds(config.session_duration as i64);
+    let cookie_duration = Duration::seconds(config.session_duration);
     let expiration = OffsetDateTime::now_utc() + cookie_duration;
     let base_cookie = Cookie::build("session_token", encrypted_payload)
         .http_only(true)

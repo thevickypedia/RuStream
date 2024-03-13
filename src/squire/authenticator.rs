@@ -167,12 +167,12 @@ pub fn verify_token(
                     username,
                 };
             }
-            if current_time - timestamp > config.session_duration as i64 {
+            if current_time - timestamp > config.session_duration {
                 return AuthToken { ok: false, detail: "Session Expired".to_string(), username };
             }
             AuthToken {
                 ok: true,
-                detail: format!("Session valid for {}s", timestamp + config.session_duration as i64 - current_time),
+                detail: format!("Session valid for {}s", timestamp + config.session_duration - current_time),
                 username,
             }
         } else {
