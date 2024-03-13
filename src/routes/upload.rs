@@ -19,6 +19,13 @@ use crate::{constant, routes, squire};
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 /// * `config` - Configuration data for the application.
 ///
+/// ## See Also
+///
+/// - The JavaScript in the frontend appends a reference/pointer to the file.
+/// - Once the reference is loaded, it makes an asynchronous call to the server.
+/// - The server then breaks the file into chunks and downloads it iteratively.
+/// - The number of files that can be uploaded simultaneously depends on the number of workers configured.
+///
 /// ## References
 /// - [Server Side](https://docs.rs/actix-multipart/latest/actix_multipart/struct.Multipart.html)
 /// - [Client Side (not implemented)](https://accreditly.io/articles/uploading-large-files-with-chunking-in-javascript)
