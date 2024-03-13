@@ -82,9 +82,10 @@ pub async fn save_files(request: HttpRequest,
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
+/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
 /// * `config` - Configuration data for the application.
 /// * `template` - Configuration container for the loaded templates.
-/// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
 ///
 /// # Returns
 ///
@@ -92,9 +93,10 @@ pub async fn save_files(request: HttpRequest,
 #[get("/upload")]
 pub async fn upload_files(request: HttpRequest,
                           fernet: web::Data<Arc<Fernet>>,
+                          session: web::Data<Arc<constant::Session>>,
+                          metadata: web::Data<Arc<constant::MetaData>>,
                           config: web::Data<Arc<squire::settings::Config>>,
-                          template: web::Data<Arc<minijinja::Environment<'static>>>,
-                          session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+                          template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
@@ -103,6 +105,7 @@ pub async fn upload_files(request: HttpRequest,
     HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(landing.render(minijinja::context!(
+            version => metadata.pkg_version,
             user => auth_response.username,
             secure_index => constant::SECURE_INDEX
         )).unwrap())

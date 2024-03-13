@@ -13,7 +13,7 @@ pub fn get_content() -> String {
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>RuStream - Self-hosted Streaming Engine</title>
+    <title>RuStream - Self-hosted Streaming Engine - v{{ version }}</title>
     <meta property="og:type" content="MediaStreaming">
     <meta name="keywords" content="Rust, streaming, actix, JavaScript, HTML, CSS">
     <meta name="author" content="Vignesh Rao">
@@ -38,6 +38,9 @@ pub fn get_content() -> String {
         body {
             margin-left: 1%;  /* 1% away from left corner */
             padding: 0.5%  /* 0.5% away from any surrounding elements */
+        }
+        small {
+            font-size: 16px;
         }
         .upload {
             position: absolute;
@@ -162,7 +165,7 @@ pub fn get_content() -> String {
     {% if custom_title %}
         <h1>{{ custom_title }}</h1>
     {% else %}
-        <h1>RuStream - Self-hosted Streaming Engine</h1>
+        <h1>Welcome to RuStream <small>v{{ version }}</small></h1>
     {% endif %}
     <hr>
     {% if dir_name or files or directories or secured_directories %}

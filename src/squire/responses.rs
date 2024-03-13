@@ -12,10 +12,11 @@ use minijinja::Template;
 /// # Returns
 ///
 /// Returns an HTTPResponse with 404 error code formatted as HTML.
-pub fn not_found(error: Template, description: &String) -> HttpResponse {
+pub fn not_found(error: Template, description: &String, version: &String) -> HttpResponse {
     HttpResponse::build(StatusCode::NOT_FOUND)
         .content_type("text/html; charset=utf-8")
         .body(error.render(minijinja::context!(
+            version => version,
             title => "CONTENT UNAVAILABLE",
             description => description,
             help => r"Lost your way?\n\nHit the HOME button to navigate back to home page.",
@@ -33,10 +34,11 @@ pub fn not_found(error: Template, description: &String) -> HttpResponse {
 /// # Returns
 ///
 /// Returns an HTTPResponse with 403 error code formatted as HTML.
-pub fn restricted(error: Template, username: &String) -> HttpResponse {
+pub fn restricted(error: Template, username: &String, version: &String) -> HttpResponse {
     HttpResponse::build(StatusCode::FORBIDDEN)
         .content_type("text/html; charset=utf-8")
         .body(error.render(minijinja::context!(
+            version => version,
             title => "RESTRICTED SECTION",
             description => format!("This content is not accessible, as it does not belong to the user profile '{}'", username),
             help => r"Lost your way?\n\nHit the HOME button to navigate back to home page.",

@@ -36,11 +36,11 @@ mod templates;
 /// }
 /// ```
 pub async fn start() -> io::Result<()> {
-    let cargo = constant::build_info();
-    let config = squire::startup::get_config(&cargo);
+    let metadata = constant::build_info();
+    let config = squire::startup::get_config(&metadata);
 
-    squire::startup::init_logger(config.debug, config.utc_logging, &cargo.crate_name);
-    println!("{}[v{}] - {}", &cargo.pkg_name, &cargo.pkg_version, &cargo.description);
+    squire::startup::init_logger(config.debug, config.utc_logging, &metadata.crate_name);
+    println!("{}[v{}] - {}", &metadata.pkg_name, &metadata.pkg_version, &metadata.description);
     squire::ascii_art::random();
 
     // Log a warning message for max payload size beyond 1 GB
@@ -60,7 +60,7 @@ pub async fn start() -> io::Result<()> {
     let config_clone = config.clone();
     let host = format!("{}:{}", config.media_host, config.media_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
-        &cargo.pkg_name, &config.workers, &host);
+        &metadata.pkg_name, &config.workers, &host);
     let jinja = templates::environment();
     let fernet = constant::fernet_object();
     let session = constant::session_info();
@@ -75,6 +75,7 @@ pub async fn start() -> io::Result<()> {
             .app_data(web::Data::new(jinja.clone()))
             .app_data(web::Data::new(fernet.clone()))
             .app_data(web::Data::new(session.clone()))
+            .app_data(web::Data::new(metadata.clone()))
             .app_data(web::PayloadConfig::default().limit(config_clone.max_payload_size))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
             .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application

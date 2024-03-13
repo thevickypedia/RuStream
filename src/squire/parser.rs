@@ -1,14 +1,14 @@
 use std::env;
 use std::process::exit;
 
-use crate::constant::Cargo;
+use crate::constant;
 
 /// Parses and returns the command-line arguments.
 ///
 /// # Returns
 ///
 /// A String notion of the argument, `env_file` if present.
-pub fn arguments(cargo: &Cargo) -> String {
+pub fn arguments(metadata: &constant::MetaData) -> String {
     let args: Vec<String> = env::args().collect();
 
     let mut version = false;
@@ -45,7 +45,7 @@ pub fn arguments(cargo: &Cargo) -> String {
         i += 1;
     }
     if version {
-        println!("{} {}", &cargo.pkg_name, &cargo.pkg_version);
+        println!("{} {}", &metadata.pkg_name, &metadata.pkg_version);
         exit(0)
     }
     env_file

@@ -23,21 +23,21 @@ pub async fn health() -> HttpResponse {
 /// # Arguments
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
-/// * `template` - Configuration container for the loaded templates.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
+/// * `template` - Configuration container for the loaded templates.
 ///
 /// # Returns
 ///
 /// Returns an `HttpResponse` with the index page as its body.
 #[get("/")]
 pub async fn root(request: HttpRequest,
-                  template: web::Data<Arc<minijinja::Environment<'static>>>,
-                  session: web::Data<Arc<constant::Session>>) -> HttpResponse {
-    // Log the connection using the squire::logger::log_connection function.
+                  session: web::Data<Arc<constant::Session>>,
+                  metadata: web::Data<Arc<constant::MetaData>>,
+                  template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     squire::logger::log_connection(&request, &session);
-
     let index = template.get_template("index").unwrap();
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(index.render(minijinja::context!()).unwrap())  // no arguments to render
+        .body(index.render(minijinja::context!(version => &metadata.pkg_version)).unwrap())
 }

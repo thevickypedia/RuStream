@@ -5,7 +5,6 @@ use chrono::{DateTime, Local, Utc};
 use walkdir::WalkDir;
 
 use crate::{constant, squire};
-use crate::constant::Cargo;
 use crate::squire::settings;
 
 /// Initializes the logger based on the provided debug flag and cargo information.
@@ -360,8 +359,8 @@ fn get_time(utc: bool) -> String {
 /// # Arguments
 ///
 /// * `config` - Configuration data for the application.
-/// * `cargo` - Package specific information loaded in a struct.
-fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
+/// * `metadata` - Struct containing metadata of the application.
+fn validate_dir_structure(config: &settings::Config, metadata: &constant::MetaData) {
     let source = &config.media_source.to_string_lossy().to_string();
     let mut errors = String::new();
     for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
@@ -398,11 +397,11 @@ fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
                         // keep formatting similar to logging
                         if config.utc_logging {
                             println!("[{}\x1b[32m INFO\x1b[0m  {}] '{}' has been created",
-                                     get_time(config.utc_logging), cargo.crate_name,
+                                     get_time(config.utc_logging), metadata.crate_name,
                                      &secure_path.to_str().unwrap())
                         } else {
                             println!("[{} INFO  {}] '{}' has been created",
-                                     get_time(config.utc_logging), cargo.crate_name,
+                                     get_time(config.utc_logging), metadata.crate_name,
                                      &secure_path.to_str().unwrap())
                         }
                     }
@@ -419,12 +418,12 @@ fn validate_dir_structure(config: &settings::Config, cargo: &Cargo) {
 ///
 /// # Arguments
 ///
-/// * `cargo` - Package specific information loaded in a struct.
+/// * `metadata` - Struct containing metadata of the application.
 ///
 /// # Returns
 ///
 /// Returns the `Config` struct containing the required parameters.
-fn validate_vars(cargo: &Cargo) -> settings::Config {
+fn validate_vars(metadata: &constant::MetaData) -> settings::Config {
     let config = load_env_vars();
     let mut errors = "".to_owned();
     if !config.media_source.exists() || !config.media_source.is_dir() {
@@ -453,7 +452,7 @@ fn validate_vars(cargo: &Cargo) -> settings::Config {
     if !errors.is_empty() {
         panic!("{}", errors);
     }
-    validate_dir_structure(&config, cargo);
+    validate_dir_structure(&config, metadata);
     config
 }
 
@@ -461,13 +460,13 @@ fn validate_vars(cargo: &Cargo) -> settings::Config {
 ///
 /// # Arguments
 ///
-/// * `cargo` - Package specific information loaded in a struct.
+/// * `metadata` - Struct containing metadata of the application.
 ///
 /// # Returns
 ///
 /// Converts the config struct into an `Arc` and returns it.
-pub fn get_config(cargo: &Cargo) -> std::sync::Arc<settings::Config> {
-    let mut env_file = squire::parser::arguments(cargo);
+pub fn get_config(metadata: &constant::MetaData) -> std::sync::Arc<settings::Config> {
+    let mut env_file = squire::parser::arguments(metadata);
     if env_file.is_empty() {
         env_file = std::env::var("env_file")
             .unwrap_or(std::env::var("ENV_FILE")
@@ -477,5 +476,5 @@ pub fn get_config(cargo: &Cargo) -> std::sync::Arc<settings::Config> {
         .unwrap_or_default()
         .join(env_file);
     let _ = dotenv::from_path(env_file_path.as_path());
-    std::sync::Arc::new(validate_vars(cargo))
+    std::sync::Arc::new(validate_vars(metadata))
 }

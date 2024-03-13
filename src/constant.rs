@@ -8,8 +8,8 @@ pub static IMAGE_FORMATS: [&str; 7] = ["jpeg", "jpg", "png", "gif", "bmp", "svg"
 pub static SECURE_INDEX: &str = "SECURE_INDEX";
 
 /// Struct to store the cargo information gathered at compile time using the `env!` macro.
-#[derive(Debug)]
-pub struct Cargo {
+#[derive(Debug, Clone)]
+pub struct MetaData {
     pub crate_name: String,
     pub manifest_dir: String,
     pub authors: Vec<String>,
@@ -30,8 +30,8 @@ pub struct Cargo {
 /// - [Official Docs](https://doc.rust-lang.org/cargo/reference/environment-variables.html)
 /// - [GitHub Issues](https://github.com/rust-lang/cargo/issues/8251#issuecomment-631731144)
 /// - [GitHub Issues](https://github.com/rust-lang/cargo/issues/11966#issue-1664748892)
-pub fn build_info() -> Cargo {
-    let cargo = Cargo {
+pub fn build_info() -> Arc<MetaData> {
+    let metadata = MetaData {
         crate_name: env!("CARGO_CRATE_NAME").to_string(),
         manifest_dir: env!("CARGO_MANIFEST_DIR").to_string(),
         authors: env!("CARGO_PKG_AUTHORS").split(',').map(String::from).collect(),
@@ -45,7 +45,7 @@ pub fn build_info() -> Cargo {
         pkg_version_patch: env!("CARGO_PKG_VERSION_PATCH").to_string(),
         pkg_version_pre: env!("CARGO_PKG_VERSION_PRE").to_string(),
     };
-    cargo
+    Arc::new(metadata)
 }
 
 /// Struct to store the session information.

@@ -13,7 +13,11 @@ pub fn get_content() -> String {
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>{{ media_title }}</title>
+    {% if media_title %}
+        <title>{{ media_title }}</title>
+    {% else %}
+        <title>RuStream - Self-hosted Streaming Engine - v{{ version }}</title>
+    {% endif %}
     <meta property="og:type" content="MediaStreaming">
     <meta name="keywords" content="Rust, streaming, actix, JavaScript, HTML, CSS">
     <meta name="author" content="Vignesh Rao">

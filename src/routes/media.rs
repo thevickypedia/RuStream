@@ -9,7 +9,7 @@ use minijinja;
 use serde::Deserialize;
 use url::form_urlencoded;
 
-use crate::{constant, squire, routes};
+use crate::{constant, routes, squire};
 
 /// Represents the payload structure for deserializing data from the request query parameters.
 #[derive(Deserialize)]
@@ -75,6 +75,7 @@ fn subtitles(true_path: PathBuf, relative_path: &String) -> Subtitles {
 /// * `info` - Query string from the request.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
 /// * `config` - Configuration data for the application.
 /// * `template` - Configuration container for the loaded templates.
 ///
@@ -86,6 +87,7 @@ pub async fn track(request: HttpRequest,
                    info: web::Query<Payload>,
                    fernet: web::Data<Arc<Fernet>>,
                    session: web::Data<Arc<constant::Session>>,
+                   metadata: web::Data<Arc<constant::MetaData>>,
                    config: web::Data<Arc<squire::settings::Config>>,
                    template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
@@ -95,8 +97,9 @@ pub async fn track(request: HttpRequest,
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&info.file), &auth_response.username) {
         return squire::responses::restricted(
             template.get_template("error").unwrap(),
-            &auth_response.username
-        )
+            &auth_response.username,
+            &metadata.pkg_version
+        );
     }
     squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
@@ -108,7 +111,8 @@ pub async fn track(request: HttpRequest,
             .content_type("text/plain")
             .body(content),
         Err(_) => squire::responses::not_found(template.get_template("error").unwrap(),
-                                               &format!("'{}' was not found", &info.file))
+                                               &format!("'{}' was not found", &info.file),
+                                               &metadata.pkg_version)
     }
 }
 
@@ -140,6 +144,7 @@ fn render_content(landing: minijinja::Template,
 /// * `media_path` - The path parameter representing the media file or directory.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
 /// * `config` - Configuration data for the application.
 /// * `template` - Configuration container for the loaded templates.
 ///
@@ -151,6 +156,7 @@ pub async fn stream(request: HttpRequest,
                     media_path: web::Path<String>,
                     fernet: web::Data<Arc<Fernet>>,
                     session: web::Data<Arc<constant::Session>>,
+                    metadata: web::Data<Arc<constant::MetaData>>,
                     config: web::Data<Arc<squire::settings::Config>>,
                     template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
@@ -163,14 +169,18 @@ pub async fn stream(request: HttpRequest,
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&filepath), &auth_response.username) {
         return squire::responses::restricted(
             template.get_template("error").unwrap(),
-            &auth_response.username
-        )
+            &auth_response.username,
+            &metadata.pkg_version
+        );
     }
     // True path of the media file
     let __target = config.media_source.join(&filepath);
     if !__target.exists() {
-        return squire::responses::not_found(template.get_template("error").unwrap(),
-                                            &format!("'{}' was not found", filepath));
+        return squire::responses::not_found(
+            template.get_template("error").unwrap(),
+            &format!("'{}' was not found", filepath),
+            &metadata.pkg_version
+        );
     }
     // True path of the media file as a String
     let __target_str = __target.to_string_lossy().to_string();
@@ -183,12 +193,13 @@ pub async fn stream(request: HttpRequest,
         let next = rust_iter.next.unwrap_or_default();
         let secure_index = constant::SECURE_INDEX.to_string();
         let mut context_builder = vec![
+            ("version", &metadata.pkg_version),
             ("media_title", &__filename),
             ("path", &render_path),
             ("previous", &prev),
             ("next", &next),
             ("user", &auth_response.username),
-            ("secure_index", &secure_index)
+            ("secure_index", &secure_index),
         ].into_iter().collect::<HashMap<_, _>>();
         if constant::IMAGE_FORMATS
             .contains(&render_path.split('.')
@@ -228,11 +239,12 @@ pub async fn stream(request: HttpRequest,
                 child_dir.strip_suffix(&format!("_{}", constant::SECURE_INDEX)).unwrap()
             )
         } else {
-            child_dir.clone()
+            child_dir
         };
         return HttpResponse::build(StatusCode::OK)
             .content_type("text/html; charset=utf-8")
             .body(listing.render(minijinja::context!(
+                version => metadata.pkg_version,
                 custom_title => custom_title,
                 files => listing_page.files,
                 user => auth_response.username,
@@ -241,7 +253,7 @@ pub async fn stream(request: HttpRequest,
                 secured_directories => listing_page.secured_directories
             )).unwrap());
     }
-    log::error!("Something went really wrong");
+    log::error!("Something went horribly wrong");
     log::error!("Media Path: {}", filepath);
     log::error!("Target: {}", __target_str);
     HttpResponse::ExpectationFailed().json(routes::auth::DetailError {
@@ -257,6 +269,7 @@ pub async fn stream(request: HttpRequest,
 /// * `info` - The query parameter containing the file information.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
 /// * `config` - Configuration data for the application.
 /// * `template` - Configuration container for the loaded templates.
 ///
@@ -268,6 +281,7 @@ pub async fn streaming_endpoint(request: HttpRequest,
                                 info: web::Query<Payload>,
                                 fernet: web::Data<Arc<Fernet>>,
                                 session: web::Data<Arc<constant::Session>>,
+                                metadata: web::Data<Arc<constant::MetaData>>,
                                 config: web::Data<Arc<squire::settings::Config>>,
                                 template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
@@ -278,8 +292,9 @@ pub async fn streaming_endpoint(request: HttpRequest,
     if !squire::authenticator::verify_secure_index(&media_path, &auth_response.username) {
         return squire::responses::restricted(
             template.get_template("error").unwrap(),
-            &auth_response.username
-        )
+            &auth_response.username,
+            &metadata.pkg_version
+        );
     }
     squire::logger::log_connection(&request, &session);
     let host = request.connection_info().host().to_owned();
@@ -295,5 +310,9 @@ pub async fn streaming_endpoint(request: HttpRequest,
     }
     let error = format!("File {:?} not found", media_path);
     log::error!("{}", error);
-    squire::responses::not_found(template.get_template("error").unwrap(), &error)
+    squire::responses::not_found(
+        template.get_template("error").unwrap(),
+        &error,
+        &metadata.pkg_version
+    )
 }

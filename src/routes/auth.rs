@@ -83,20 +83,22 @@ pub async fn login(request: HttpRequest,
 /// # Arguments
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
-/// * `config` - Configuration data for the application.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
-/// * `template` - Configuration container for the loaded templates.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
+/// * `config` - Configuration data for the application.
+/// * `template` - Configuration container for the loaded templates.
 ///
 /// # Returns
 ///
 /// Returns an `HTTPResponse` with the cookie for `session_token` reset if available.
 #[get("/logout")]
 pub async fn logout(request: HttpRequest,
-                    config: web::Data<Arc<squire::settings::Config>>,
                     fernet: web::Data<Arc<Fernet>>,
-                    template: web::Data<Arc<minijinja::Environment<'static>>>,
-                    session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+                    session: web::Data<Arc<constant::Session>>,
+                    metadata: web::Data<Arc<constant::MetaData>>,
+                    config: web::Data<Arc<squire::settings::Config>>,
+                    template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let host = request.connection_info().host().to_owned();
     let logout_template = template.get_template("logout").unwrap();
     let mut response = HttpResponse::build(StatusCode::OK);
@@ -117,7 +119,10 @@ pub async fn logout(request: HttpRequest,
         } else {
             log::warn!("Session information for {} was not stored or no file was rendered", host);
         }
-        rendered = logout_template.render(minijinja::context!(detail => "You have been logged out successfully.")).unwrap();
+        rendered = logout_template.render(minijinja::context!(
+            version => metadata.pkg_version,
+            detail => "You have been logged out successfully."
+        )).unwrap();
 
         let mut cookie = Cookie::new("session_token", "");
         cookie.set_same_site(SameSite::Strict);
@@ -125,10 +130,11 @@ pub async fn logout(request: HttpRequest,
         response.cookie(cookie);
     } else {
         log::debug!("No stored session found for {}", host);
-        rendered = logout_template.render(
-            minijinja::context!(detail => "You are not logged in. Please click the button below to proceed.",
-                show_login => true)
-        ).unwrap();
+        rendered = logout_template.render(minijinja::context!(
+                version => metadata.pkg_version,
+                detail => "You are not logged in. Please click the button below to proceed.",
+                show_login => true
+            )).unwrap();
     }
     // response.finish() is not required since setting the body will close the response
     response.body(rendered)
@@ -139,10 +145,11 @@ pub async fn logout(request: HttpRequest,
 /// # Arguments
 ///
 /// * `request` - A reference to the Actix web `HttpRequest` object.
-/// * `config` - Configuration data for the application.
 /// * `fernet` - Fernet object to encrypt the auth payload that will be set as `session_token` cookie.
-/// * `template` - Configuration container for the loaded templates.
 /// * `session` - Session struct that holds the `session_mapping` and `session_tracker` to handle sessions.
+/// * `metadata` - Struct containing metadata of the application.
+/// * `config` - Configuration data for the application.
+/// * `template` - Configuration container for the loaded templates.
 ///
 /// # Returns
 ///
@@ -150,10 +157,11 @@ pub async fn logout(request: HttpRequest,
 /// * `401` - HttpResponse with an error message for failed authentication.
 #[get("/home")]
 pub async fn home(request: HttpRequest,
-                  config: web::Data<Arc<squire::settings::Config>>,
                   fernet: web::Data<Arc<Fernet>>,
-                  template: web::Data<Arc<minijinja::Environment<'static>>>,
-                  session: web::Data<Arc<constant::Session>>) -> HttpResponse {
+                  session: web::Data<Arc<constant::Session>>,
+                  metadata: web::Data<Arc<constant::MetaData>>,
+                  config: web::Data<Arc<squire::settings::Config>>,
+                  template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let auth_response = squire::authenticator::verify_token(&request, &config, &fernet, &session);
     if !auth_response.ok {
         return failed_auth(auth_response, &config);
@@ -168,6 +176,7 @@ pub async fn home(request: HttpRequest,
         .content_type("text/html; charset=utf-8")
         .body(
             listing.render(minijinja::context!(
+                version => metadata.pkg_version,
                 files => listing_page.files,
                 user => auth_response.username,
                 secure_index => constant::SECURE_INDEX,
@@ -181,21 +190,26 @@ pub async fn home(request: HttpRequest,
 ///
 /// # Arguments
 ///
-/// * `template` - Configuration container for the loaded templates.
 /// * `request` - A reference to the Actix web `HttpRequest` object.
+/// * `metadata` - Struct containing metadata of the application.
+/// * `template` - Configuration container for the loaded templates.
 ///
 /// # Returns
 ///
 /// HttpResponse with either a session expiry or unauthorized message.
 #[get("/error")]
-pub async fn error(template: web::Data<Arc<minijinja::Environment<'static>>>,
-                   request: HttpRequest) -> HttpResponse {
+pub async fn error(request: HttpRequest,
+                   metadata: web::Data<Arc<constant::MetaData>>,
+                   template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     if let Some(detail) = request.cookie("detail") {
         log::info!("Error response for /error: {}", detail.value());
         let session = template.get_template("session").unwrap();
         return HttpResponse::build(StatusCode::UNAUTHORIZED)
             .content_type("text/html; charset=utf-8")
-            .body(session.render(minijinja::context!(reason => detail.value())).unwrap());
+            .body(session.render(minijinja::context!(
+                version => metadata.pkg_version,
+                reason => detail.value()
+            )).unwrap());
     }
 
     log::info!("Sending unauthorized response for /error");
@@ -203,6 +217,7 @@ pub async fn error(template: web::Data<Arc<minijinja::Environment<'static>>>,
     HttpResponse::build(StatusCode::UNAUTHORIZED)
         .content_type("text/html; charset=utf-8")
         .body(error.render(minijinja::context!(
+            version => metadata.pkg_version,
             title => "LOGIN FAILED",
             description => "USER ERROR - REPLACE USER",
             help => r"Forgot Password?\n\nRelax and try to remember your password.",
