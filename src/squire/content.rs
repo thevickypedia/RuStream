@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{MAIN_SEPARATOR, Path, PathBuf};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -97,14 +97,13 @@ fn get_file_font(extn: &str) -> String {
 /// A string with the `fa` value based on the folder depth.
 fn get_folder_font(structure: &Path,
                    auth_response: &authenticator::AuthToken) -> HashMap<String, String> {
-    let directory = structure.to_string_lossy().to_string();
+    let components: &Vec<_> = &structure.components().collect::<Vec<_>>();
+    let parent = components.first().unwrap().as_os_str().to_string_lossy().to_string();
     let mut entry_map = HashMap::new();
-    entry_map.insert("path".to_string(), format!("stream/{}", &directory));
-    let depth = &structure.iter().count();
+    entry_map.insert("path".to_string(), format!("stream/{}", &parent));
     for component in structure.iter() {
-        let secured = format!("{}_{}", &auth_response.username, constant::SECURE_INDEX);
-        if secured == component.to_string_lossy() {
-            entry_map.insert("name".to_string(), directory);
+        if component.to_string_lossy() == format!("{}_{}", &auth_response.username, constant::SECURE_INDEX) {
+            entry_map.insert("name".to_string(), parent);
             entry_map.insert("font".to_string(), "fa-solid fa-lock".to_string());
             entry_map.insert("secured".to_string(), "true".to_string());
             return entry_map;
@@ -113,8 +112,8 @@ fn get_folder_font(structure: &Path,
             return HashMap::new();
         }
     }
-    entry_map.insert("name".to_string(), directory);
-    if *depth > 1 {
+    entry_map.insert("name".to_string(), parent);
+    if components.len() > 1 {
         entry_map.insert("font".to_string(), "fa-solid fa-folder-tree".to_string());
     } else {
         entry_map.insert("font".to_string(), "fa fa-folder".to_string());
@@ -164,6 +163,7 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
                         let skimmed = path.components().rev().skip(1)
                             .collect::<Vec<_>>().iter().rev()
                             .collect::<PathBuf>();
+                        // todo: no need to loop through all the files, if a folder has at least one video/image file
                         let entry_map = get_folder_font(&skimmed, auth_response);
                         if entry_map.get("secured").unwrap_or(&"".to_string()) == "true" {
                             if payload.secured_directories.contains(&entry_map) || entry_map.is_empty() { continue; }
@@ -189,48 +189,64 @@ pub fn get_all_stream_content(config: &settings::Config, auth_response: &authent
 ///
 /// # Arguments
 ///
+/// * `path_payload` - Media path received in the payload.
 /// * `parent` - Path to the parent directory.
-/// * `child` - Path to the child directory.
 /// * `file_formats` - File formats (set as env vars) that are allowed for streaming.
 ///
 /// # Returns
 ///
 /// A `ContentPayload` struct representing the content of the specified directory.
-pub fn get_dir_stream_content(parent: &str,
-                              child: &str,
+pub fn get_dir_stream_content(path_payload: &String,
+                              parent: &str,
                               file_formats: &[String]) -> ContentPayload {
     let mut files = Vec::new();
     let mut directories = Vec::new();
     for entry in fs::read_dir(parent).unwrap().flatten() {
-        let file_name = entry.file_name().into_string().unwrap();
-        if file_name.starts_with('_') || file_name.starts_with('.') {
+        let entry_name = entry.file_name().into_string().unwrap();
+        if entry_name.starts_with('_') || entry_name.starts_with('.') {
             continue;
         }
-        let file_path = Path::new(child).join(&file_name);
-        if file_path.is_file() {
-            let file_extn = &file_path.extension().unwrap_or_default().to_string_lossy().to_string();
+        // Use server path to verify and client path to communicate back to client
+        let server_path = Path::new(parent).join(&entry_name);
+        // Use only the final dir in the path, since rest of it will be loaded in the URL itself
+        // Not doing this will result in redundant path, like /home/GOT/season1/season1/episode1.mp4 resulting in 404
+        let client_path = Path::new(path_payload.split(MAIN_SEPARATOR).last().unwrap()).join(&entry_name);
+        let client_path_str = client_path.to_string_lossy().to_string();
+        if server_path.is_file() {
+            let file_extn = &server_path.extension().unwrap_or_default().to_string_lossy().to_string();
             if file_formats.contains(file_extn) {
                 let map = HashMap::from([
-                    ("name".to_string(), file_name),
-                    ("path".to_string(), file_path.to_string_lossy().to_string()),
+                    ("name".to_string(), entry_name),
+                    ("path".to_string(), client_path_str),
                     ("font".to_string(), get_file_font(file_extn))
                 ]);
                 files.push(map);
             }
-        } else {
-            let dir_name = file_path.iter().last().unwrap().to_string_lossy().to_string();
+        } else if server_path.is_dir() {
+            let dir_font;
+            if server_path.to_string_lossy().contains(constant::SECURE_INDEX) {
+                dir_font = "fa-solid fa-lock".to_string()
+            } else if client_path.components().collect::<Vec<_>>().len() > 1 {
+                dir_font = "fa-solid fa-folder-tree".to_string()
+            } else { // todo: will never get here, so remove unnecessary overhead
+                dir_font = "fa-solid fa-folder-tree".to_string()
+            }
             let map = HashMap::from([
-                ("name".to_string(), dir_name),
-                ("path".to_string(), file_path.to_string_lossy().to_string()),
-                ("font".to_string(), "fa-solid fa-lock".to_string())
+                ("name".to_string(), entry_name),
+                ("path".to_string(), client_path_str),
+                ("font".to_string(), dir_font)
             ]);
             directories.push(map);
+        } else {
+            log::error!("Something went horribly wrong");
+            log::error!("Parent Dir: {}", parent);
+            log::error!("Path Payload: {}", path_payload);
         }
     }
-    // todo: this works, but also needs updating the base structure the same way to avoid ugliness=
     let re = Regex::new(r"(\D+|\d+)").unwrap();
     files.sort_by_key(|a| natural_sort_key(&re, a.get("name").unwrap()));
     directories.sort_by_key(|a| natural_sort_key(&re, a.get("name").unwrap()));
+    // secure indices will be placed in root of media_source, so it's not required for subdirectories
     ContentPayload { files, directories, ..Default::default() }
 }
 

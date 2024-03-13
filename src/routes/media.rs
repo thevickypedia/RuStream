@@ -230,9 +230,9 @@ pub async fn stream(request: HttpRequest,
         }
         return render_content(landing, context_builder);
     } else if __target.is_dir() {
-        let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
-        let listing_page = squire::content::get_dir_stream_content(&__target_str, &child_dir, &config.file_formats);
+        let listing_page = squire::content::get_dir_stream_content(&filepath, &__target_str, &config.file_formats);
         let listing = template.get_template("listing").unwrap();
+        let child_dir = __target.iter().last().unwrap().to_string_lossy().to_string();
         let custom_title = if child_dir.ends_with(constant::SECURE_INDEX) {
             format!(
                 "<i class='fa-solid fa-lock'></i>&nbsp;&nbsp;{}",

@@ -221,7 +221,8 @@ pub async fn error(request: HttpRequest,
             title => "LOGIN FAILED",
             description => "USER ERROR - REPLACE USER",
             help => r"Forgot Password?\n\nRelax and try to remember your password.",
-            button_text => "LOGIN", button_link => "/"
+            button_text => "LOGIN", button_link => "/",
+            block_navigation => true
         )).unwrap())
 }
 
