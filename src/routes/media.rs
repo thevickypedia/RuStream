@@ -35,7 +35,7 @@ struct Subtitles {
 /// * `path` - The input path string to be URL encoded.
 ///
 /// ## References
-/// - [RustJobs](https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/)
+/// - [rustjobs.dev](https://rustjobs.dev/blog/how-to-url-encode-strings-in-rust/)
 ///
 /// # Returns
 ///
@@ -174,6 +174,8 @@ pub async fn stream(request: HttpRequest,
             &metadata.pkg_version
         );
     }
+    let secure_path = if filepath.contains(constant::SECURE_INDEX) { "true" } else { "false" };
+    let secure_flag = secure_path.to_string();
     // True path of the media file
     let __target = config.media_source.join(&filepath);
     if !__target.exists() {
@@ -251,7 +253,8 @@ pub async fn stream(request: HttpRequest,
                 user => auth_response.username,
                 secure_index => constant::SECURE_INDEX,
                 directories => listing_page.directories,
-                secured_directories => listing_page.secured_directories
+                secured_directories => listing_page.secured_directories,
+                secure_path => &secure_flag
             )).unwrap());
     }
     log::error!("Something went horribly wrong");

@@ -129,6 +129,26 @@ pub fn get_content() -> String {
             margin-right: 0.5rem;
         }
     </style>
+    <style>
+        /* Style for context menu */
+        .context-menu {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 5px 0;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .context-menu-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #fff !important; /* White background */
+            color: #000 !important; /* Black font */
+        }
+        .context-menu-item:hover {
+            background-color: #000 !important; /* White background */
+            color: #fff !important; /* Black font */
+        }
+    </style>
 </head>
 <noscript>
     <style>
@@ -162,6 +182,11 @@ pub fn get_content() -> String {
         </div>
     </div>
     <br><br><br><br>
+    <!-- Context menu template (hidden by default) -->
+    <div id="contextMenu" class="context-menu" style="display: none;">
+        <div class="context-menu-item" onclick="deleteItem(currentPath)">Delete</div>
+      <!-- <div class="context-menu-item" onclick="renameItem(currentPath)">Rename</div> -->
+    </div>
     {% if custom_title %}
         <h1>{{ custom_title }}</h1>
     {% else %}
@@ -177,7 +202,11 @@ pub fn get_content() -> String {
         {% if files %}
             <h3>Files {{ files|length }}</h3>
             {% for file in files %}
-                <li><i class="{{ file.font }}"></i>&nbsp;&nbsp;<a href="{{ file.path }}">{{ file.name }}</a></li>
+                {% if secure_path == 'true' %}
+                    <li><i class="{{ file.font }}"></i>&nbsp;&nbsp;<a oncontextmenu="showContextMenu(event, '{{ file.path }}')" href="{{ file.path }}">{{ file.name }}</a></li>
+                {% else %}
+                    <li><i class="{{ file.font }}"></i>&nbsp;&nbsp;<a href="{{ file.path }}">{{ file.name }}</a></li>
+                {% endif %}
             {% endfor %}
         {% endif %}
         <!-- Display number of directories and list the directories -->
@@ -190,7 +219,7 @@ pub fn get_content() -> String {
         {% if secured_directories %}
             <h3>Secured Directory</h3>
             {% for directory in secured_directories %}
-                <li><i class="{{ directory.font }}"></i>&nbsp;&nbsp;<a href="{{ directory.path }}">{{ directory.name }}</a></li>
+                <li><i class="{{ directory.font }}"></i>&nbsp;&nbsp;<a oncontextmenu="showContextMenu(event, '{{ directory.path }}')" href="{{ directory.path }}">{{ directory.name }}</a></li>
             {% endfor %}
         {% endif %}
     {% else %}
@@ -214,6 +243,87 @@ pub fn get_content() -> String {
             window.history.back();
         }
     </script>
+    <script>
+        var contextMenu = document.getElementById('contextMenu');
+
+        // Function to show context menu
+        function showContextMenu(event, path) {
+            event.preventDefault();
+
+            // Set the global variable to the current file path
+            currentPath = path;
+
+            // Position the context menu beneath the clicked icon
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = event.clientX + 'px';
+            contextMenu.style.top = event.clientY + 'px';
+        }
+
+        function editAction(action, trueURL, relativePath) {
+            let http = new XMLHttpRequest();
+            http.open('POST', window.location.origin + `/edit`, true);  // asynchronous session
+            http.setRequestHeader('Content-Type', 'application/json'); // Set content type to JSON
+            http.setRequestHeader('edit-action', action);
+            let data = {
+                url_locator: trueURL,
+                path_locator: relativePath
+            };
+            let jsonData = JSON.stringify(data);
+            http.onreadystatechange = function() {
+                if (http.readyState === XMLHttpRequest.DONE) {
+                    if (http.status === 200) {
+                        window.location.reload();
+                    } else {
+                        console.error('Error:', http.status);
+                    }
+                }
+            };
+            http.send(jsonData);
+        }
+
+        function getConfirmation(fileName, action) {
+            let confirmation = confirm(`Are you sure you want to ${action}?\n\n'${fileName}'`);
+            if (!confirmation) {
+                contextMenu.style.display = 'none';
+                return false;
+            }
+            return true;
+        }
+
+        function extractFileName(path) {
+            // Find the last occurrence of either '/' or '\'
+            const lastIndex = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+
+            // Extract the filename using substring
+            return path.substring(lastIndex + 1);
+        }
+
+        // Function to handle delete action
+        function deleteItem(relativePath) {
+            contextMenu.style.display = 'none';
+
+            let fileName = extractFileName(relativePath);
+            let pass = getConfirmation(fileName, 'delete');
+            if (!pass) {
+                return;
+            }
+            let trueURL = window.location.href + '/' + fileName;
+            editAction("delete", trueURL, relativePath);
+        }
+
+        // Function to handle rename action
+        function renameItem(path) {
+            contextMenu.style.display = 'none';
+            alert(`Rename of ${path} is not enabled yet!!`);
+        }
+
+        // Hide context menu when clicking outside
+        document.addEventListener('click', function(event) {
+            if (event.target !== contextMenu && !contextMenu.contains(event.target)) {
+                contextMenu.style.display = 'none';
+            }
+        });
+        </script>
 </body>
 </html>
 "###.to_string()

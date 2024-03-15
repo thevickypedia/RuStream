@@ -3,8 +3,8 @@ use rand::prelude::SliceRandom;
 /// Prints random ASCII art of a horse, dog or a dolphin.
 ///
 /// ## References
-/// - [https://www.asciiart.eu](https://www.asciiart.eu)
-/// - [https://asciiart.cc](https://asciiart.cc)
+/// - [asciiart.eu](https://www.asciiart.eu)
+/// - [asciiart.cc](https://asciiart.cc)
 pub fn random() {
     let horse = r"
                                                  #    #
