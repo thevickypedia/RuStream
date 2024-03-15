@@ -253,10 +253,24 @@ pub fn get_content() -> String {
             // Set the global variable to the current file path
             currentPath = path;
 
-            // Position the context menu beneath the clicked icon
+            // Calculate the appropriate coordinates for the context menu
+            var mouseX = event.clientX;
+            var mouseY = event.clientY;
+            var windowWidth = window.innerWidth;
+            var windowHeight = window.innerHeight;
+            var contextMenuWidth = contextMenu.offsetWidth;
+            var contextMenuHeight = contextMenu.offsetHeight;
+            var scrollX = window.scrollX || window.pageXOffset;
+            var scrollY = window.scrollY || window.pageYOffset;
+
+            // Adjust the coordinates considering the scroll position and moving 2 pixels away from the mouse pointer
+            var menuX = mouseX + scrollX + contextMenuWidth > windowWidth ? mouseX + scrollX - contextMenuWidth - 2 : mouseX + scrollX + 2;
+            var menuY = mouseY + scrollY + contextMenuHeight > windowHeight ? mouseY + scrollY - contextMenuHeight - 2 : mouseY + scrollY + 2;
+
+            // Position the context menu at the calculated coordinates
+            contextMenu.style.left = menuX + 'px';
+            contextMenu.style.top = menuY + 'px';
             contextMenu.style.display = 'block';
-            contextMenu.style.left = event.clientX + 'px';
-            contextMenu.style.top = event.clientY + 'px';
         }
 
         function editAction(action, trueURL, relativePath) {
@@ -264,11 +278,6 @@ pub fn get_content() -> String {
             http.open('POST', window.location.origin + `/edit`, true);  // asynchronous session
             http.setRequestHeader('Content-Type', 'application/json'); // Set content type to JSON
             http.setRequestHeader('edit-action', action);
-            let data = {
-                url_locator: trueURL,
-                path_locator: relativePath
-            };
-            let jsonData = JSON.stringify(data);
             http.onreadystatechange = function() {
                 if (http.readyState === XMLHttpRequest.DONE) {
                     if (http.status === 200) {
@@ -278,7 +287,11 @@ pub fn get_content() -> String {
                     }
                 }
             };
-            http.send(jsonData);
+            let data = {
+                url_locator: trueURL,
+                path_locator: relativePath
+            };
+            http.send(JSON.stringify(data));
         }
 
         function getConfirmation(fileName, action) {

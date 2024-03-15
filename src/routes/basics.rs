@@ -38,7 +38,7 @@ pub async fn root(request: HttpRequest,
                   session: web::Data<Arc<constant::Session>>,
                   metadata: web::Data<Arc<constant::MetaData>>,
                   template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
-    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::custom::log_connection(&request, &session);
     let index = template.get_template("index").unwrap();
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
@@ -70,7 +70,7 @@ pub async fn profile(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let (_host, last_accessed) = squire::logger::log_connection(&request, &session);
+    let (_host, last_accessed) = squire::custom::log_connection(&request, &session);
     let index = template.get_template("profile").unwrap();
     let mut access_map = HashMap::new();
     if !last_accessed.is_empty() {

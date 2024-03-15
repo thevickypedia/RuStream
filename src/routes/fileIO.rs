@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, web};
+use actix_web::http::StatusCode;
 use fernet::Fernet;
 use serde::Deserialize;
 
@@ -79,12 +80,10 @@ pub async fn edit(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::custom::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     let extracted = extract_media_path(payload, &config.media_source);
-    // todo: pop up doesn't always occur next to the mouse
-    //  styling of the pop up is very basic
-    //  make custom error responses generic
+    // todo: styling of the pop up is very basic
     let media_path: PathBuf = match extracted {
         Ok(path) => {
             path
@@ -94,10 +93,12 @@ pub async fn edit(request: HttpRequest,
         }
     };
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&media_path), &auth_response.username) {
-        return squire::responses::restricted(
+        return squire::custom::error(
+            "RESTRICTED SECTION",
             template.get_template("error").unwrap(),
-            &auth_response.username,
             &metadata.pkg_version,
+            format!("This content is not accessible, as it does not belong to the user profile '{}'", auth_response.username),
+            StatusCode::FORBIDDEN
         );
     }
     if let Some(edit_action) = request.headers().get("edit-action") {

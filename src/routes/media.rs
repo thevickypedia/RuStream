@@ -96,13 +96,15 @@ pub async fn track(request: HttpRequest,
         return routes::auth::failed_auth(auth_response, &config);
     }
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&info.file), &auth_response.username) {
-        return squire::responses::restricted(
+        return squire::custom::error(
+            "RESTRICTED SECTION",
             template.get_template("error").unwrap(),
-            &auth_response.username,
-            &metadata.pkg_version
+            &metadata.pkg_version,
+            format!("This content is not accessible, as it does not belong to the user profile '{}'", auth_response.username),
+            StatusCode::FORBIDDEN
         );
     }
-    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::custom::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     log::debug!("Track requested: {}", &info.file);
     let filepath = Path::new(&config.media_source).join(&info.file);
@@ -111,9 +113,13 @@ pub async fn track(request: HttpRequest,
         Ok(content) => HttpResponse::Ok()
             .content_type("text/plain")
             .body(content),
-        Err(_) => squire::responses::not_found(template.get_template("error").unwrap(),
-                                               &format!("'{}' was not found", &info.file),
-                                               &metadata.pkg_version)
+        Err(_) => squire::custom::error(
+            "CONTENT UNAVAILABLE",
+            template.get_template("error").unwrap(),
+            &metadata.pkg_version,
+            format!("'{}' was not found", &info.file),
+            StatusCode::NOT_FOUND
+        )
     }
 }
 
@@ -164,14 +170,16 @@ pub async fn stream(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::custom::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     let filepath = media_path.to_string();
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&filepath), &auth_response.username) {
-        return squire::responses::restricted(
+        return squire::custom::error(
+            "RESTRICTED SECTION",
             template.get_template("error").unwrap(),
-            &auth_response.username,
-            &metadata.pkg_version
+            &metadata.pkg_version,
+            format!("This content is not accessible, as it does not belong to the user profile '{}'", auth_response.username),
+            StatusCode::FORBIDDEN
         );
     }
     let secure_path = if filepath.contains(constant::SECURE_INDEX) { "true" } else { "false" };
@@ -179,11 +187,13 @@ pub async fn stream(request: HttpRequest,
     // True path of the media file
     let __target = config.media_source.join(&filepath);
     if !__target.exists() {
-        return squire::responses::not_found(
+        return squire::custom::error(
+            "CONTENT UNAVAILABLE",
             template.get_template("error").unwrap(),
-            &format!("'{}' was not found", filepath),
-            &metadata.pkg_version
-        );
+            &metadata.pkg_version,
+            format!("'{}' was not found", filepath),
+            StatusCode::NOT_FOUND
+        )
     }
     // True path of the media file as a String
     let __target_str = __target.to_string_lossy().to_string();
@@ -294,13 +304,15 @@ pub async fn streaming_endpoint(request: HttpRequest,
     }
     let media_path = config.media_source.join(&info.file);
     if !squire::authenticator::verify_secure_index(&media_path, &auth_response.username) {
-        return squire::responses::restricted(
+        return squire::custom::error(
+            "RESTRICTED SECTION",
             template.get_template("error").unwrap(),
-            &auth_response.username,
-            &metadata.pkg_version
+            &metadata.pkg_version,
+            format!("This content is not accessible, as it does not belong to the user profile '{}'", auth_response.username),
+            StatusCode::FORBIDDEN
         );
     }
-    let (host, _last_accessed) = squire::logger::log_connection(&request, &session);
+    let (host, _last_accessed) = squire::custom::log_connection(&request, &session);
     if media_path.exists() {
         let file = actix_files::NamedFile::open_async(media_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
@@ -313,9 +325,11 @@ pub async fn streaming_endpoint(request: HttpRequest,
     }
     let error = format!("File {:?} not found", media_path);
     log::error!("{}", error);
-    squire::responses::not_found(
+    squire::custom::error(
+        "CONTENT UNAVAILABLE",
         template.get_template("error").unwrap(),
-        &error,
-        &metadata.pkg_version
+        &metadata.pkg_version,
+        format!("'{}' was not found", &info.file),
+        StatusCode::NOT_FOUND
     )
 }
