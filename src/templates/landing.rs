@@ -207,7 +207,7 @@ pub fn get_content() -> String {
     <div class="dropdown">
         <button class="dropbtn"><i class="fa fa-user"></i></button>
         <div class="dropdown-content">
-            <a onclick="goSecure()" style="cursor: pointer;"><i class="fa-solid fa-user-lock"></i> {{ user }}</a>
+            <a onclick="goProfile()" style="cursor: pointer;"><i class="fa-solid fa-user-lock"></i> {{ user }}</a>
             <a onclick="logOut()" style="cursor: pointer"><i class="fa fa-sign-out"></i> logout</a>
         </div>
     </div>
@@ -287,8 +287,8 @@ pub fn get_content() -> String {
         function goHome() {
             window.location.href = "/home";
         }
-        function goSecure() {
-            window.location.href = '/stream/{{ user }}_{{ secure_index }}';
+        function goProfile() {
+            window.location.href = '/profile';
         }
         function logOut() {
             window.location.href = "/logout";

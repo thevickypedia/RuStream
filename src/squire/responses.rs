@@ -42,6 +42,7 @@ pub fn restricted(error: Template, username: &String, version: &String) -> HttpR
             title => "RESTRICTED SECTION",
             description => format!("This content is not accessible, as it does not belong to the user profile '{}'", username),
             help => r"Lost your way?\n\nHit the HOME button to navigate back to home page.",
-            button_text => "HOME", button_link => "/home"
+            button_text => "HOME", button_link => "/home",
+            block_navigation => true
         )).unwrap())
 }

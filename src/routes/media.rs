@@ -9,6 +9,7 @@ use minijinja;
 use serde::Deserialize;
 use url::form_urlencoded;
 
+
 use crate::{constant, routes, squire};
 
 /// Represents the payload structure for deserializing data from the request query parameters.
@@ -101,7 +102,7 @@ pub async fn track(request: HttpRequest,
             &metadata.pkg_version
         );
     }
-    squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     log::debug!("Track requested: {}", &info.file);
     let filepath = Path::new(&config.media_source).join(&info.file);
@@ -163,7 +164,7 @@ pub async fn stream(request: HttpRequest,
     if !auth_response.ok {
         return routes::auth::failed_auth(auth_response, &config);
     }
-    squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
     let filepath = media_path.to_string();
     if !squire::authenticator::verify_secure_index(&PathBuf::from(&filepath), &auth_response.username) {
@@ -296,15 +297,14 @@ pub async fn streaming_endpoint(request: HttpRequest,
             &metadata.pkg_version
         );
     }
-    squire::logger::log_connection(&request, &session);
-    let host = request.connection_info().host().to_owned();
+    let (host, _last_accessed) = squire::logger::log_connection(&request, &session);
     if media_path.exists() {
         let file = actix_files::NamedFile::open_async(media_path).await.unwrap();
         // Check if the host is making a continued connection streaming the same file
         let mut tracker = session.tracker.lock().unwrap();
         if tracker.get(&host).unwrap() != &info.file {
             log::info!("Streaming {}", info.file);
-            tracker.insert(request.connection_info().host().to_string(), info.file.to_string());
+            tracker.insert(host, info.file.to_string());
         }
         return file.into_response(&request);
     }

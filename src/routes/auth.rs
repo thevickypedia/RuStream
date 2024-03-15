@@ -50,7 +50,7 @@ pub async fn login(request: HttpRequest,
     }
 
     let mapped = verified.unwrap();
-    squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
 
     let payload = serde_json::to_string(&mapped).unwrap();
     let encrypted_payload = fernet.encrypt(payload.as_bytes());
@@ -166,7 +166,7 @@ pub async fn home(request: HttpRequest,
     if !auth_response.ok {
         return failed_auth(auth_response, &config);
     }
-    squire::logger::log_connection(&request, &session);
+    let (_host, _last_accessed) = squire::logger::log_connection(&request, &session);
     log::debug!("{}", auth_response.detail);
 
     let listing_page = squire::content::get_all_stream_content(&config, &auth_response);
@@ -221,7 +221,8 @@ pub async fn error(request: HttpRequest,
             title => "LOGIN FAILED",
             description => "USER ERROR - REPLACE USER",
             help => r"Forgot Password?\n\nRelax and try to remember your password.",
-            button_text => "LOGIN", button_link => "/"
+            button_text => "LOGIN", button_link => "/",
+            block_navigation => true
         )).unwrap())
 }
 

@@ -26,6 +26,7 @@ pub struct AuthToken {
     pub ok: bool,
     pub detail: String,
     pub username: String,
+    pub time_left: i64
 }
 
 
@@ -149,6 +150,7 @@ pub fn verify_token(
             ok: false,
             detail: "Server doesn't recognize your session".to_string(),
             username: "NA".to_string(),
+            time_left: 0
         };
     }
     if let Some(cookie) = request.cookie("session_token") {
@@ -165,21 +167,30 @@ pub fn verify_token(
                     ok: false,
                     detail: "Invalid session token".to_string(),
                     username,
+                    time_left: 0
                 };
             }
             if current_time - timestamp > config.session_duration {
-                return AuthToken { ok: false, detail: "Session Expired".to_string(), username };
+                return AuthToken {
+                    ok: false,
+                    detail: "Session Expired".to_string(),
+                    username,
+                    time_left: 0
+                };
             }
+            let time_left = timestamp + config.session_duration - current_time;
             AuthToken {
                 ok: true,
-                detail: format!("Session valid for {}s", timestamp + config.session_duration - current_time),
+                detail: format!("Session valid for {}s", time_left),
                 username,
+                time_left
             }
         } else {
             AuthToken {
                 ok: false,
                 detail: "Invalid session token".to_string(),
                 username: "NA".to_string(),
+                time_left: 0
             }
         }
     } else {
@@ -187,6 +198,7 @@ pub fn verify_token(
             ok: false,
             detail: "Session information not found".to_string(),
             username: "NA".to_string(),
+            time_left: 0
         }
     }
 }

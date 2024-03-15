@@ -13,6 +13,7 @@ mod session;
 /// Error page template that is served as HTML response for any error message to be conveyed.
 mod error;
 mod upload;
+mod profile;
 
 /// Loads all the HTML templates' content into a Jinja Environment
 ///
@@ -29,5 +30,6 @@ pub fn environment() -> Arc<minijinja::Environment<'static>> {
     env.add_template_owned("session", session::get_content()).unwrap();
     env.add_template_owned("error", error::get_content()).unwrap();
     env.add_template_owned("upload", upload::get_content()).unwrap();
+    env.add_template_owned("profile", profile::get_content()).unwrap();
     Arc::new(env)
 }
