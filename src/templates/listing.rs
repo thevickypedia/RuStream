@@ -106,7 +106,7 @@ pub fn get_content() -> String {
     </style>
     <!-- Title list CSS -->
     <style>
-        a:hover, a:active { font-size: 120%; opacity: 0.7; }
+        a:hover, a:active { font-size: 102%; opacity: 0.5; }
         a:link { color: blue; }
         a:visited { color: blue; }
         ol {
@@ -145,8 +145,16 @@ pub fn get_content() -> String {
             color: #000 !important; /* Black font */
         }
         .context-menu-item:hover {
-            background-color: #000 !important; /* White background */
-            color: #fff !important; /* Black font */
+            background-color: #000 !important; /* Black background */
+            color: #fff !important; /* White font */
+        }
+        .icon {
+            background-color: #fff !important; /* White background */
+            color: #000 !important; /* Black font */
+        }
+        .icon:hover {
+            background-color: #000 !important; /* Black background */
+            color: #fff !important; /* White font */
         }
     </style>
 </head>
@@ -183,9 +191,9 @@ pub fn get_content() -> String {
     </div>
     <br><br><br><br>
     <!-- Context menu template (hidden by default) -->
-    <div id="contextMenu" class="context-menu" style="display: none;">
-        <div class="context-menu-item" onclick="deleteItem(currentPath)">Delete</div>
-      <!-- <div class="context-menu-item" onclick="renameItem(currentPath)">Rename</div> -->
+    <div id="contextMenu" class="context-menu icon" style="display: none;">
+        <div class="context-menu-item" onclick="editItem(currentPath, 'delete')"><i class="fa-regular fa-trash-can"></i>&nbsp;&nbsp;Delete</div>
+        <div class="context-menu-item" onclick="editItem(currentPath, 'rename')"><i class="fa-solid fa-pen"></i></i>&nbsp;&nbsp;Rename</div>
     </div>
     {% if custom_title %}
         <h1>{{ custom_title }}</h1>
@@ -219,7 +227,7 @@ pub fn get_content() -> String {
         {% if secured_directories %}
             <h3>Secured Directory</h3>
             {% for directory in secured_directories %}
-                <li><i class="{{ directory.font }}"></i>&nbsp;&nbsp;<a oncontextmenu="showContextMenu(event, '{{ directory.path }}')" href="{{ directory.path }}">{{ directory.name }}</a></li>
+                <li><i class="{{ directory.font }}"></i>&nbsp;&nbsp;<a oncontextmenu="showContextMenu(event, '{{ directory.path }}', true)" href="{{ directory.path }}">{{ directory.name }}</a></li>
             {% endfor %}
         {% endif %}
     {% else %}
@@ -247,11 +255,12 @@ pub fn get_content() -> String {
         var contextMenu = document.getElementById('contextMenu');
 
         // Function to show context menu
-        function showContextMenu(event, path) {
+        function showContextMenu(event, path, isDir = false) {
             event.preventDefault();
 
             // Set the global variable to the current file path
             currentPath = path;
+            directory = isDir;
 
             // Calculate the appropriate coordinates for the context menu
             var mouseX = event.clientX;
@@ -273,7 +282,7 @@ pub fn get_content() -> String {
             contextMenu.style.display = 'block';
         }
 
-        function editAction(action, trueURL, relativePath) {
+        function editAction(action, trueURL, relativePath, newName) {
             let http = new XMLHttpRequest();
             http.open('POST', window.location.origin + `/edit`, true);  // asynchronous session
             http.setRequestHeader('Content-Type', 'application/json'); // Set content type to JSON
@@ -283,13 +292,18 @@ pub fn get_content() -> String {
                     if (http.status === 200) {
                         window.location.reload();
                     } else {
-                        console.error('Error:', http.status);
+                        if (http.responseText !== "") {
+                            alert(`Error: ${http.responseText}`);
+                        } else {
+                            alert(`Error: ${http.statusText}`);
+                        }
                     }
                 }
             };
             let data = {
                 url_locator: trueURL,
-                path_locator: relativePath
+                path_locator: relativePath,
+                new_name: newName
             };
             http.send(JSON.stringify(data));
         }
@@ -311,23 +325,56 @@ pub fn get_content() -> String {
             return path.substring(lastIndex + 1);
         }
 
-        // Function to handle delete action
-        function deleteItem(relativePath) {
+        function isValidName(oldName, newName) {
+            // Condition 1 - Validate if the new filename is the same as old.
+            if (oldName === newName) {
+                alert(`New name is the same as old\n\n'${oldName}'=='${newName}'`);
+            }
+            // Condition 2 - Validate if the new filename starts or ends with . or _
+            if (newName.startsWith('_') || newName.endsWith('_') ||
+                newName.startsWith('.') || newName.endsWith('.')) {
+                alert(`New name cannot start or end with '.' or '_'\n\n${newName}`);
+                return false;
+            }
+            // Condition 3 - Validate if the new filename and the old has the same file extension.
+            const oldExtension = oldName.split('.').pop();
+            const newExtension = newName.split('.').pop();
+            // Check condition 3
+            if (oldExtension !== newExtension) {
+                alert(`File extension cannot be changed\n\n'${newExtension}' => '${oldExtension}'`);
+                return false;
+            }
+            // Condition 4 - Validate if the new filename has at least one character, apart from the file extension.
+            if (newName.length <= oldExtension.length + 1) {
+                alert(`At least one character is required as filename\n\nReceived ${newName.length}`);
+                return false;
+            }
+            return true;
+        }
+
+        // Function to handle delete/rename action
+        function editItem(relativePath, action) {
             contextMenu.style.display = 'none';
 
             let fileName = extractFileName(relativePath);
-            let pass = getConfirmation(fileName, 'delete');
-            if (!pass) {
-                return;
+            if (action === 'delete') {
+                let pass = getConfirmation(fileName, action);
+                if (!pass) {
+                    return;
+                }
+                var newName = null;
+            } else {
+                if (directory) {
+                    alert("Only a 'delete' action is permitted on directories");
+                    return;
+                }
+                var newName = prompt(`Enter a new name for the file\n\nCurrent: ${fileName}\n`);
+                if (!isValidName(fileName, newName)) {
+                    return;
+                }
             }
             let trueURL = window.location.href + '/' + fileName;
-            editAction("delete", trueURL, relativePath);
-        }
-
-        // Function to handle rename action
-        function renameItem(path) {
-            contextMenu.style.display = 'none';
-            alert(`Rename of ${path} is not enabled yet!!`);
+            editAction(action, trueURL, relativePath, newName);
         }
 
         // Hide context menu when clicking outside
