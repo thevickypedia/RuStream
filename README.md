@@ -62,21 +62,25 @@ curl -o RuStream-Windows-x86_64.zip -LH "Accept: application/octet-stream" "http
 **Mandatory**
 - **authorization**: Dictionary of key-value pairs with `username` as key and `password` as value.
 - **media_source**: Source path for the files to be streamed.
-> Files starting with `_` _(underscore)_ and `.` _(dot)_ will be ignored
+  > Files starting/ending with `_` _(underscore)_ and `.` _(dot)_ will be ignored
 
 **Optional**
+- **debug**: Boolean flag to enable debug level logging. Defaults to `false`
+- **utc_logging**: Boolean flag to set timezone to UTC in the output logs. Defaults to `true`
 - **media_host**: IP address to host the server. Defaults to `127.0.0.1` / `localhost`
 - **media_port**: Port number to host the application. Defaults to `8000`
 - **session_duration**: Time _(in seconds)_ each authenticated session should last. Defaults to `3600`
 - **file_formats**: Vector of supported file formats. Defaults to `[mp4, mov, jpg, jpeg]`
 - **workers**: Number of workers to spin up for the server. Defaults to the number of physical cores.
 - **max_connections**: Maximum number of concurrent connections per worker. Defaults to `3`
+- **max_payload_size**: Maximum size of files that can be uploaded from the UI. Defaults to `100 MB`
+  > Input should be in the format, `10 MB`, `3 GB` - _inputs are case insensitive_
 - **websites**: Vector of websites (_supports regex_) to add to CORS configuration. _Required only if tunneled via CDN_
 - **key_file**: Path to the private key file for SSL certificate. Defaults to `None`
 - **cert_file**: Path to the full chain file for SSL certificate. Defaults to `None`
 - **secure_session**: Boolean flag to secure the cookie `session_token`. Defaults to `false`
-> If `SECURE_SESSION` is to set to `true`, the cookie `session_token` will only be sent via HTTPS<br>
-> This means that the server can **ONLY** be hosted via `HTTPS` or `localhost`
+  > If `secure_session` is to set to `true`, the cookie `session_token` will only be sent via HTTPS<br>
+  > This means that the server can **ONLY** be hosted via `HTTPS` or `localhost`
 
 > Checkout [GitHub Wiki][gh-wiki-env] for more information about environment variables and `dotenv` usage.
 
