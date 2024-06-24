@@ -13,7 +13,7 @@ env:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: thevickypedia-lite
     permissions:
       contents: write
     outputs:
@@ -117,32 +117,24 @@ jobs:
       matrix:
         platform:
           - release_for: Linux-x86_64
-            os: ubuntu-20.04
-            target: x86_64-unknown-linux-gnu
+            os: linux-amd64
             bin: ${{ needs.release.outputs.bin-name }}
             name: ${{ needs.release.outputs.pkg-name }}-Linux-x86_64.tar.gz
-            command: build
 
           - release_for: Windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
+            os: windows-amd64
             bin: ${{ needs.release.outputs.bin-name }}.exe
             name: ${{ needs.release.outputs.pkg-name }}-Windows-x86_64.zip
-            command: build
 
           - release_for: macOS-x86_64
-            os: macOS-latest
-            target: x86_64-apple-darwin
+            os: darwin-amd64
             bin: ${{ needs.release.outputs.bin-name }}
             name: ${{ needs.release.outputs.pkg-name }}-Darwin-x86_64.tar.gz
-            command: build
 
-          - release_for: RaspberryPi
-            os: ubuntu-20.04
-            target: arm-unknown-linux-gnueabihf
+          - release_for: macOS-arm64
+            os: darwin-arm64
             bin: ${{ needs.release.outputs.bin-name }}
-            name: ${{ needs.release.outputs.pkg-name }}-RaspberryPi.tar.gz
-            command: build
+            name: ${{ needs.release.outputs.pkg-name }}-Darwin-x86_64.tar.gz
 
     name: Upload asset for ${{ matrix.platform.release_for }}
     runs-on: ${{ matrix.platform.os }}
@@ -162,22 +154,30 @@ jobs:
           printf '*%.0s' {1..60} && printf "\n"
           echo "Updated rust version: $(rustc --version)"
           printf '*%.0s' {1..60} && printf "\n"
+        shell: bash
 
       - name: Install OpenSSL static for Windows
         # https://github.com/sfackler/rust-openssl/issues/1086
-        if: ${{ matrix.platform.os == 'windows-latest' }}
+        if: startsWith(matrix.platform.os, 'windows')
         run: |
-          mkdir \Tools
+          if (-Not (Test-Path -Path \Tools)) {
+            mkdir \Tools
+          }
           cd \Tools
-          git clone https://github.com/Microsoft/vcpkg.git
+          if (-Not (Test-Path -Path .\vcpkg)) {
+            git clone https://github.com/Microsoft/vcpkg.git
+          }
           cd vcpkg
           echo ("vcpkg_dir=" + $pwd) >> $env:GITHUB_ENV
-          .\bootstrap-vcpkg.bat
+          if (-Not (Test-Path -Path .\vcpkg.exe)) {
+            .\bootstrap-vcpkg.bat
+          }
           .\vcpkg.exe install openssl:x64-windows-static
+        shell: pwsh
 
       - name: Build
         run: |
-          if [ "${{ matrix.platform.os }}" == "windows-latest" ]; then
+          if [[ "${{ matrix.platform.os }}" =~ ^windows ]]; then
             echo "Setting vcpkg env vars for OpenSSL in Windows"
             export OPENSSL_DIR="${{ env.vcpkg_dir }}\installed\x64-windows-static"
             export OPENSSL_STATIC="Yes"
@@ -188,7 +188,7 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ matrix.platform.os }}" == "windows-latest" ]; then
+          if [[ "${{ matrix.platform.os }}" =~ ^windows ]]; then
             echo "Setting vcpkg env vars for OpenSSL in Windows"
             export OPENSSL_DIR="${{ env.vcpkg_dir }}\installed\x64-windows-static"
             export OPENSSL_STATIC="Yes"
@@ -197,19 +197,21 @@ jobs:
           cargo test --no-run
         shell: bash
 
-      - name: Copy Artifacts (Windows)
-        if: ${{ matrix.platform.os == 'windows-latest' }}
+      - name: Compress and Copy Artifact (Windows)
+        if: startsWith(matrix.platform.os, 'windows')
         run: |
           mkdir -p ${{ needs.release.outputs.pkg-name }}
           cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
           Compress-Archive -DestinationPath ${{ matrix.platform.name }} -Path ${{ needs.release.outputs.pkg-name }}/
+        shell: pwsh
 
-      - name: Copy Artifacts (macOS/Ubuntu)
-        if: ${{ matrix.platform.os != 'windows-latest' }}
+      - name: Compress and Copy Artifact (macOS/Ubuntu)
+        if: "!startsWith(matrix.platform.os, 'windows')"
         run: |
           mkdir -p ${{ needs.release.outputs.pkg-name }}
           cp target/release/${{ matrix.platform.bin }} ${{ needs.release.outputs.pkg-name }}/${{ matrix.platform.bin }}
           tar -zcvf ${{ matrix.platform.name }} ${{ needs.release.outputs.pkg-name }}/
+        shell: bash
 
       - name: Upload Asset to Release
         run: |
@@ -222,7 +224,7 @@ jobs:
   publish-crate:
     needs: upload_assets
     if: needs.release.outputs.release-flag == 'true'
-    runs-on: ubuntu-latest
+    runs-on: thevickypedia-lite
     steps:
       - uses: actions/checkout@v4
       - name: Update Rust
@@ -234,6 +236,7 @@ jobs:
           printf '*%.0s' {1..60} && printf "\n"
           echo "Updated rust version: $(rustc --version)"
           printf '*%.0s' {1..60} && printf "\n"
+        shell: bash
       - name: Release Crate
         run: |
           cargo login ${{ secrets.CRATES_TOKEN }}
