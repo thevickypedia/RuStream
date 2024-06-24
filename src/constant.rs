@@ -8,6 +8,7 @@ pub static IMAGE_FORMATS: [&str; 7] = ["jpeg", "jpg", "png", "gif", "bmp", "svg"
 pub static SECURE_INDEX: &str = "SECURE_INDEX";
 
 /// Struct to store the cargo information gathered at compile time using the `env!` macro.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct MetaData {
     pub crate_name: String,

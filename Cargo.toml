@@ -1,6 +1,6 @@
 [package]
 name = "RuStream"
-version = "1.3.0-a"
+version = "1.3.0"
 description = "Self-hosted Streaming Engine, that can render media files via authenticated sessions."
 license = "MIT"
 documentation = "https://docs.rs/RuStream"
@@ -26,26 +26,26 @@ path = "src/main.rs"
 rustdoc-args = ["--document-private-items"]
 
 [dependencies]
-actix-rt = "2.9.0"
-actix-web = { version = "4.5.1", features = ["openssl"] }
-actix-files = "0.6.5"
+actix-rt = "2.10.0"
+actix-web = { version = "4.8.0", features = ["openssl"] }
+actix-files = "0.6.6"
 actix-cors = "0.7.0"
-actix-multipart = "0.6.1"
-serde = { version = "1.0.196", features = ["derive"] }
-serde_json = "1.0.113"
-chrono = { version = "0.4.33", features = ["serde"] }
-env_logger = "0.11.1"
-log = "0.4.20"
-base64 = "0.22.0"
+actix-multipart = "0.6.2"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.117"
+chrono = { version = "0.4.38", features = ["serde"] }
+env_logger = "0.11.3"
+log = "0.4.21"
+base64 = "0.22.1"
 sha2 = "0.10.8"
 rand = "0.8.5"
-fernet = "0.2.1"
-minijinja = { version =  "1.0.12", features = ["loader"] }
-url = "2.5.0"
-regex = "1.5"
-walkdir = "2.3.2"
-openssl = "0.10"
+fernet = "0.2.2"
+minijinja = { version =  "2.0.2", features = ["loader"] }
+url = "2.5.2"
+regex = "1.10.5"
+walkdir = "2.5.0"
+openssl = "0.10.64"
 dotenv = "0.15.0"
 futures-util = "0.3.30"
 [target.'cfg(target_os = "linux")'.dependencies]
-openssl = { version = "0.10", features = ["vendored"] }
+openssl = { version = "0.10.64", features = ["vendored"] }
