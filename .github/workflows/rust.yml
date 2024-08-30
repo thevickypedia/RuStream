@@ -47,7 +47,8 @@ jobs:
           echo "Latest Package Version: $latest_version"
           version_exists=false
           for version in $(echo "$versions" | jq -r '.[]'); do
-            if [ "$version" == "$current_version" ]; then
+            trimmed=$(echo "$version" | awk '{$1=$1};1')
+            if [ "$trimmed" == "$current_version" ]; then
               version_exists=true
               break
             fi
@@ -78,7 +79,9 @@ jobs:
           done
 
           echo "Release Tag: $release_tag"
+          latest_tag=$(curl -s -L https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           commit_msg="$(git log -1 --pretty=%B | sed ':a;N;$!ba;s/\n/\\n/g')"
+          commit_msg+="\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/$latest_tag...$release_tag"
           release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
           response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
             -d "$release_data" \
