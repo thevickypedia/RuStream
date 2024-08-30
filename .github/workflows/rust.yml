@@ -37,7 +37,6 @@ jobs:
           echo "bin_name=$bin_name" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Set Release Flag  # Release flag is set only for a push on main branch
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         id: set-release-flag
         run: |
           current_version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
@@ -65,34 +64,18 @@ jobs:
           echo "pkg_version=$current_version" >> $GITHUB_ENV
         shell: bash
       - name: Create New Release
+        if: env.release == 'true'
         id: create-release
         run: |
-          if [ "${{ env.release }}" == "true" ]; then
-            echo "Creating PROD release"
-            release_tag="v${{ env.pkg_version }}"
-            cargo_prerelease=("alpha" "beta" "rc")
-            prerelease=false
-            for cargo_pre in "${cargo_prerelease[@]}"; do
-              if [[ $pkg_version == *"$cargo_pre"* ]]; then
-                prerelease=true
-                break
-              fi
-            done
-          else
-            echo "Creating TEST release"
-            epoch="$(date +%s)"
-            current_version=${{ env.pkg_version }}
-            echo "Current version: $current_version"
-            version_as_int=$((10#${current_version//./}))
-            ((version_as_int++))
-            major=$((version_as_int / 100))
-            minor=$((version_as_int % 100 / 10))
-            patch=$((version_as_int % 10))
-            new_version="$major.$minor.$patch"
-            echo "Bumped version to: $new_version"
-            release_tag="v${new_version}-prerelease-${epoch}"
-            prerelease=true
-          fi
+          release_tag="v${{ env.pkg_version }}"
+          cargo_prerelease=("alpha" "beta" "rc")
+          prerelease=false
+          for cargo_pre in "${cargo_prerelease[@]}"; do
+            if [[ $pkg_version == *"$cargo_pre"* ]]; then
+              prerelease=true
+              break
+            fi
+          done
 
           echo "Release Tag: $release_tag"
           commit_msg="$(git log -1 --pretty=%B | sed ':a;N;$!ba;s/\n/\\n/g')"
@@ -137,6 +120,7 @@ jobs:
             name: ${{ needs.release.outputs.pkg-name }}-Darwin-x86_64.tar.gz
 
     name: Upload asset for ${{ matrix.platform.release_for }}
+    if: needs.release.outputs.release-flag == 'true'
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: write
@@ -222,7 +206,9 @@ jobs:
         shell: bash
 
   publish-crate:
-    needs: upload_assets
+    needs:
+      - release
+      - upload_assets
     if: needs.release.outputs.release-flag == 'true'
     runs-on: thevickypedia-lite
     steps:
