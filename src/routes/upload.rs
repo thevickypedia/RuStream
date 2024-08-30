@@ -56,7 +56,21 @@ pub async fn save_files(request: HttpRequest,
     while let Some(item) = payload.next().await {
         match item {
             Ok(mut field) => {
-                let filename = field.content_disposition().get_filename().unwrap();
+                let filename = match field.content_disposition() {
+                    Some(content_disposition) => match content_disposition.get_filename() {
+                        Some(filename) => filename,
+                        None => {
+                            let error = "Filename not found in content disposition";
+                            log::error!("{}", &error);
+                            return HttpResponse::BadRequest().json(error);
+                        }
+                    },
+                    None => {
+                        let error = "Content disposition not found";
+                        log::error!("{}", &error);
+                        return HttpResponse::BadRequest().json(error);
+                    }
+                };
                 let mut destination = File::create(&upload_path.join(filename)).unwrap();
                 log::info!("Downloading '{}' {}- uploaded by '{}'", &filename, secure_str, &auth_response.username);
                 while let Some(fragment) = field.next().await {

@@ -6,7 +6,7 @@ license = "MIT"
 documentation = "https://docs.rs/RuStream"
 homepage = "https://github.com/thevickypedia/RuStream"
 repository = "https://github.com/thevickypedia/RuStream"
-rust-version = "1.76.0"
+rust-version = "1.80.0"
 keywords = ["asynchronous-server", "self-hosted", "streaming-engine", "symmetric-encryption", "fernet-cryptography"]
 categories = ["web-programming::http-server", "asynchronous", "algorithms", "authentication", "rendering::engine"]
 include = ["/src", "LICENSE"]
@@ -27,22 +27,22 @@ rustdoc-args = ["--document-private-items"]
 
 [dependencies]
 actix-rt = "2.10.0"
-actix-web = { version = "4.8.0", features = ["openssl"] }
+actix-web = { version = "4.9.0", features = ["openssl"] }
 actix-files = "0.6.6"
 actix-cors = "0.7.0"
-actix-multipart = "0.6.2"
-serde = { version = "1.0.203", features = ["derive"] }
-serde_json = "1.0.117"
+actix-multipart = "0.7.2"
+serde = { version = "1.0.209", features = ["derive"] }
+serde_json = "1.0.127"
 chrono = { version = "0.4.38", features = ["serde"] }
-env_logger = "0.11.3"
-log = "0.4.21"
+env_logger = "0.11.5"
+log = "0.4.22"
 base64 = "0.22.1"
 sha2 = "0.10.8"
 rand = "0.8.5"
 fernet = "0.2.2"
-minijinja = { version =  "2.0.2", features = ["loader"] }
+minijinja = { version =  "2.2.0", features = ["loader"] }
 url = "2.5.2"
-regex = "1.10.5"
+regex = "1.10.6"
 walkdir = "2.5.0"
 openssl = "0.10.64"
 dotenv = "0.15.0"
