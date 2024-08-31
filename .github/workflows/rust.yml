@@ -18,6 +18,7 @@ jobs:
       contents: write
     outputs:
       release-id: ${{ steps.create-release.outputs.release_id }}
+      release-tag: ${{ steps.create-release.outputs.release_tag }}
       release-flag: ${{ steps.set-release-flag.outputs.release_flag }}
       pkg-name: ${{ steps.get-package-info.outputs.pkg_name }}
       bin-name: ${{ steps.get-package-info.outputs.bin_name }}
@@ -47,7 +48,8 @@ jobs:
           echo "Latest Package Version: $latest_version"
           version_exists=false
           for version in $(echo "$versions" | jq -r '.[]'); do
-            if [ "$version" == "$current_version" ]; then
+            trimmed=$(echo "$version" | awk '{$1=$1};1')
+            if [ "$trimmed" == "$current_version" ]; then
               version_exists=true
               break
             fi
@@ -68,6 +70,7 @@ jobs:
         id: create-release
         run: |
           release_tag="v${{ env.pkg_version }}"
+          echo "release_tag=v${{ env.pkg_version }}" >> "$GITHUB_OUTPUT"
           cargo_prerelease=("alpha" "beta" "rc")
           prerelease=false
           for cargo_pre in "${cargo_prerelease[@]}"; do
@@ -78,7 +81,9 @@ jobs:
           done
 
           echo "Release Tag: $release_tag"
+          latest_tag=$(curl -s -L https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           commit_msg="$(git log -1 --pretty=%B | sed ':a;N;$!ba;s/\n/\\n/g')"
+          commit_msg+="\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/$latest_tag...$release_tag"
           release_data="{\"tag_name\":\"$release_tag\",\"name\":\"$release_tag\",\"body\":\"$commit_msg\",\"draft\":false,\"prerelease\":$prerelease}"
           response=$(curl -X POST -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
             -d "$release_data" \
@@ -117,7 +122,7 @@ jobs:
           - release_for: macOS-arm64
             os: darwin-arm64
             bin: ${{ needs.release.outputs.bin-name }}
-            name: ${{ needs.release.outputs.pkg-name }}-Darwin-x86_64.tar.gz
+            name: ${{ needs.release.outputs.pkg-name }}-Darwin-arm64.tar.gz
 
     name: Upload asset for ${{ matrix.platform.release_for }}
     if: needs.release.outputs.release-flag == 'true'
@@ -126,8 +131,20 @@ jobs:
       contents: write
 
     steps:
+      - name: Release ID Propagation
+        run: |
+          if [ -n "${{ needs.release.outputs.release-id }}" ]; then
+            echo "Release ID propagated: ${{ needs.release.outputs.release-id }}"
+          else
+            echo "Release ID propagation failed. Exiting.."
+            exit 1
+          fi
+          echo "start_time=$(date +%s)" >> "$GITHUB_ENV"
+        shell: bash
+
       - name: Checkout Repo
         uses: actions/checkout@v4
+
       - name: Update Rust
         # print it with style
         run: |
@@ -203,6 +220,16 @@ jobs:
           -H "Content-Type: application/octet-stream" \
           --data-binary @"${{ matrix.platform.name }}" \
           "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.release.outputs.release-id }}/assets?name=${{ matrix.platform.name }}"
+        shell: bash
+
+      - name: Runtime Analyzer
+        run: |
+          start=${{ env.start_time }}
+          end=$(date +%s)
+          time_taken=$((end-start))
+          url="${{ github.server_url }}/${{ github.repository }}/releases/download/${{ needs.release.outputs.release-tag }}/${{ matrix.platform.name }}"
+          hyperlink="[${{ matrix.platform.release_for }}]($url)"
+          echo "🚀 Built for $hyperlink in $time_taken seconds" >> $GITHUB_STEP_SUMMARY
         shell: bash
 
   publish-crate:
