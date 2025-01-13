@@ -120,7 +120,7 @@ jobs:
           - release_for: macOS-arm64
             os: darwin-arm64
             bin: ${{ needs.release.outputs.bin-name }}
-            name: ${{ needs.release.outputs.pkg-name }}-Darwin-x86_64.tar.gz
+            name: ${{ needs.release.outputs.pkg-name }}-Darwin-arm64.tar.gz
 
     name: Upload asset for ${{ matrix.platform.release_for }}
     if: needs.release.outputs.release-flag == 'true'
