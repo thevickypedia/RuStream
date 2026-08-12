@@ -1,0 +1,19 @@
+FROM ubuntu:24.04
+
+WORKDIR /app
+
+RUN groupadd -r rustream && useradd -r -g rustream rustream \
+    && mkdir -p /data/media \
+    && chown -R rustream:rustream /data/media \
+    && apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY rustream/rustream /usr/local/bin/rustream
+
+RUN chmod +x /usr/local/bin/rustream
+
+USER rustream
+
+EXPOSE 8000
+
+ENTRYPOINT ["/usr/local/bin/rustream"]

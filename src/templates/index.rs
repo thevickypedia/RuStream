@@ -202,9 +202,11 @@ pub fn get_content() -> String {
         let hash = await CalculateHash(hex_user, hex_pass, timestamp)
         let authHeaderValue = hex_user + ',' + hash + ',' + timestamp;
         let origin = window.location.origin
+        const BASE_URL = "{{ base_url }}";
+        function prefixed(path) { return BASE_URL === "/" ? path : BASE_URL + path; }
         $.ajax({
             method: "POST",
-            url: origin.concat("/login"),
+            url: origin.concat(prefixed("/login")),
             headers: {
                 'accept': 'application/json',
                 'Authorization': btoa(authHeaderValue)

@@ -1,0 +1,14 @@
+services:
+  rustream:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rustream
+    restart: unless-stopped
+    user: "${UID:-1000}:${GID:-1000}"
+    env_file:
+      - .env
+    ports:
+      - "${media_port:-8000}:${media_port:-8000}"
+    volumes:
+      - ./media:/data/media

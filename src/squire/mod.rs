@@ -6,12 +6,12 @@ pub mod startup;
 pub mod secure;
 /// Module for custom functions that logs connection information and builds custom error responses.
 pub mod custom;
-/// Module for the functions that yield an ASCII art to print during startup.
-pub mod ascii_art;
 /// Module for the CORS middleware configuration.
 pub mod middleware;
 /// Module for the function that converts the subtitles from `srt` to `vtt` file format.
 pub mod subtitles;
+/// Module for on-demand media conversion using ffmpeg.
+pub mod ffmpeg;
 /// Module for the functions that scans the source and renders the filenames as a struct.
 pub mod content;
 /// Module that handles the authentication and

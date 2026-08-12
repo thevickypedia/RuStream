@@ -1,12 +1,12 @@
 [package]
 name = "RuStream"
-version = "1.3.1"
+version = "1.7.0"
 description = "Self-hosted Streaming Engine, that can render media files via authenticated sessions."
 license = "MIT"
 documentation = "https://docs.rs/RuStream"
-homepage = "https://github.com/thevickypedia/RuStream"
-repository = "https://github.com/thevickypedia/RuStream"
-rust-version = "1.80.0"
+homepage = "https://github.com/Veucci/RuStream"
+repository = "https://github.com/Veucci/RuStream"
+rust-version = "1.88.0"
 keywords = ["asynchronous-server", "self-hosted", "streaming-engine", "symmetric-encryption", "fernet-cryptography"]
 categories = ["web-programming::http-server", "asynchronous", "algorithms", "authentication", "rendering::engine"]
 include = ["/src", "LICENSE"]

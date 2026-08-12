@@ -1,6 +1,5 @@
 use std::{path, thread};
 use std::collections::HashMap;
-use std::net::ToSocketAddrs;
 
 /// Represents the configuration parameters for RuStream.
 pub struct Config {
@@ -17,6 +16,8 @@ pub struct Config {
     pub media_host: String,
     /// Port number for hosting the application.
     pub media_port: u16,
+    /// URL path prefix under which the application is served.
+    pub base_url: String,
     /// Duration of a session in seconds.
     pub session_duration: i64,
     /// List of supported file formats.
@@ -33,6 +34,8 @@ pub struct Config {
 
     /// Boolean flag to restrict session_token to be sent only via HTTPS
     pub secure_session: bool,
+    /// Boolean flag to enable on-demand ffmpeg conversions.
+    pub ffmpeg_enabled: bool,
 
     /// Path to the private key file for SSL certificate
     pub key_file: path::PathBuf,
@@ -49,38 +52,40 @@ pub fn default_utc_logging() -> bool { true }
 /// Returns the default value for SSL files.
 pub fn default_ssl() -> path::PathBuf { path::PathBuf::new() }
 
-/// Returns the default media host based on the local machine's IP address.
+pub fn default_authorization() -> HashMap<String, String> {
+    HashMap::from([("user".to_string(), "SuperSecurePass".to_string())])
+}
+
+pub fn default_media_source() -> path::PathBuf {
+    path::PathBuf::from("/data/media")
+}
+
+/// Returns the default media host (0.0.0.0)
 pub fn default_media_host() -> String {
-    let hostname = "localhost";
-    match (hostname, 0).to_socket_addrs() {
-        Ok(mut addrs) => {
-            if let Some(addr) = addrs.find(|a| a.is_ipv4()) {
-                return addr.ip().to_string();
-            }
-        }
-        Err(err) => {
-            log::error!("Error resolving hostname: {}", err);
-        }
-    }
-    "localhost".to_string()
+    "0.0.0.0".to_string()
 }
 
 /// Returns the default media port (8000)
 pub fn default_media_port() -> u16 { 8000 }
 
+/// Returns the default base URL path prefix ("/").
+pub fn default_base_url() -> String { "/".to_string() }
+
 /// Returns the default session duration (3600 seconds)
 pub fn default_session_duration() -> i64 { 3600 }
 
 /// Returns the file formats supported by default.
+///
+/// A single `*` entry acts as a wildcard, making all files eligible for listing.
 pub fn default_file_formats() -> Vec<String> {
-    vec!["mp4".to_string(), "mov".to_string(), "jpg".to_string(), "jpeg".to_string()]
+    vec!["*".to_string()]
 }
 
-/// Returns the default number of worker threads (half of logical cores)
+/// Returns the default number of worker threads (half of logical cores, at least one)
 pub fn default_workers() -> usize {
     let logical_cores = thread::available_parallelism();
     match logical_cores {
-        Ok(cores) => cores.get() / 2,
+        Ok(cores) => (cores.get() / 2).max(1),
         Err(err) => {
             log::error!("{}", err);
             3
@@ -99,3 +104,6 @@ pub fn default_websites() -> Vec<String> { Vec::new() }
 
 /// Returns the default value for secure_session
 pub fn default_secure_session() -> bool { false }
+
+/// Returns the default value for ffmpeg_enabled (conversion is off unless explicitly enabled)
+pub fn default_ffmpeg_enabled() -> bool { false }

@@ -46,31 +46,17 @@ pub fn get_content() -> String {
             font-size: 16px;
             cursor: pointer;
         }
-        .upload {
-            position: absolute;
-            top: 3.8%;
-            right: 313px;
-            border: none;
-            padding: 10px 14px;
-            font-size: 16px;
-            cursor: pointer;
+        .navbar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 1% 1.5%;
         }
-        .home {
-            position: absolute;
-            top: 3.8%;
-            right: 217px;
+        .navbar button {
             border: none;
-            padding: 10px 14px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .back {
-            position: absolute;
-            top: 3.8%;
-            right: 132px;
-            border: none;
-            padding: 10px 14px;
-            font-size: 16px;
+            padding: 8px 14px;
+            font-size: 15px;
             cursor: pointer;
         }
         body {
@@ -147,38 +133,147 @@ pub fn get_content() -> String {
         }
     </style>
     <style>
-        .dropbtn {
+        .user-actions {
             position: absolute;
             top: 3.8%;
             right: 30px;
-            padding: 10px 24px;
-            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-actions button {
             border: none;
+            padding: 8px 14px;
+            font-size: 15px;
             cursor: pointer;
         }
-        .dropdown {
-            position: absolute;
-            top: 3.8%;
-            right: 30px;
-            padding: 10px 24px;
-            display: inline-block;
-        }
-        .dropdown-content {
+    </style>
+    <!-- Upload dialog CSS -->
+    <style>
+        .upload-overlay {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            align-items: center;
+            justify-content: center;
+            z-index: 998;
+        }
+        .upload-modal {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 24px;
+            width: 92%;
+            max-width: 440px;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .upload-modal .close {
             position: absolute;
-            top: 40px;  /* Distance from the user icon button */
-            right: 30px;
-            width: 160px;
-            min-width: auto;
-            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);  /* Basically, black with 20% opacity */
-            z-index: 1;
+            top: 10px;
+            right: 14px;
+            background: transparent !important;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666666 !important;
         }
-        .dropdown-content a {
-            padding: 12px 16px;
-            text-decoration: none;
+        .upload-modal h3 {
+            margin: 0 0 4px;
+            text-align: center;
+            color: #000000 !important;
+        }
+        .upload-modal p.sub {
+            margin: 0 0 14px;
+            text-align: center;
+            color: #666666 !important;
+            font-size: 13px;
+        }
+        .drop-zone {
+            border: 1px dashed #999999;
+            border-radius: 8px;
+            padding: 22px 12px;
+            text-align: center;
+            color: #555555;
+            background: #fafafa;
+            cursor: pointer;
+        }
+        .drop-zone.drag-over {
+            background: #eeeeee;
+            border-color: #000000;
+        }
+        .drop-zone p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            color: #555555 !important;
+        }
+        .drop-zone input {
+            display: none;
+        }
+        .drop-zone .browse {
+            margin-top: 12px;
+            background: #000000 !important;
+            color: #ffffff !important;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .upload-list {
+            display: none;
+            margin: 14px 0 0;
+            padding: 0;
+            text-align: left;
+        }
+        .upload-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eeeeee;
+            font-size: 14px;
+            color: #000000;
+        }
+        .upload-list li img {
+            width: 24px;
+            height: 24px;
+        }
+        .upload-list li .name {
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #000000 !important;
+        }
+        .upload-list li .pct {
+            color: #666666 !important;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .upload-list li .progress {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .upload-list li .progress span {
             display: block;
+            height: 100%;
+            width: 0%;
+            background: #000000;
+            transition: width 0.3s;
         }
-        .dropdown:hover .dropdown-content {display: block;}
+        .upload-list li svg.cross {
+            cursor: pointer;
+            fill: #666666;
+            flex-shrink: 0;
+        }
     </style>
     <noscript>
         <style>
@@ -201,17 +296,29 @@ pub fn get_content() -> String {
     </noscript>
 </head>
 <body>
-    <button class="upload" onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
-    <button class="home" onclick="goHome()"><i class="fa fa-home"></i> Home</button>
-    <button class="back" onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
-    <div class="dropdown">
-        <button class="dropbtn"><i class="fa fa-user"></i></button>
-        <div class="dropdown-content">
-            <a onclick="goProfile()" style="cursor: pointer;"><i class="fa-solid fa-user-lock"></i> {{ user }}</a>
-            <a onclick="logOut()" style="cursor: pointer"><i class="fa fa-sign-out"></i> logout</a>
+    <div class="navbar">
+        <button onclick="goHome()"><i class="fa fa-home"></i> Home</button>
+        <button onclick="goBack()"><i class="fa fa-backward"></i> Back</button>
+        <button onclick="upload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
+    </div>
+    <div class="user-actions">
+        <button onclick="goProfile()"><i class="fa-solid fa-user"></i> {{ user }}</button>
+        <button onclick="logOut()"><i class="fa-solid fa-sign-out"></i> Logout</button>
+    </div>
+    <div id="uploadModal" class="upload-overlay">
+        <div class="upload-modal">
+            <button class="close" onclick="closeUploadModal()" title="Close"><i class="fa-solid fa-xmark"></i></button>
+            <h3>Upload Files</h3>
+            <p class="sub">PDF, Images, Videos and Subtitles are allowed</p>
+            <div class="drop-zone" id="dropZone">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 28px; color: #666666;"></i>
+                <p>Drag &amp; drop files here</p>
+                <button class="browse" type="button">Browse Files</button>
+                <input type="file" id="uploadInput" multiple>
+            </div>
+            <ul class="upload-list" id="uploadList"></ul>
         </div>
     </div>
-    <br><br><br>
     <h1>{{ media_title }}</h1>
     {% if render_image %}
         <img id="image-source" src="" onclick="fullScreen()">
@@ -284,20 +391,130 @@ pub fn get_content() -> String {
         {% endif %}
     </script>
     <script>
+        const BASE_URL = "{{ base_url }}";
+        function prefixed(path) { return BASE_URL === "/" ? path : BASE_URL + path; }
         function goHome() {
-            window.location.href = "/home";
+            window.location.href = prefixed("/home");
         }
         function goProfile() {
-            window.location.href = '/profile';
+            window.location.href = prefixed('/profile');
         }
         function logOut() {
-            window.location.href = "/logout";
+            window.location.href = prefixed("/logout");
         }
         function upload() {
-            window.location.href = "/upload";
+            openUploadModal();
         }
         function goBack() {
             window.history.back();
+        }
+    </script>
+    <script>
+        let uploadInput = document.getElementById('uploadInput');
+        let dropZone = document.getElementById('dropZone');
+        let uploadList = document.getElementById('uploadList');
+
+        let uploadsDone = 0;
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').style.display = 'flex';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            if (uploadsDone > 0) {
+                window.location.reload();
+            }
+        }
+
+        // Check the file type
+        function typeValidation(type) {
+            let splitType = type.split('/')[0]
+            if (type === 'application/pdf' || type === 'text/vtt' || splitType === 'image' || splitType === 'video') {
+                return true
+            }
+        }
+
+        function handleUploadFiles(files) {
+            [...files].forEach((file) => {
+                if (typeValidation(file.type)) {
+                    uploadFile(file)
+                }
+            })
+        }
+
+        // upload file function
+        function uploadFile(file) {
+            let li = document.createElement('li')
+            li.innerHTML = `
+                <img src="https://thevickypedia.github.io/open-source/images/icons/${iconSelector(file.type)}" alt="">
+                <div style="flex: 1; min-width: 0;">
+                    <div class="name">${file.name}</div>
+                    <div class="progress"><span></span></div>
+                </div>
+                <span class="pct">0%</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="cross" height="18" width="18"><path d="m5.979 14.917-.854-.896 4-4.021-4-4.062.854-.896 4.042 4.062 4-4.062.854.896-4 4.062 4 4.021-.854.896-4-4.063Z"/></svg>
+            `
+            uploadList.style.display = 'block'
+            uploadList.prepend(li)
+            let http = new XMLHttpRequest()
+            let data = new FormData()
+            data.append('file', file)
+            http.onload = () => {
+                if (http.status === 200) {
+                    // Successful response from the server
+                    li.querySelector('.pct').innerHTML = 'Done'
+                    li.querySelector('.progress span').style.width = '100%'
+                    li.querySelector('.cross').remove()
+                    uploadsDone += 1
+                } else {
+                    // Handle error responses
+                    alert('Error uploading file. Status:' + http.status);
+                    return false;
+                }
+            }
+            http.onerror = (error) => {
+                // Handle network errors
+                console.log(error);
+                alert('Network error during file upload.');
+                return false;
+            };
+            http.upload.onprogress = (e) => {
+                let percent_complete = (e.loaded / e.total) * 100
+                li.querySelector('.pct').innerHTML = Math.round(percent_complete) + '%'
+                li.querySelector('.progress span').style.width = percent_complete + '%'
+            }
+            http.open('POST', window.location.origin + prefixed('/upload'), true);  // asynchronous session
+            http.send(data)
+            li.querySelector('.cross').onclick = () => http.abort()
+            http.onabort = () => {
+                li.querySelector('.pct').innerHTML = 'ABORTED';
+                li.querySelector('.cross').remove();
+            }
+        }
+
+        // find icon for file
+        function iconSelector(type) {
+            let splitType = (type.split('/')[0] === 'application') ? type.split('/')[1] : type.split('/')[0];
+            return splitType + '.png'
+        }
+
+        uploadInput.onchange = () => {
+            handleUploadFiles(uploadInput.files)
+            uploadInput.value = ''
+        }
+        dropZone.onclick = () => uploadInput.click()
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        }
+        dropZone.ondragleave = () => dropZone.classList.remove('drag-over')
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over')
+            if (e.dataTransfer.files) {
+                handleUploadFiles(e.dataTransfer.files)
+            }
         }
     </script>
     <script>

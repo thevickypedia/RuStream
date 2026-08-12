@@ -33,16 +33,29 @@ pub async fn health() -> HttpResponse {
 /// # Returns
 ///
 /// Returns an `HttpResponse` with the index page as its body.
-#[get("/")]
-pub async fn root(request: HttpRequest,
-                  session: web::Data<Arc<constant::Session>>,
-                  metadata: web::Data<Arc<constant::MetaData>>,
-                  template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
+/// Renders the index/login page, also used for the base_url prefix entry point.
+pub async fn index_page(request: HttpRequest,
+                        session: web::Data<Arc<constant::Session>>,
+                        metadata: web::Data<Arc<constant::MetaData>>,
+                        config: web::Data<Arc<squire::settings::Config>>,
+                        template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
     let (_host, _last_accessed) = squire::custom::log_connection(&request, &session);
     let index = template.get_template("index").unwrap();
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
-        .body(index.render(minijinja::context!(version => &metadata.pkg_version)).unwrap())
+        .body(index.render(minijinja::context!(
+            version => &metadata.pkg_version,
+            base_url => &config.base_url
+        )).unwrap())
+}
+
+#[get("/")]
+pub async fn root(request: HttpRequest,
+                  session: web::Data<Arc<constant::Session>>,
+                  metadata: web::Data<Arc<constant::MetaData>>,
+                  config: web::Data<Arc<squire::settings::Config>>,
+                  template: web::Data<Arc<minijinja::Environment<'static>>>) -> HttpResponse {
+    index_page(request, session, metadata, config, template).await
 }
 
 /// Handles the profile endpoint, and returns an HTML response.
@@ -76,13 +89,9 @@ pub async fn profile(request: HttpRequest,
     if !last_accessed.is_empty() {
         let filepath = Path::new(&last_accessed);
         let extn = filepath.extension().unwrap().to_str().unwrap();
-        let name = filepath.iter().last().unwrap().to_string_lossy().to_string();
-        let path = format!("/stream/{}", &last_accessed);
-        let font = if last_accessed.contains(constant::SECURE_INDEX) {
-            "fa-solid fa-lock".to_string()
-        } else {
-            squire::content::get_file_font(extn)
-        };
+        let name = filepath.iter().next_back().unwrap().to_string_lossy().to_string();
+        let path = routes::join_path(&config.base_url, &format!("/stream/{}", last_accessed));
+        let font = squire::content::get_file_font(extn);
         access_map = HashMap::from([
             ("name", name), ("font", font), ("path", path)
         ]);
@@ -91,6 +100,7 @@ pub async fn profile(request: HttpRequest,
         .content_type("text/html; charset=utf-8")
         .body(index.render(minijinja::context!(
             version => &metadata.pkg_version,
+            base_url => &config.base_url,
             user => &auth_response.username,
             time_left => &auth_response.time_left,
             file => access_map,

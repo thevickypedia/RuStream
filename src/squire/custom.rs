@@ -26,7 +26,7 @@ pub fn log_connection(request: &HttpRequest, session: &constant::Session) -> (St
             log::info!("User agent: {}", user_agent.to_str().unwrap())
         }
     }
-    return (host.clone(), tracker.get(&host).map_or("".to_string(), |s| s.to_string()));
+    (host.clone(), tracker.get(&host).map_or("".to_string(), |s| s.to_string()))
 }
 
 /// Frames a custom response into an error page.

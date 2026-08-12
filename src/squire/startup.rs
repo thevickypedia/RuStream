@@ -2,7 +2,6 @@ use std;
 use std::io::Write;
 
 use chrono::{DateTime, Local, Utc};
-use walkdir::WalkDir;
 
 use crate::{constant, squire};
 use crate::squire::settings;
@@ -55,32 +54,22 @@ pub fn init_logger(debug: bool, utc: bool, crate_name: &String) {
 ///
 /// If the value is missing or if there is an error parsing the `HashMap`
 fn mandatory_vars() -> (std::collections::HashMap<String, String>, std::path::PathBuf) {
-    let authorization_str = match std::env::var("authorization") {
-        Ok(val) => val,
-        Err(_) => {
-            panic!(
-                "\nauthorization\n\texpected a HashMap, received null [value=missing]\n",
-            );
-        }
-    };
-    let authorization: std::collections::HashMap<String, String> =
-        match serde_json::from_str(&authorization_str) {
-            Ok(val) => val,
+    let authorization = match std::env::var("authorization") {
+        Ok(val) => match serde_json::from_str::<std::collections::HashMap<String, String>>(&val) {
+            Ok(parsed) => parsed,
             Err(_) => {
                 panic!(
                     "\nauthorization\n\terror parsing JSON [value=invalid]\n",
                 );
             }
-        };
-    let media_source_str = match std::env::var("media_source") {
-        Ok(val) => val,
-        Err(_) => {
-            panic!(
-                "\nmedia_source\n\texpected a directory path, received null [value=missing]\n",
-            );
-        }
+        },
+        Err(_) => settings::default_authorization(),
     };
-    (authorization, std::path::PathBuf::from(media_source_str))
+    let media_source = match std::env::var("media_source") {
+        Ok(val) => std::path::PathBuf::from(val),
+        Err(_) => settings::default_media_source(),
+    };
+    (authorization, media_source)
 }
 
 /// Extracts the env var by key and parses it as a `bool`
@@ -208,6 +197,19 @@ fn parse_vec(key: &str) -> Option<Vec<String>> {
     }
 }
 
+/// Normalizes the base URL to start with a single leading slash and no trailing slashes.
+fn normalize_base_url(value: String) -> String {
+    let mut base = value.trim().to_string();
+    if !base.starts_with('/') {
+        base.insert(0, '/');
+    }
+    base = base.trim_end_matches('/').to_string();
+    if base.is_empty() {
+        base = "/".to_string();
+    }
+    base
+}
+
 /// Extracts the env var by key and parses it as a `PathBuf`
 ///
 /// # Arguments
@@ -315,9 +317,14 @@ fn load_env_vars() -> settings::Config {
     let max_connections = parse_usize("max_connections").unwrap_or(settings::default_max_connections());
     let websites = parse_vec("websites").unwrap_or(settings::default_websites());
     let secure_session = parse_bool("secure_session").unwrap_or(settings::default_secure_session());
+    let ffmpeg_enabled = parse_bool("ffmpeg_enabled").unwrap_or(settings::default_ffmpeg_enabled());
     let key_file = parse_path("key_file").unwrap_or(settings::default_ssl());
     let cert_file = parse_path("cert_file").unwrap_or(settings::default_ssl());
     let max_payload_size = parse_max_payload("max_payload_size").unwrap_or(settings::default_max_payload_size());
+    let base_url = match std::env::var("base_url") {
+        Ok(val) => normalize_base_url(val),
+        Err(_) => settings::default_base_url(),
+    };
     settings::Config {
         authorization,
         media_source,
@@ -325,6 +332,7 @@ fn load_env_vars() -> settings::Config {
         utc_logging,
         media_host,
         media_port,
+        base_url,
         session_duration,
         file_formats,
         workers,
@@ -334,6 +342,7 @@ fn load_env_vars() -> settings::Config {
         secure_session,
         key_file,
         cert_file,
+        ffmpeg_enabled,
     }
 }
 
@@ -354,66 +363,6 @@ fn get_time(utc: bool) -> String {
     }
 }
 
-/// Validates the directory structure to ensure that the secure index is present in media source's root.
-///
-/// # Arguments
-///
-/// * `config` - Configuration data for the application.
-/// * `metadata` - Struct containing metadata of the application.
-fn validate_dir_structure(config: &settings::Config, metadata: &constant::MetaData) {
-    let source = &config.media_source.to_string_lossy().to_string();
-    let mut errors = String::new();
-    for entry in WalkDir::new(&config.media_source).into_iter().filter_map(|e| e.ok()) {
-        let entry_path = entry.path();
-        if entry_path.is_dir() && entry_path.to_str().unwrap().ends_with(constant::SECURE_INDEX) {
-            let secure_index = entry_path.strip_prefix(source).unwrap();
-            let depth = secure_index.iter().count();
-            if depth != 1usize {
-                let index_vec = secure_index.iter().collect::<Vec<_>>();
-                let secure_dir = index_vec.last().unwrap();
-                // secure_parent_path is the secure index's location
-                let secure_parent_path = &index_vec[0..index_vec.len() - 1]
-                    .join(std::ffi::OsStr::new(std::path::MAIN_SEPARATOR_STR));
-                errors.push_str(&format!(
-                    "\n{:?}\n\tSecure index directory [{:?}] should be at the root [{:?}] [depth={}, valid=1]\n\
-                    \t> Hint: Either move {:?} within {:?}, [OR] set the 'media_source' to {:?}\n",
-                    secure_index,
-                    secure_dir,
-                    config.media_source,
-                    depth,
-                    secure_dir,
-                    config.media_source,
-                    config.media_source.join(secure_parent_path)
-                ));
-            }
-        }
-    }
-    if errors.is_empty() {
-        for username in config.authorization.keys() {
-            let secure_path = &config.media_source.join(format!("{}_{}", &username, constant::SECURE_INDEX));
-            if !secure_path.exists() {
-                match std::fs::create_dir(secure_path) {
-                    Ok(_) => {
-                        // keep formatting similar to logging
-                        if config.utc_logging {
-                            println!("[{}\x1b[32m INFO\x1b[0m  {}] '{}' has been created",
-                                     get_time(config.utc_logging), metadata.crate_name,
-                                     &secure_path.to_str().unwrap())
-                        } else {
-                            println!("[{} INFO  {}] '{}' has been created",
-                                     get_time(config.utc_logging), metadata.crate_name,
-                                     &secure_path.to_str().unwrap())
-                        }
-                    }
-                    Err(err) => panic!("{}", err)
-                }
-            }
-        }
-    } else {
-        panic!("{}", errors)
-    }
-}
-
 /// Validates all the required environment variables with the required settings.
 ///
 /// # Arguments
@@ -423,15 +372,50 @@ fn validate_dir_structure(config: &settings::Config, metadata: &constant::MetaDa
 /// # Returns
 ///
 /// Returns the `Config` struct containing the required parameters.
+fn warn_default(key: &str, detail: &str, utc: bool, crate_name: &String) {
+    if utc {
+        println!("[{}\x1b[33m WARN\x1b[0m  {}] '{}' was not provided, {}", get_time(utc), crate_name, key, detail)
+    } else {
+        println!("[{} WARN  {}] '{}' was not provided, {}", get_time(utc), crate_name, key, detail)
+    }
+}
+
 fn validate_vars(metadata: &constant::MetaData) -> settings::Config {
     let config = load_env_vars();
+    let authorization_provided = std::env::var("authorization").is_ok();
+    let media_source_provided = std::env::var("media_source").is_ok();
+    if !authorization_provided {
+        warn_default("authorization", "using default credentials", config.utc_logging, &metadata.crate_name);
+    }
+    if !media_source_provided {
+        warn_default("media_source", "using the default directory", config.utc_logging, &metadata.crate_name);
+    }
     let mut errors = "".to_owned();
     if !config.media_source.exists() || !config.media_source.is_dir() {
-        let err1 = format!(
-            "\nmedia_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
-            config.media_source.to_string_lossy()
-        );
-        errors.push_str(&err1);
+        if !media_source_provided {
+            match std::fs::create_dir_all(&config.media_source) {
+                Ok(_) => {
+                    if config.utc_logging {
+                        println!("[{}\x1b[32m INFO\x1b[0m  {}] '{}' has been created",
+                                 get_time(config.utc_logging), metadata.crate_name,
+                                 config.media_source.to_string_lossy())
+                    } else {
+                        println!("[{} INFO  {}] '{}' has been created",
+                                 get_time(config.utc_logging), metadata.crate_name,
+                                 config.media_source.to_string_lossy())
+                    }
+                }
+                Err(err) => errors.push_str(&format!(
+                    "\nmedia_source\n\tUnable to create the default directory [{}]: {} [value=invalid]\n",
+                    config.media_source.to_string_lossy(), err
+                )),
+            }
+        } else {
+            errors.push_str(&format!(
+                "\nmedia_source\n\tInput [{}] is not a valid directory [value=invalid]\n",
+                config.media_source.to_string_lossy()
+            ));
+        }
     }
     for (username, password) in &config.authorization {
         if username.len() < 4 {
@@ -452,7 +436,6 @@ fn validate_vars(metadata: &constant::MetaData) -> settings::Config {
     if !errors.is_empty() {
         panic!("{}", errors);
     }
-    validate_dir_structure(&config, metadata);
     config
 }
 

@@ -5,6 +5,7 @@
 extern crate actix_web;
 
 use std::io;
+use std::sync::Arc;
 
 use actix_web::{App, HttpServer, middleware, web};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
@@ -17,6 +18,26 @@ mod routes;
 mod squire;
 /// Module to load all the templates for the UI.
 mod templates;
+
+/// Registers all the application services, optionally under the base_url prefix.
+fn configure(cfg: &mut web::ServiceConfig) {
+    cfg.service(routes::basics::health)
+        .service(routes::basics::root)
+        .service(routes::auth::login)
+        .service(routes::auth::logout)
+        .service(routes::auth::home)
+        .service(routes::basics::profile)
+        .service(routes::fileio::edit)
+        .service(routes::fileio::convert)
+        .service(routes::fileio::convert_status)
+        .service(routes::media::track)
+        .service(routes::media::stream)
+        .service(routes::media::streaming_endpoint)
+        .service(routes::media::file_info)
+        .service(routes::media::download)
+        .service(routes::upload::upload_files)
+        .service(routes::upload::save_files);
+}
 
 /// Contains entrypoint and initializer settings to trigger the asynchronous `HTTPServer`
 ///
@@ -40,8 +61,7 @@ pub async fn start() -> io::Result<()> {
     let config = squire::startup::get_config(&metadata);
 
     squire::startup::init_logger(config.debug, config.utc_logging, &metadata.crate_name);
-    println!("{}[v{}] - {}", &metadata.pkg_name, &metadata.pkg_version, &metadata.description);
-    squire::ascii_art::random();
+    println!("{}[v{}] - {}", metadata.pkg_name, metadata.pkg_version, metadata.description);
 
     // Log a warning message for max payload size beyond 1 GB
     if config.max_payload_size > 1024 * 1024 * 1024 {
@@ -60,38 +80,36 @@ pub async fn start() -> io::Result<()> {
     let config_clone = config.clone();
     let host = format!("{}:{}", config.media_host, config.media_port);
     log::info!("{} [workers:{}] running on http://{} (Press CTRL+C to quit)",
-        &metadata.pkg_name, &config.workers, &host);
+        metadata.pkg_name, config.workers, host);
     let jinja = templates::environment();
     let fernet = constant::fernet_object();
     let session = constant::session_info();
+    let jobs = Arc::new(squire::ffmpeg::JobTracker::new());
     /*
         || syntax is creating a closure that serves as the argument to the HttpServer::new() method.
         The closure is defining the configuration for the Actix web server.
         The purpose of the closure is to configure the server before it starts listening for incoming requests.
      */
     let application = move || {
-        App::new()  // Creates a new Actix web application
+        let app = App::new()  // Creates a new Actix web application
             .app_data(web::Data::new(config_clone.clone()))
             .app_data(web::Data::new(jinja.clone()))
             .app_data(web::Data::new(fernet.clone()))
             .app_data(web::Data::new(session.clone()))
+            .app_data(web::Data::new(jobs.clone()))
             .app_data(web::Data::new(metadata.clone()))
             .app_data(web::PayloadConfig::default().limit(config_clone.max_payload_size))
             .wrap(squire::middleware::get_cors(config_clone.websites.clone()))
-            .wrap(middleware::Logger::default())  // Adds a default logger middleware to the application
-            .service(routes::basics::health)  // Registers a service for handling requests
-            .service(routes::basics::root)
-            .service(routes::auth::login)
-            .service(routes::auth::logout)
-            .service(routes::auth::home)
-            .service(routes::basics::profile)
-            .service(routes::fileio::edit)
-            .service(routes::auth::error)
-            .service(routes::media::track)
-            .service(routes::media::stream)
-            .service(routes::media::streaming_endpoint)
-            .service(routes::upload::upload_files)
-            .service(routes::upload::save_files)
+            .wrap(middleware::Logger::default());  // Adds a default logger middleware to the application
+        if config_clone.base_url == "/" {
+            app.configure(configure)
+        } else {
+            let base_url = config_clone.base_url.clone();
+            app.configure(move |cfg| {
+                cfg.service(web::resource(&base_url).route(web::get().to(routes::basics::index_page)));
+                cfg.service(web::scope(&base_url).configure(configure));
+            })
+        }
     };
     let server = HttpServer::new(application)
         .workers(config.workers)

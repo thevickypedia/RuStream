@@ -1,0 +1,12 @@
+target
+debug
+uploads
+media
+.git
+.github
+.env
+*.pem
+Dockerfile
+docker-compose.yaml
+docker-compose.yml
+.gitignore

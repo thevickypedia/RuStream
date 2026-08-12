@@ -45,7 +45,7 @@ pub fn arguments(metadata: &constant::MetaData) -> String {
         i += 1;
     }
     if version {
-        println!("{} {}", &metadata.pkg_name, &metadata.pkg_version);
+        println!("{} {}", metadata.pkg_name, metadata.pkg_version);
         exit(0)
     }
     env_file

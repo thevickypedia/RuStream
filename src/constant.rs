@@ -5,7 +5,9 @@ use std::sync::{Arc, Mutex};
 use fernet::Fernet;
 
 pub static IMAGE_FORMATS: [&str; 7] = ["jpeg", "jpg", "png", "gif", "bmp", "svg", "webp"];
-pub static SECURE_INDEX: &str = "SECURE_INDEX";
+pub static VIDEO_FORMATS: [&str; 13] = [
+    "mp4", "mkv", "avi", "mov", "webm", "m4v", "mpg", "mpeg", "wmv", "flv", "ts", "m2ts", "ogv"
+];
 
 /// Struct to store the cargo information gathered at compile time using the `env!` macro.
 #[allow(dead_code)]

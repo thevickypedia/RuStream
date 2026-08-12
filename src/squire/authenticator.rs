@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, web};
@@ -48,7 +47,7 @@ fn extract_credentials(authorization: &HeaderValue) -> Result<Credentials, &'sta
     let header = authorization.to_str().unwrap().to_string();
     // base64 encoded in JavaScript using inbuilt btoa function
     let b64_decode_response = squire::secure::base64_decode(&header);
-    return match b64_decode_response {
+    match b64_decode_response {
         Ok(decoded_auth) => {
             if decoded_auth.is_empty() {
                 log::warn!("Authorization header was received without a value");
@@ -65,7 +64,7 @@ fn extract_credentials(authorization: &HeaderValue) -> Result<Credentials, &'sta
         Err(err) => {
             Err(err)
         }
-    };
+    }
 }
 
 /// Verifies user login based on extracted credentials and configuration settings.
@@ -154,7 +153,8 @@ pub fn verify_token(
         };
     }
     if let Some(cookie) = request.cookie("session_token") {
-        if let Ok(decrypted) = fernet.decrypt(cookie.value()) {
+        // decrypt() uses a 60s default TTL, so use the configured session duration instead
+        if let Ok(decrypted) = fernet.decrypt_with_ttl(cookie.value(), config.session_duration as u64) {
             let payload: HashMap<String, String> = serde_json::from_str(&String::from_utf8_lossy(&decrypted)).unwrap();
             let username = payload.get("username").unwrap().to_string();
             let cookie_key = payload.get("key").unwrap().to_string();
@@ -201,39 +201,4 @@ pub fn verify_token(
             time_left: 0
         }
     }
-}
-
-/// Verifies the secure index of the directory/file that's being accessed.
-///
-/// # Arguments
-/// * `path` - A reference to the `PathBuf` object that's being accessed.
-/// * `username` - Username of the session.
-///
-/// ## See Also
-/// **Content delivery endpoints**
-/// * `stream` - Servers the content's landing page.
-/// * `track` - Servers the content's subtitles track.
-/// * `media` - Servers the content as a streaming response.
-/// * `home` - Servers the content's listing page.
-///
-/// **Endpoints that require secure index validation**
-/// * `stream` - Handles validation for both the landing page and subdirectories.
-/// * `media` - Handles validation for streaming the requested content.
-/// * `track` - Handles validation for subtitles track file.
-///
-/// # Returns
-///
-/// Returns a boolean value to indicate if the access can be granted.
-pub fn verify_secure_index(path: &Path, username: &String) -> bool {
-    for dir in path.iter() {
-        let child = dir.to_string_lossy().to_string();
-        if child.ends_with(constant::SECURE_INDEX) && child != format!("{}_{}", username, constant::SECURE_INDEX) {
-            let user_dir = child
-                .strip_suffix(constant::SECURE_INDEX).unwrap()
-                .strip_suffix('_').unwrap();
-            log::warn!("'{}' tried to access {:?} that belongs to '{}'", username, path, user_dir);
-            return false;
-        }
-    }
-    true
 }
